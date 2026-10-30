@@ -1,4 +1,5 @@
 import warnings
+
 warnings.filterwarnings("ignore")
 import larpix
 import argparse
@@ -11,146 +12,174 @@ import logging
 import sys
 import os
 
-
 logger = logging.getLogger(__name__)
 
-_default_verbose=False
-skip_readback=False
+_default_verbose = False
+skip_readback = False
 # 0x201c
 # 1: disable
 # 0: enable (default)
 
 from runenv import runenv as RUN
+
 module = sys.modules[__name__]
 for var in RUN.config.keys():
     setattr(module, var, getattr(RUN, var))
 
+
 def main(verbose, pacman_config):
 
-    #number of clock cycles to hold for hard reset of LArPix
-    RESET_CYCLES=4096
+    # number of clock cycles to hold for hard reset of LArPix
+    RESET_CYCLES = 4096
     pacman_configs = {}
-    with open(pacman_config, 'r') as f:
+    with open(pacman_config, "r") as f:
         pacman_configs = json.load(f)
 
     c = larpix.Controller()
     c.io = larpix.io.PACMAN_IO(relaxed=True, config_filepath=pacman_config)
 
     pacman_configs = {}
-    with open(pacman_config, 'r') as f:
+    with open(pacman_config, "r") as f:
         pacman_configs = json.load(f)
 
-    # for each io_group, perform networking 
+    # for each io_group, perform networking
     config_path = None
 
+    logger.info("starting power up")
 
-    logger.info('starting power up')
-
-    for io_group_ip_pair in pacman_configs['io_group']:
+    for io_group_ip_pair in pacman_configs["io_group"]:
         io_group = io_group_ip_pair[0]
-        print('Configuring IO Group {}'.format(io_group))
-        #read pacman information and metadata from RUNENV
+        print("Configuring IO Group {}".format(io_group))
+        # read pacman information and metadata from RUNENV
         pacman_version = iog_pacman_version_[io_group]
         VDDD_DAC = iog_VDDD_DAC[io_group]
         VDDA_DAC = iog_VDDA_DAC[io_group]
 
         if verbose:
-            print('disabling tile power and clock')
+            print("disabling tile power and clock")
         # disable tile power, LARPIX clock
         c.io.set_reg(0x00000010, 0, io_group=io_group)
         c.io.set_reg(0x00000014, 0, io_group=io_group)
 
         if verbose:
-            print('setting up mclk')
+            print("setting up mclk")
         # set up mclk in pacman
-        c.io.set_reg(0x101c, 0x4, io_group=io_group)
+        c.io.set_reg(0x101C, 0x4, io_group=io_group)
         time.sleep(0.1)
 
         for IO_CHAN in utility_base.tile_to_io_channel(io_group_pacman_tile_[io_group]):
 
             uart = pacman_base.convert_io_channel_to_uart(IO_CHAN)
             if uart:
-                c.io.set_uart_clock_ratio(uart,   1)
+                c.io.set_uart_clock_ratio(uart, 1)
                 time.sleep(0.01)
 
         if verbose:
-            print('enabling power')
+            print("enabling power")
         # enable pacman power
         c.io.set_reg(0x00000014, 1, io_group=io_group)
 
         pacman_version = iog_pacman_version_[io_group]
 
-        VDDA_REG=None
-        VDDD_REG=None
+        VDDA_REG = None
+        VDDD_REG = None
 
-        if pacman_version=='v1rev5':
-            VDDD_REG=0x24020
-            VDDA_REG=0x24010
+        if pacman_version == "v1rev5":
+            VDDD_REG = 0x24020
+            VDDA_REG = 0x24010
             for PACMAN_TILE in io_group_pacman_tile_[io_group]:
-                if verbose: print('powering pacman tile:', PACMAN_TILE, 'to', VDDD_DAC, VDDA_DAC)
-                #set voltage dacs to 0V  
-                c.io.set_reg(VDDD_REG+(PACMAN_TILE-1), 0, io_group=io_group)
-                c.io.set_reg(VDDA_REG+(PACMAN_TILE-1), 0, io_group=io_group)
+                if verbose:
+                    print(
+                        "powering pacman tile:", PACMAN_TILE, "to", VDDD_DAC, VDDA_DAC
+                    )
+                # set voltage dacs to 0V
+                c.io.set_reg(VDDD_REG + (PACMAN_TILE - 1), 0, io_group=io_group)
+                c.io.set_reg(VDDA_REG + (PACMAN_TILE - 1), 0, io_group=io_group)
                 time.sleep(0.2)
 
-                #set voltage dacs VDDD first 
-                c.io.set_reg(VDDD_REG+(PACMAN_TILE-1), VDDD_DAC[PACMAN_TILE-1], io_group=io_group)
-                c.io.set_reg(VDDA_REG+(PACMAN_TILE-1), VDDA_DAC[PACMAN_TILE-1], io_group=io_group)
+                # set voltage dacs VDDD first
+                c.io.set_reg(
+                    VDDD_REG + (PACMAN_TILE - 1),
+                    VDDD_DAC[PACMAN_TILE - 1],
+                    io_group=io_group,
+                )
+                c.io.set_reg(
+                    VDDA_REG + (PACMAN_TILE - 1),
+                    VDDA_DAC[PACMAN_TILE - 1],
+                    io_group=io_group,
+                )
 
-        if verbose:  print('reset larpix for n cycles',RESET_CYCLES)
+        if verbose:
+            print("reset larpix for n cycles", RESET_CYCLES)
         #   - set reset cycles
 
-        c.io.set_reg(0x1014,RESET_CYCLES,io_group=io_group)
+        c.io.set_reg(0x1014, RESET_CYCLES, io_group=io_group)
         #   - toggle reset bit
 
         clk_ctrl = c.io.get_reg(0x1010, io_group=io_group)
-        c.io.set_reg(0x1010, clk_ctrl|4, io_group=io_group)
+        c.io.set_reg(0x1010, clk_ctrl | 4, io_group=io_group)
         c.io.set_reg(0x1010, clk_ctrl, io_group=io_group)
 
-        #enable tile power
-        tile_enable_sum=0
+        # enable tile power
+        tile_enable_sum = 0
         tile_enable_val = 0
         for PACMAN_TILE in io_group_pacman_tile_[io_group]:
-            tile_enable_sum = + tile_enable_sum
-            tile_enable_val= c.io.get_reg(0x00000010, io_group=io_group) + pow(2, PACMAN_TILE-1)
-            c.io.set_reg(0x00000010,tile_enable_val,io_group)
+            tile_enable_sum = +tile_enable_sum
+            tile_enable_val = c.io.get_reg(0x00000010, io_group=io_group) + pow(
+                2, PACMAN_TILE - 1
+            )
+            c.io.set_reg(0x00000010, tile_enable_val, io_group)
             time.sleep(0.1)
-            if verbose: print('enabling tilereg 0x10: {0:b}'.format(tile_enable_val) )
+            if verbose:
+                print("enabling tilereg 0x10: {0:b}".format(tile_enable_val))
 
-        if io_group_asic_version_[io_group]=='2b':
-            if verbose: print('Inverting PACMAN UARTs on io_group={}'.format(io_group))
-            pacman_base.invert_pacman_uart(c.io, io_group, io_group_asic_version_[io_group], \
-                                       io_group_pacman_tile_[io_group])
+        if io_group_asic_version_[io_group] == "2b":
+            if verbose:
+                print("Inverting PACMAN UARTs on io_group={}".format(io_group))
+            pacman_base.invert_pacman_uart(
+                c.io,
+                io_group,
+                io_group_asic_version_[io_group],
+                io_group_pacman_tile_[io_group],
+            )
 
-        if not skip_readback: readback=pacman_base.power_readback(c.io, io_group, pacman_version,io_group_pacman_tile_[io_group])
+        if not skip_readback:
+            readback = pacman_base.power_readback(
+                c.io, io_group, pacman_version, io_group_pacman_tile_[io_group]
+            )
         #   - toggle reset bit
-        c.io.set_reg(0x1014,RESET_CYCLES,io_group=io_group)
+        c.io.set_reg(0x1014, RESET_CYCLES, io_group=io_group)
         clk_ctrl = c.io.get_reg(0x1010, io_group=io_group)
-        c.io.set_reg(0x1010, clk_ctrl|4, io_group=io_group)
+        c.io.set_reg(0x1010, clk_ctrl | 4, io_group=io_group)
         c.io.set_reg(0x1010, clk_ctrl, io_group=io_group)
-        #disable trigger forwarding
-        c.io.set_reg(0x2014, 0xffffffff, io_group=io_group)
+        # disable trigger forwarding
+        c.io.set_reg(0x2014, 0xFFFFFFFF, io_group=io_group)
         time.sleep(0.01)
         # Set sync mask
-        c.io.set_reg(0x18, 0x3ff, io_group=io_group)
+        c.io.set_reg(0x18, 0x3FF, io_group=io_group)
 
         pacman_base.disable_all_pacman_uart(c.io, io_group)
 
         pacman_base.set_packet_delay(c.io, io_group)
 
-        utility_base.update_json(asic_config_paths_file_, io_group,None )
-        utility_base.update_json(network_config_paths_file_, io_group,None )
+        utility_base.update_json(asic_config_paths_file_, io_group, None)
+        utility_base.update_json(network_config_paths_file_, io_group, None)
 
-    logger.info('completed')
+    logger.info("completed")
 
     return
 
 
-if __name__=='__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--pacman_config', default="io/pacman.json", \
-                        type=str, help='''Config specifying PACMANs''')
-    parser.add_argument('--verbose', '-v', action='store_true', \
-                        default=_default_verbose)
-    args=parser.parse_args()
+    parser.add_argument(
+        "--pacman_config",
+        default="io/pacman.json",
+        type=str,
+        help="""Config specifying PACMANs""",
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", default=_default_verbose
+    )
+    args = parser.parse_args()
     c = main(**vars(args))

@@ -37,7 +37,7 @@ def main(verbose, pacman_config):
     # write_api = client.write_api(write_options=SYNCHRONOUS)
 
     pacman_configs = {}
-    with open(pacman_config, 'r') as f:
+    with open(pacman_config, "r") as f:
         pacman_configs = json.load(f)
 
     c = larpix.Controller()
@@ -50,10 +50,11 @@ def main(verbose, pacman_config):
         print()
         print(dt.datetime.now())
         for io_group in range(1, 2):
-            print('Looking at IO Group {}'.format(io_group))
+            print("Looking at IO Group {}".format(io_group))
 
             readback = pacman_base.power_readback(
-                c.io, io_group, 'v1rev5', range(1, 11))
+                c.io, io_group, "v1rev5", range(1, 11)
+            )
 
             # for t in readback.keys():
             #     p = influxdb_client.Point(measurement).tag("io_group", io_group).tag("tile", t).field("vdda",
@@ -78,11 +79,16 @@ def main(verbose, pacman_config):
     return
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--pacman_config', default="io/pacman.json",
-                        type=str, help='''Config specifying PACMANs''')
-    parser.add_argument('--verbose', '-v', action='store_true',
-                        default=_default_verbose)
+    parser.add_argument(
+        "--pacman_config",
+        default="io/pacman.json",
+        type=str,
+        help="""Config specifying PACMANs""",
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", default=_default_verbose
+    )
     args = parser.parse_args()
     c = main(**vars(args))
