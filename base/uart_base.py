@@ -1,9 +1,6 @@
-from base import utility_base
-from base import network_base_FSD
-from base import uart_base
-from base import asic_base
-from base import pacman_base
 import stepbystep_v2d_5x5
+from base import (asic_base, network_base_FSD, pacman_base, uart_base,
+                  utility_base)
 
 # from timebudget import timebudget
 

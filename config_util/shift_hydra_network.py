@@ -2,14 +2,16 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
+import argparse
+import json
+import os
+
 import larpix
 import larpix.io
-import argparse
-from tqdm import tqdm
-import os
-import json
-from config_dtime import datetime_now
 import numpy as np
+from tqdm import tqdm
+
+from config_dtime import datetime_now
 
 hydra_registers_v2b = ["enable_piso_downstream", "enable_piso_upstream", "enable_posi"]
 hydra_registers_v2a = ["enable_miso_downstream", "enable_miso_upstream", "enable_mosi"]

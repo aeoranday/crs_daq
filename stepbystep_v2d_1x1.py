@@ -1,8 +1,9 @@
+import time
+
 import larpix
 import larpix.io
-from base import utility_base
-from base import pacman_base
-import time
+
+from base import pacman_base, utility_base
 
 default_v_cm_lvds_tx = 5
 

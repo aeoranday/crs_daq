@@ -1,16 +1,14 @@
-import larpix
-from base import pacman_base
-from base import utility_base
-from copy import deepcopy
-
 # from memory_profiler import profile
 import json
 import time
+from copy import deepcopy
+
+import larpix
 import numpy as np
 
 # from timebudget import timebudget
 # import asyncio
-from base import ana_base
+from base import ana_base, pacman_base, utility_base
 
 # @profile
 

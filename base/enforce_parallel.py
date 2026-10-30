@@ -1,10 +1,12 @@
-import larpix
-from tqdm import tqdm
-from base import utility_base
-from copy import deepcopy
-import numpy as np
 import logging
 import time
+from copy import deepcopy
+
+import larpix
+import numpy as np
+from tqdm import tqdm
+
+from base import utility_base
 
 logger = logging.getLogger(__name__)
 tag_to_config_map = {"MOD1": 0, "MOD2": 1, "MOD3": 2, "MOD4": 3, None: 0}

@@ -1,16 +1,18 @@
 import warnings
 
 warnings.filterwarnings("ignore")
-import larpix
 import argparse
-import larpix.io
-import time
-from base import pacman_base, utility_base
 import json
-import os
-from runenv import runenv as RUN
-import sys
 import logging
+import os
+import sys
+import time
+
+import larpix
+import larpix.io
+
+from base import pacman_base, utility_base
+from runenv import runenv as RUN
 
 logger = logging.getLogger(__name__)
 

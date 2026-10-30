@@ -1,9 +1,11 @@
-import larpix
-from base import utility_base
-import numpy as np
-import h5py
-import json
 import glob
+import json
+
+import h5py
+import larpix
+import numpy as np
+
+from base import utility_base
 
 
 def find_pixel_trim_adc(

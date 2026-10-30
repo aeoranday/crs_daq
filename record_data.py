@@ -2,10 +2,10 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-import larpix
 import argparse
-
 import sys
+
+import larpix
 
 from runenv import runenv as RUN
 
@@ -14,14 +14,14 @@ for var in RUN.config.keys():
     setattr(module, var, getattr(RUN, var))
 
 
-from base import config_loader
-import shutil
-import time
 import os
-from base import utility_base
-from signal import signal, SIGINT
+import shutil
 import subprocess
+import time
+from signal import SIGINT, signal
+
 import base.utility_base
+from base import config_loader, utility_base
 from base.utility_base import now
 
 _default_file_count = -1

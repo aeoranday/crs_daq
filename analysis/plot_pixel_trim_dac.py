@@ -1,8 +1,9 @@
-import os
-import json
-import matplotlib.pyplot as plt
 import argparse
+import json
+import os
 import time
+
+import matplotlib.pyplot as plt
 
 
 def main(asic_config):

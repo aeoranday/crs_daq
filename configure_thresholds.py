@@ -1,22 +1,18 @@
+import argparse
+import copy
+import json
+import sys
+import time
+
 import larpix
 import larpix.io
-import argparse
-import time
-import json
-import copy
+import matplotlib.pyplot as plt
 import numpy as np
-from runenv import runenv as RUN
+from tqdm import tqdm
 
 # from RUNENV import *
-from base import pacman_base
-from base import config_loader
-from base import enforce_parallel
-from base import utility_base
+from base import config_loader, enforce_parallel, pacman_base, utility_base
 from base.utility_base import *
-from tqdm import tqdm
-import matplotlib.pyplot as plt
-
-import sys
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]

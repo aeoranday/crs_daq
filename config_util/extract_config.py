@@ -2,12 +2,11 @@
 
 import argparse
 import io
-from pathlib import Path
 import tarfile
+from pathlib import Path
 
 import h5py
 import numpy as np
-
 from embed_config import NAME
 
 

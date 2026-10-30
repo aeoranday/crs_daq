@@ -1,10 +1,11 @@
+import argparse
+import json
+import os
+
 import larpix
 import larpix.io
-import argparse
 import pickledb
 from tqdm import tqdm
-import os
-import json
 
 
 def main(input_files, register, value, **kwargs):

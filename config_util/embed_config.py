@@ -3,11 +3,11 @@
 import argparse
 import io
 import json
-from pathlib import Path
 import tarfile
+from pathlib import Path
 
-import numpy as np
 import h5py
+import numpy as np
 
 NAME = "daq_configs"
 

@@ -1,6 +1,7 @@
-import json
-from RUNENV import *
 import argparse
+import json
+
+from RUNENV import *
 
 _default_verbose = False
 

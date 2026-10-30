@@ -1,9 +1,10 @@
+import time
+
 import larpix
 import larpix.io
 
 # from base import utility_base
 from base import pacman_base
-import time
 
 
 def read(c, key, param):

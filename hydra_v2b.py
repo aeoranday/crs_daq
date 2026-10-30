@@ -2,25 +2,22 @@
 # RIGHT NOW SECOND IO_CHANNEL CONTROLLER OVERWRITES FIRST
 
 
-import larpix
-import larpix.io
-from base import pacman_base
-from base import network_base_FSD
-from base import utility_base
-from base import generate_config
 import argparse
 import json
+import os
+import shutil
+import sys
 import time
 from time import perf_counter
-import shutil
-from base import config_loader
+
+import larpix
+import larpix.io
 from tqdm import tqdm
+
 from analysis import plot_hydra_network_10x16
-
+from base import (config_loader, generate_config, network_base_FSD,
+                  pacman_base, utility_base)
 from runenv import runenv as RUN
-
-import sys
-import os
 
 module = sys.modules[__name__]
 for var in RUN.config.keys():

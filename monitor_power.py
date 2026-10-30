@@ -1,13 +1,15 @@
-import logging
-import json
-from base.utility_base import now
-from base import pacman_base
-import time
 import argparse
+import datetime as dt
+import json
+import logging
+import time
+import warnings
+
 import larpix
 import larpix.io
 
-import datetime as dt
+from base import pacman_base
+from base.utility_base import now
 
 # import influxdb_client
 # from influxdb_client.client.write_api import SYNCHRONOUS
@@ -15,7 +17,6 @@ import datetime as dt
 # urllib3 has functions to help with url timeout problems
 # import urllib3
 
-import warnings
 
 warnings.filterwarnings("ignore")
 

@@ -1,6 +1,7 @@
-from base import graphs
-import json
 import argparse
+import json
+
+from base import graphs
 
 _name = "tile-6"
 _excluded_chips = []

@@ -2,9 +2,9 @@ import warnings
 
 warnings.filterwarnings("ignore")
 import json
+import logging
 import os
 import sys
-import logging
 
 # set up logger
 

@@ -1,20 +1,17 @@
+import argparse
+import json
+import os
 import sys
 import time
-import argparse
-from base import graphs
+
 import larpix
 import larpix.io
 import larpix.logger
-from base import generate_config
-from base import pacman_base
-from tqdm import tqdm
 import numpy as np
-import json
-from base import utility_base
+from tqdm import tqdm
+
+from base import generate_config, graphs, pacman_base, utility_base
 from base.network_base import _default_clk_ctrl, clk_ctrl_2_clk_ratio_map
-import time
-import sys
-import os
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]

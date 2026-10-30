@@ -2,14 +2,16 @@ import warnings
 
 warnings.filterwarnings("ignore")
 import argparse
-import time
-import sys
 import os
-from runenv import runenv as RUN
+import shutil
+import sys
+import time
+
+import numpy as np
+
 from base import utility_base
 from base.utility_base import get_from_json
-import numpy as np
-import shutil
+from runenv import runenv as RUN
 
 module = sys.modules[__name__]
 for var in RUN.config.keys():

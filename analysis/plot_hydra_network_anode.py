@@ -1,11 +1,12 @@
-import matplotlib.pyplot as plt
-import yaml
-import numpy as np
 import argparse
 import json
-from matplotlib.patches import Rectangle
-from matplotlib.collections import PatchCollection
 from collections import defaultdict
+
+import matplotlib.pyplot as plt
+import numpy as np
+import yaml
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Rectangle
 
 plt.rcParams.update({"font.size": 20})
 

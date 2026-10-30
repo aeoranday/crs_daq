@@ -1,8 +1,9 @@
 import argparse
 import json
-import numpy as np
 import os
 import time
+
+import numpy as np
 
 
 def datetime_now():

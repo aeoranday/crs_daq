@@ -1,13 +1,14 @@
 # Adapted from: https://github.com/larpix/larpix-10x10-scripts/blob/main/plot_hydra_network_v2a.py
 
-import matplotlib.pyplot as plt
-import yaml
-import numpy as np
 import argparse
 import json
-from matplotlib.patches import Rectangle
-from matplotlib.collections import PatchCollection
 import logging
+
+import matplotlib.pyplot as plt
+import numpy as np
+import yaml
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Rectangle
 
 logger = logging.getLogger("plotting_logger")
 

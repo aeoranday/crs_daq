@@ -1,20 +1,19 @@
 import warnings
 
 warnings.filterwarnings("ignore")
-import larpix
+import argparse
+import json
+import logging
 import time
+
+import larpix
 import larpix.io
 from RUNENV import *
-import argparse
-from base import config_loader
-from base import network_base
 from tqdm import tqdm
-from base import pacman_base
-from base import utility_base
-from base import enforce_parallel
-import json
+
+from base import (config_loader, enforce_parallel, network_base, pacman_base,
+                  utility_base)
 from base.utility_base import now
-import logging
 
 _default_verbose = False
 _default_controller_config = None

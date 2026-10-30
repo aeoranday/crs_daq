@@ -1,11 +1,12 @@
-import larpix
-import larpix.io
 import argparse
-import time
 import json
 import os
-from base import utility_base
+import time
 
+import larpix
+import larpix.io
+
+from base import utility_base
 from runenv import runenv as RUN
 
 asic_config_dir = RUN.asic_config_dir

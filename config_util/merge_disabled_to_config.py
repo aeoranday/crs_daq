@@ -1,7 +1,9 @@
 import argparse
 import json
-import numpy as np
 import os
+
+import numpy as np
+
 from config_dtime import datetime_now
 
 

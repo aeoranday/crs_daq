@@ -1,24 +1,22 @@
 import warnings
 
 warnings.filterwarnings("ignore")
-import larpix
-import time
-import larpix.io
-from runenv import runenv as RUN
 import argparse
-from base import config_loader
-from base import network_base_FSD
-from base import network_base_FSD_v3
-from base import network_base
-from tqdm import tqdm
-from base import pacman_base
-from base import utility_base
-from base import enforce_parallel
 import json
-from base.utility_base import now
 import logging
-import sys
 import os
+import sys
+import time
+
+import larpix
+import larpix.io
+from tqdm import tqdm
+
+from base import (config_loader, enforce_parallel, network_base,
+                  network_base_FSD, network_base_FSD_v3, pacman_base,
+                  utility_base)
+from base.utility_base import now
+from runenv import runenv as RUN
 
 module = sys.modules[__name__]
 for var in RUN.config.keys():

@@ -2,18 +2,17 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
+import argparse
+import json
+import os
+import sys
+
 import larpix
 import larpix.io
-import argparse
-from base import config_loader
 from tqdm import tqdm
-from base import pacman_base
-from base import utility_base
-from base import enforce_parallel
+
+from base import config_loader, enforce_parallel, pacman_base, utility_base
 from base.utility_base import now
-import json
-import sys
-import os
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]

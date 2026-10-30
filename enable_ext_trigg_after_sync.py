@@ -1,22 +1,18 @@
-import larpix
-import larpix.io
-from base import pacman_base
-from base import network_base_FSD_v3
-from base import enforce_parallel
-from base import utility_base
-from base import generate_config
 import argparse
 import json
+import os
+import shutil
+import sys
 import time
 from time import perf_counter
-import shutil
-from base import config_loader
+
+import larpix
+import larpix.io
 from tqdm import tqdm
 
+from base import (config_loader, enforce_parallel, generate_config,
+                  network_base_FSD_v3, pacman_base, utility_base)
 from runenv import runenv as RUN
-
-import sys
-import os
 
 verbose = False
 

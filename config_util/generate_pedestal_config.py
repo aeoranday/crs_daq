@@ -3,12 +3,14 @@
 # are set in /larpix-control/larpix//configs/chip/default_v3.py
 #######################################################################################
 
+import argparse
+import json
+import os
+
 import larpix
 import larpix.io
-import argparse
 from tqdm import tqdm
-import os
-import json
+
 from config_dtime import datetime_now
 
 _default_verbose = False

@@ -1,11 +1,10 @@
-import larpix
-from base import utility_base
-from base import uart_base
-from base import asic_base
 import json
 import time
-from base import pacman_base
+
+import larpix
 import numpy as np
+
+from base import asic_base, pacman_base, uart_base, utility_base
 
 # from timebudget import timebudget
 # import asyncio

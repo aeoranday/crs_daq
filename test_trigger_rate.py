@@ -1,19 +1,18 @@
+import argparse
+import json
+import shutil
+import threading
+import time
+
 import larpix
 import larpix.io
-import argparse
-from base import config_loader
-from RUNENV import *
 import pickledb
-import shutil
+from RUNENV import *
 from tqdm import tqdm
-from base import pacman_base
-from base import utility_base
-from base import enforce_parallel
-from base.utility_base import now, chip_key_to_asic_id
-import time
+
 import record_data
-import threading
-import json
+from base import config_loader, enforce_parallel, pacman_base, utility_base
+from base.utility_base import chip_key_to_asic_id, now
 
 _default_verbose = False
 _default_runtime = 0.25

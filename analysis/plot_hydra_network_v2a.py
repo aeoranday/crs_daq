@@ -1,10 +1,11 @@
-import matplotlib.pyplot as plt
-import yaml
-import numpy as np
 import argparse
 import json
-from matplotlib.patches import Rectangle
+
+import matplotlib.pyplot as plt
+import numpy as np
+import yaml
 from matplotlib.collections import PatchCollection
+from matplotlib.patches import Rectangle
 from RUNENV import *
 
 _default_controller_config = None

@@ -1,15 +1,16 @@
-import h5py
-import matplotlib.pyplot as plt
-import yaml
-import numpy as np
 import argparse
 import json
-from matplotlib.patches import Rectangle
-from matplotlib.collections import PatchCollection
-from matplotlib import cm
-from matplotlib.colors import Normalize
 from collections import defaultdict
+
+import h5py
+import matplotlib.pyplot as plt
+import numpy as np
 import tqdm
+import yaml
+from matplotlib import cm
+from matplotlib.collections import PatchCollection
+from matplotlib.colors import Normalize
+from matplotlib.patches import Rectangle
 
 plt.rcParams.update({"font.size": 15})
 
