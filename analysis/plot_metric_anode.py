@@ -12,6 +12,8 @@ from matplotlib.collections import PatchCollection
 from matplotlib.colors import Normalize
 from matplotlib.patches import Rectangle
 
+import utils
+
 plt.rcParams.update({"font.size": 15})
 
 _default_filename = None
@@ -35,33 +37,6 @@ def _rotate_pixel(pixel_pos, tile_orientation):
     return pixel_pos[0] * tile_orientation[2], pixel_pos[1] * tile_orientation[1]
 
 
-def unique_channel_id(d):
-    return (
-        (d["io_group"].astype(int) * 1000 + d["io_channel"].astype(int)) * 1000
-        + d["chip_id"].astype(int)
-    ) * 100 + d["channel_id"].astype(int)
-
-
-def unique_to_channel_id(unique):
-    return unique % 100
-
-
-def unique_to_chip_id(unique):
-    return (unique // 100) % 1000
-
-
-def unique_to_io_channel(unique):
-    return (unique // (100 * 1000)) % 1000
-
-
-def unique_to_tiles(unique):
-    return ((unique_to_io_channel(unique) - 1) // 4) + 1
-
-
-def unique_to_io_group(unique):
-    return (unique // (100 * 1000 * 1000)) % 1000
-
-
 def parse_file(filename, max_entries):
     d = dict()
     f = h5py.File(filename, "r")
@@ -71,7 +46,7 @@ def parse_file(filename, max_entries):
     valid_parity_mask = f["packets"][:]["valid_parity"] == 1
     mask = np.logical_and(data_mask, valid_parity_mask)
     adc = f["packets"]["dataword"][mask][:max_entries]
-    unique_id = unique_channel_id(f["packets"][mask][:max_entries])
+    unique_id = utils.generate_uid_from_fields(f["packets"][mask][:max_entries])
     unique_id_set = np.unique(unique_id)
     chips = f["packets"]["chip_id"][mask][:max_entries]
 
@@ -93,16 +68,16 @@ def parse_file(filename, max_entries):
 
 def plot_1d(d, metric):
 
-    io_groups = set(unique_to_io_group(np.array(list(d.keys()))))
-    tiles = set(unique_to_tiles(np.array(list(d.keys()))))
+    io_groups = set(utils.uid_to_io_group(np.array(list(d.keys()))))
+    tiles = set(utils.uid_to_tiles(np.array(list(d.keys()))))
 
     for io_group in io_groups:
         for tile in tiles:
             tile_id = "{}-{}".format(io_group, tile)
 
-            mask = unique_to_io_group(np.array(list(d.keys()))) == io_group
+            mask = utils.uid_to_io_group(np.array(list(d.keys()))) == io_group
             mask = np.logical_and(
-                mask, unique_to_tiles(np.array(list(d.keys()))) == tile
+                mask, utils.uid_to_tiles(np.array(list(d.keys()))) == tile
             )
 
             if not np.any(mask):
@@ -339,7 +314,7 @@ def plot_xy(d, metric, geometry_yaml, geometry_yaml_mod2, normalization):
         uniques = np.array(list(d.keys()))
         for io_group in range(1, 9):
 
-            mask = unique_to_io_group(uniques) == io_group
+            mask = utils.uid_to_io_group(uniques) == io_group
 
             print("Getting {} for io_group {}".format(metric, io_group))
             d_keys = uniques[mask]
@@ -501,9 +476,9 @@ def plot_xy(d, metric, geometry_yaml, geometry_yaml_mod2, normalization):
             )
 
             for key in d_keys:
-                channel_id = unique_to_channel_id(key)
-                chip_id = unique_to_chip_id(key)
-                tile = unique_to_tiles(key) + 8 * (1 - (io_group % 2))
+                channel_id = utils.uid_to_channel_id(key)
+                chip_id = utils.uid_to_chip_id(key)
+                tile = utils.uid_to_tiles(key) + 8 * (1 - (io_group % 2))
 
                 if chip_id not in range(11, 111):
                     continue

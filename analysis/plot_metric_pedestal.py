@@ -12,6 +12,8 @@ from matplotlib.collections import PatchCollection
 from matplotlib.colors import Normalize
 from matplotlib.patches import Rectangle
 
+import utils
+
 _default_filename = None
 
 _default_geometry_yaml = "analysis/layout-3.0.0.yaml"
@@ -24,33 +26,6 @@ periodic_trigger_cycles = 0.067  # MHz
 verbose = True
 
 
-def unique_channel_id(d):
-    return (
-        (d["io_group"].astype(int) * 1000 + d["io_channel"].astype(int)) * 1000
-        + d["chip_id"].astype(int)
-    ) * 100 + d["channel_id"].astype(int)
-
-
-def unique_to_channel_id(unique):
-    return unique % 100
-
-
-def unique_to_chip_id(unique):
-    return (unique // 100) % 1000
-
-
-def unique_to_io_channel(unique):
-    return (unique // (100 * 1000)) % 1000
-
-
-def unique_to_tiles(unique):
-    return ((unique_to_io_channel(unique) - 1) // 4) + 1
-
-
-def unique_to_io_group(unique):
-    return (unique // (100 * 1000 * 1000)) % 1000
-
-
 def parse_file(filename, max_entries=-1):
     d = dict()
     f = h5py.File(filename, "r")
@@ -61,7 +36,7 @@ def parse_file(filename, max_entries=-1):
     # mask = np.logical_and(data_mask, valid_parity_mask)
     mask = f["packets"][:]["packet_type"] == 1
     adc = f["packets"]["dataword"][mask][:max_entries]
-    unique_id = unique_channel_id(f["packets"][mask][:max_entries])
+    unique_id = utils.generate_uid_from_fields(f["packets"][mask][:max_entries])
     unique_id_set = np.unique(unique_id)
     chips = f["packets"]["chip_id"][mask][:max_entries]
 
@@ -87,16 +62,16 @@ def parse_file(filename, max_entries=-1):
 
 
 def plot_1d(d, metric):
-    io_groups = set(unique_to_io_group(np.array(list(d.keys()))))
-    tiles = set(unique_to_tiles(np.array(list(d.keys()))))
+    io_groups = set(utils.uid_to_io_group(np.array(list(d.keys()))))
+    tiles = set(utils.uid_to_tiles(np.array(list(d.keys()))))
 
     for io_group in io_groups:
         for tile in tiles:
             tile_id = "{}-{}".format(io_group, tile)
 
-            mask = unique_to_io_group(np.array(list(d.keys()))) == io_group
+            mask = utils.uid_to_io_group(np.array(list(d.keys()))) == io_group
             mask = np.logical_and(
-                mask, unique_to_tiles(np.array(list(d.keys()))) == tile
+                mask, utils.uid_to_tiles(np.array(list(d.keys()))) == tile
             )
 
             if not np.any(mask):
@@ -210,15 +185,15 @@ def plot_xy(d, metric, geometry_yaml, normalization, filename):
     #                           23, 24, 25, 38, 39, 40, 54, 55, 56, 57]
     routed_v2a_channels = [i for i in range(64) if i not in nonrouted_v2a_channels]
 
-    io_groups = set(unique_to_io_group(np.array(list(d.keys()))))
-    tiles = set(unique_to_tiles(np.array(list(d.keys()))))
+    io_groups = set(utils.uid_to_io_group(np.array(list(d.keys()))))
+    tiles = set(utils.uid_to_tiles(np.array(list(d.keys()))))
 
     for io_group in io_groups:
         for tile in tiles:
             tile_id = "{}-{}".format(io_group, tile)
-            mask = unique_to_io_group(np.array(list(d.keys()))) == io_group
+            mask = utils.uid_to_io_group(np.array(list(d.keys()))) == io_group
             mask = np.logical_and(
-                mask, unique_to_tiles(np.array(list(d.keys()))) == tile
+                mask, utils.uid_to_tiles(np.array(list(d.keys()))) == tile
             )
 
             if not np.any(mask):
@@ -275,8 +250,8 @@ def plot_xy(d, metric, geometry_yaml, normalization, filename):
                 plt.annotate(str(chipid), [avgX, avgY], ha="center", va="center")
 
             for key in d_keys:
-                channel_id = unique_to_channel_id(key)
-                chip_id = unique_to_chip_id(key)
+                channel_id = utils.uid_to_channel_id(key)
+                chip_id = utils.uid_to_chip_id(key)
                 if chip_id not in range(11, 171):
                     continue
                 if channel_id in nonrouted_v2a_channels:

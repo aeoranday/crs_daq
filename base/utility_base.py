@@ -11,7 +11,7 @@ import larpix.format.pacman_msg_format as pacman_msg_fmt
 import larpix.format.rawhdf5format as rhdf5
 import numpy as np
 
-from utils import datetime_now
+import utils
 
 # metadata dumping and generation for ctrl+c
 _dump_and_exit_ = False
@@ -232,7 +232,7 @@ def flush_data(c, runtime=0.1, rate_limit=0.0, max_iterations=10):
 
 
 def data_filename(c, packet, tag=None):
-    now: str = datetime_now()
+    now: str = utils.datetime_now()
     type_str = "binary"
     if packet:
         type_str = "packet"
@@ -635,7 +635,7 @@ def io_channel_to_root_chip(io_channel, asic_version, isFSDtile=False):
 
 
 def save_json(d, prefix):
-    now: str = datetime_now()
+    now: str = utils.datetime_now()
     fname = prefix + "-" + now + ".json"
     with open(fname, "w") as outfile:
         json.dump(d, outfile, indent=4)
@@ -644,7 +644,7 @@ def save_json(d, prefix):
 
 
 def save_asic_config(c):
-    now: str = datetime_now()
+    now: str = utils.datetime_now()
     for ck in c.chips:
         fname = "config-" + str(ck) + "-" + now + ".json"
         c[ck].config.write(fname, force=True)
@@ -653,44 +653,6 @@ def save_asic_config(c):
 
 def unique(io_group, io_channel, chip_id, channel_id):
     return ((io_group * 256 + io_channel) * 256 + chip_id) * 64 + channel_id
-
-
-def unique_channel_id(d):
-    return (
-        (d["io_group"].astype(int) * 1000 + d["io_channel"].astype(int)) * 1000
-        + d["chip_id"].astype(int)
-    ) * 100 + d["channel_id"].astype(int)
-
-
-def unique_channel_id_args(io_group, io_channel, chip_id, channel_id):
-    return ((io_group * 1000 + io_channel) * 1000 + chip_id) * 100 + channel_id
-
-
-def unique_to_chip_key(i):
-    chip_key = (
-        str(unique_to_io_group(i))
-        + "-"
-        + str(unique_to_io_channel(i))
-        + "-"
-        + str(unique_to_chip_id(i))
-    )
-    return chip_key
-
-
-def unique_to_channel_id(unique):
-    return int(unique % 100)
-
-
-def unique_to_chip_id(unique):
-    return int((unique // 100) % 1000)
-
-
-def unique_to_io_channel(unique):
-    return int((unique // (100 * 1000)) % 1000)
-
-
-def unique_to_io_group(unique):
-    return int((unique // (100 * 1000 * 1000)) % 1000)
 
 
 def chip_key_to_asic_id(chip_key):
