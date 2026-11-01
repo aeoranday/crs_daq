@@ -4,7 +4,6 @@ warnings.filterwarnings("ignore")
 import argparse
 import json
 import logging
-import time
 
 import larpix
 import larpix.io

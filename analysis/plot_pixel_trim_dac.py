@@ -1,9 +1,10 @@
 import argparse
 import json
 import os
-import time
 
 import matplotlib.pyplot as plt
+
+from utils import datetime_now
 
 
 def main(asic_config):
@@ -22,7 +23,7 @@ def main(asic_config):
     plt.ylabel("counts")
     plt.yscale("log")
 
-    now = time.strftime("%Y_%m_%d_%H_%M_%S_%Z")
+    now: str = datetime_now()
 
     plt.savefig("pixel_trim_dac-" + now + ".png")
     print("Saved to: ", "pixel_trim_dac-" + now + ".png")

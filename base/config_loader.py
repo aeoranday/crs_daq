@@ -1,13 +1,13 @@
 import argparse
 import json
 import os
-import time
 
 import larpix
 import larpix.io
 
 from base import utility_base
 from runenv import runenv as RUN
+from utils import datetime_now
 
 asic_config_dir = RUN.asic_config_dir
 
@@ -20,10 +20,6 @@ hydra_registers = [
     "enable_miso_upstream",
     "enable_mosi",
 ]
-
-
-def datetime_now():
-    return utility_base.now()
 
 
 def write_config_to_file(c, path=None, chip_key=None, description="default"):

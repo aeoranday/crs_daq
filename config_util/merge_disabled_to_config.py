@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 
-from config_dtime import datetime_now
+from utils import datetime_now
 
 
 def parse_disabled_json(disabled_json):

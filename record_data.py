@@ -8,6 +8,7 @@ import sys
 import larpix
 
 from runenv import runenv as RUN
+from utils import datetime_now
 
 module = sys.modules[__name__]
 for var in RUN.config.keys():
@@ -17,7 +18,6 @@ for var in RUN.config.keys():
 import os
 import shutil
 import subprocess
-import time
 from signal import SIGINT, signal
 
 import base.utility_base
@@ -34,11 +34,6 @@ def ctrlc_handler(signal_received, frame):
 
     base.utility_base._dump_and_exit_ = True
     print("CTRL-C detected. Starting Dump.")
-
-
-def datetime_now():
-    """Return string with year, month, day, hour, minute"""
-    return time.strftime("%Y_%m_%d_%H_%M_%Z_%S")
 
 
 def main(

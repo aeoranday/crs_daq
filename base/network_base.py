@@ -5,6 +5,7 @@ import larpix
 import numpy as np
 
 from base import asic_base, pacman_base, uart_base, utility_base
+from utils import datetime_now
 
 # from timebudget import timebudget
 # import asyncio
@@ -818,7 +819,7 @@ def write_network_to_file(
             d["missing"][key.io_group][key.io_channel][key.chip_id] = []
         d["missing"][key.io_group][key.io_channel][key.chip_id].append(pair[1])
 
-    now = time.strftime("%Y_%m_%d_%H_%M_%Z")
+    now: str = datetime_now()
     if file_prefix != None:
         fname = file_prefix + "-network-" + now + ".json"
     if file_prefix == None:

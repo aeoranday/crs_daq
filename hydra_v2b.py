@@ -18,6 +18,7 @@ from analysis import plot_hydra_network_10x16
 from base import (config_loader, generate_config, network_base_FSD,
                   pacman_base, utility_base)
 from runenv import runenv as RUN
+from utils import datetime_now
 
 module = sys.modules[__name__]
 for var in RUN.config.keys():
@@ -65,7 +66,7 @@ def main(
     time.sleep(4096 * 4 * 1e-6)
 
     if True:
-        now = time.strftime("%Y_%m_%d_%H_%M_%Z")
+        now: str = datetime_now()
         config_name = "controller-config-" + now + ".json"
 
     # for iog in [io_group]:

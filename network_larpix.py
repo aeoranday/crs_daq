@@ -6,7 +6,6 @@ import json
 import logging
 import os
 import sys
-import time
 
 import larpix
 import larpix.io
@@ -34,9 +33,7 @@ def enforce_iterative(
 ):
     # while True:
     #     nc.verify_registers([('1-1-151', [122])])
-    #     time.sleep(1)
     #     nc.verify_registers([('1-1-152', [122])])
-    #     time.sleep(1)
 
     ok, diff, unconfigured = enforce_parallel.enforce_parallel(
         nc, all_network_keys, pbar_desc=pbar_desc, pbar_position=pbar_position

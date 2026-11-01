@@ -1,12 +1,8 @@
 import argparse
 import json
 import os
-import time
 
-
-def datetime_now():
-    """Return string with year, month, day, hour, minute"""
-    return time.strftime("%Y_%m_%d_%H_%M_%Z")
+from utils import datetime_now
 
 
 def main(asic_config, **kwargs):

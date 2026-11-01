@@ -3,7 +3,6 @@ import copy
 import json
 import os
 import sys
-import time
 
 import larpix
 import larpix.io
@@ -125,7 +124,6 @@ def main(io_group, pacman_config, high_dac, disabled, **kwargs):
                 disabled_list,
                 channel,
             )
-            # time.sleep(0.05)
 
             # Set test pulse DAC high
             multitile_write(
@@ -137,7 +135,6 @@ def main(io_group, pacman_config, high_dac, disabled, **kwargs):
                 disabled_list,
                 channel,
             )
-            # time.sleep(0.05)
 
             # Fire test pulse
             # NOTE: csa_testpulse_enable IS ACTIVE LOW (0)
@@ -150,7 +147,6 @@ def main(io_group, pacman_config, high_dac, disabled, **kwargs):
                 disabled_list,
                 channel,
             )
-            # time.sleep(0.05)
 
             # Disable test pulse
             # NOTE: csa_testpulse_enable IS INACTIVE HIGH (1)

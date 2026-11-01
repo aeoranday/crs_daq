@@ -1,7 +1,7 @@
 import argparse
 import json
 
-from config_dtime import datetime_now
+from utils import datetime_now
 
 
 def main(*files, disabled_list=None, **kwargs):

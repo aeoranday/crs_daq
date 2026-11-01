@@ -1,9 +1,10 @@
 import argparse
 import json
 import os
-import time
 
 import matplotlib.pyplot as plt
+
+from utils import datetime_now
 
 
 def main(asic_config):
@@ -33,7 +34,7 @@ def main(asic_config):
     plt.xlabel("threshold_global")
     plt.ylabel("counts")
 
-    now = time.strftime("%Y_%m_%d_%H_%M_%S_%Z")
+    now: str = datetime_now()
 
     plt.savefig("threshold_global-" + now + ".png")
     print("Saved to: ", "threshold_global-" + now + ".png")

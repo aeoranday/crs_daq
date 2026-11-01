@@ -3,7 +3,6 @@ import json
 import os
 import shutil
 import sys
-import time
 from time import perf_counter
 
 import larpix

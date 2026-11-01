@@ -12,6 +12,7 @@ import numpy as np
 from base import config_loader, enforce_parallel, pacman_base, utility_base
 from base.utility_base import *
 from runenv import runenv as RUN
+from utils import datetime_now
 
 module = sys.modules[__name__]
 for var in RUN.config.keys():
@@ -491,7 +492,7 @@ def main(pacman_config, disabled_list, chip_list, diagnostic_dir, **kwargs):
     print("==> %.2f seconds --- disabled channels from input list\n" % timeEnd)
     save_to_json(
         diagnostic_dir
-        + "/input_disabled_list_{}".format(time.strftime("%Y_%m_%d_%H_%M_%S_%Z")),
+        + "/input_disabled_list_{}".format(datetime_now()),
         csa_disable,
         recast=False,
     )
@@ -532,7 +533,7 @@ def main(pacman_config, disabled_list, chip_list, diagnostic_dir, **kwargs):
     print("\t==> %.2f seconds --- toggle global DACs\n" % timeEnd)
     save_to_json(
         diagnostic_dir
-        + "/global_disabled_list_{}".format(time.strftime("%Y_%m_%d_%H_%M_%S_%Z")),
+        + "/global_disabled_list_{}".format(datetime_now()),
         toggle_global_csa_disable,
         recast=False,
     )
@@ -556,21 +557,19 @@ def main(pacman_config, disabled_list, chip_list, diagnostic_dir, **kwargs):
 
     save_to_json(
         diagnostic_dir
-        + "/combined_global_disabled_list_{}".format(
-            time.strftime("%Y_%m_%d_%H_%M_%S_%Z")
-        ),
+        + "/combined_global_disabled_list_{}".format(datetime_now()),
         global_disable,
         recast=False,
     )
     save_to_json(
         diagnostic_dir
-        + "/global_configuration_{}".format(time.strftime("%Y_%m_%d_%H_%M_%S_%Z")),
+        + "/global_configuration_{}".format(datetime_now()),
         global_track_progress,
         recast=True,
     )
     save_to_json(
         diagnostic_dir
-        + "/global_triggers_{}".format(time.strftime("%Y_%m_%d_%H_%M_%S_%Z")),
+        + "/global_triggers_{}".format(datetime_now()),
         global_track_triggers,
         recast=True,
     )
@@ -585,9 +584,7 @@ def main(pacman_config, disabled_list, chip_list, diagnostic_dir, **kwargs):
     if this_chip_count > 0:
         save_chip_key_list(
             diagnostic_dir
-            + "/chip_reevaluation_list_{}".format(
-                time.strftime("%Y_%m_%d_%H_%M_%S_%Z")
-            ),
+            + "/chip_reevaluation_list_{}".format(datetime_now()),
             chips_to_test,
         )
 

@@ -11,7 +11,7 @@ import larpix
 import larpix.io
 from tqdm import tqdm
 
-from config_dtime import datetime_now
+from utils import datetime_now
 
 _default_verbose = False
 _default_periodic_trigger_cycles = 1000000

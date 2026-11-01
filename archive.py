@@ -5,7 +5,6 @@ import argparse
 import os
 import shutil
 import sys
-import time
 
 import numpy as np
 

@@ -13,6 +13,7 @@ from tqdm import tqdm
 from base import generate_config, graphs, pacman_base, utility_base
 from base.network_base import _default_clk_ctrl, clk_ctrl_2_clk_ratio_map
 from runenv import runenv as RUN
+from utils import datetime_now
 
 module = sys.modules[__name__]
 for var in RUN.config.keys():
@@ -345,7 +346,7 @@ def main(
     fname = config_name
 
     if config_name is None:  # no input file to incluce
-        fname = "config-{}.json".format(time.strftime("%Y_%m_%d_%H_%M_%Z"))
+        fname = "config-{}.json".format(datetime_now())
         with open(fname, "w") as f:
             json.dump(d, f)
         return fname

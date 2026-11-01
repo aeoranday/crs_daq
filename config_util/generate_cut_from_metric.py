@@ -1,6 +1,5 @@
 import argparse
 import json
-import time
 
 import h5py
 import matplotlib.pyplot as plt
@@ -13,17 +12,14 @@ from matplotlib.collections import PatchCollection
 from matplotlib.colors import Normalize
 from matplotlib.patches import Rectangle
 
+from utils import datetime_now
+
 _default_filename = None
 
 _default_metric = "rate"
 _default_std_cut = 2
 _default_mean_cut = 50
 _default_rate_cut = 10
-
-
-def datetime_now():
-    """Return string with year, month, day, hour, minute"""
-    return time.strftime("%Y_%m_%d_%H_%M_%Z")
 
 
 def unique_channel_id(d):

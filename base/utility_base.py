@@ -11,6 +11,8 @@ import larpix.format.pacman_msg_format as pacman_msg_fmt
 import larpix.format.rawhdf5format as rhdf5
 import numpy as np
 
+from utils import datetime_now
+
 # metadata dumping and generation for ctrl+c
 _dump_and_exit_ = False
 _broadcast_disable_nwrite = 3
@@ -163,10 +165,6 @@ def update_json(file, key, data, meta_field="configs"):
     return d
 
 
-def now():
-    return time.strftime("%Y_%m_%d_%H_%M_%S_%Z")
-
-
 def read(c, key, param):
     c.reads = []
     c.read_configuration(key, param, timeout=0.1)
@@ -184,10 +182,6 @@ def read(c, key, param):
         if msg.chip_id == key.chip_id and r == c[key].config.register_map[param]:
             break
     return r, v
-
-
-def now():
-    return time.strftime("%Y_%m_%d_%H_%M_%Z")
 
 
 def broadcast_disable(c, target_chips=None):
@@ -238,7 +232,7 @@ def flush_data(c, runtime=0.1, rate_limit=0.0, max_iterations=10):
 
 
 def data_filename(c, packet, tag=None):
-    now = time.strftime("%Y_%m_%d_%H_%M_%S_%Z")
+    now: str = datetime_now()
     type_str = "binary"
     if packet:
         type_str = "packet"
@@ -641,7 +635,7 @@ def io_channel_to_root_chip(io_channel, asic_version, isFSDtile=False):
 
 
 def save_json(d, prefix):
-    now = time.strftime("%Y_%m_%d_%H_%M_%Z")
+    now: str = datetime_now()
     fname = prefix + "-" + now + ".json"
     with open(fname, "w") as outfile:
         json.dump(d, outfile, indent=4)
@@ -650,7 +644,7 @@ def save_json(d, prefix):
 
 
 def save_asic_config(c):
-    now = time.strftime("%Y_%m_%d_%H_%M_%Z")
+    now: str = datetime_now()
     for ck in c.chips:
         fname = "config-" + str(ck) + "-" + now + ".json"
         c[ck].config.write(fname, force=True)

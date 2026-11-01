@@ -12,7 +12,8 @@ from tqdm import tqdm
 
 import record_data
 from base import config_loader, enforce_parallel, pacman_base, utility_base
-from base.utility_base import chip_key_to_asic_id, now
+from base.utility_base import chip_key_to_asic_id
+from utils import datetime_now
 
 _default_verbose = False
 _default_runtime = 0.25
@@ -67,7 +68,7 @@ def main(verbose, threshold, runtime, disabled_list):
         config_loader.load_config_from_directory(c, CONFIG)
 
         db.set("IO_GROUP_{}_ASIC_CONFIGS".format(io_group), CONFIG)
-        db.set("LAST_UPDATE", now())
+        db.set("LAST_UPDATE", datetiem_now())
     # ensure UARTs are enable on pacman to receive configuration packets
     for io_group in io_group_pacman_tile_.keys():
         pacman_base.enable_all_pacman_uart_from_io_group(c.io, io_group)

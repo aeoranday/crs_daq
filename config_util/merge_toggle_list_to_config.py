@@ -1,14 +1,10 @@
 import argparse
 import json
 import os
-import time
 
 import numpy as np
 
-
-def datetime_now():
-    """Return string with year, month, day, hour, minute, second"""
-    return time.strftime("%Y_%m_%d_%H_%M_%S_%Z")
+from utils import datetime_now
 
 
 v2a_nonrouted_channels = [6, 7, 8, 9, 22, 23, 24, 25, 38, 39, 40, 54, 55, 56, 57]
