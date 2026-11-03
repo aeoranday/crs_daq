@@ -1,4 +1,3 @@
-import argparse
 import json
 import os
 
@@ -43,7 +42,7 @@ def write_config_to_file(c, path=None, chip_key=None, description="default"):
             full_dict = c[chip].config.to_dict()
             chip_dict = {
                 key: full_dict[key]
-                for key in c[chip].config.get_nondefault_registers().keys()
+                for key in c[chip].config.get_nondefault_registers()
             }
             chip_dict["meta"] = {}
             chip_dict["meta"]["CHIP_KEY"] = str(chip)
@@ -113,7 +112,7 @@ def load_config_from_file_existing_network(c, config):
     new_key = "{}-{}-{}".format(ids[0], key_tile, ids[2])
 
     new_id = None
-    for chip in c.chips.keys():
+    for chip in c.chips:
         chip_tile = utility_base.io_channel_to_tile(chip.io_channel)
         new_chip = "{}-{}-{}".format(chip.io_group, chip_tile, chip.chip_id)
         if new_chip == new_key:
@@ -129,7 +128,7 @@ def load_config_from_file_existing_network(c, config):
     if new_id is None:
         print("unable to find chip:", chip_key)
 
-    for key in asic_config.keys():
+    for key in asic_config:
         if key in hydra_registers:
             continue
         if key == "chip_id":
@@ -153,7 +152,7 @@ def load_config_from_file(c, config):
     version = asic_config["meta"]["ASIC_VERSION"]
     key_tile = utility_base.io_channel_to_tile(larpix.key.Key(chip_key).io_channel)
 
-    if not chip_key in c.chips:
+    if chip_key not in c.chips:
         # check other possible io_channels it could correspond to
         io_channels = utility_base.tile_to_io_channel([key_tile])
 
@@ -173,7 +172,7 @@ def load_config_from_file(c, config):
         if not found:
             c.add_chip(chip_key, version=version)
 
-    for key in asic_config.keys():
+    for key in asic_config:
         if key == "meta":
             continue
         # if key in hydra_registers: continue

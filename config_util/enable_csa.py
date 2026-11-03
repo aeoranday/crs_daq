@@ -6,7 +6,7 @@ from utils import datetime_now
 
 def main(*files, disabled_list=None, **kwargs):
     disabled = {}
-    if not disabled_list is None:
+    if disabled_list is not None:
         with open(disabled_list, "r") as f:
             disabled = json.load(f)
 
@@ -18,11 +18,11 @@ def main(*files, disabled_list=None, **kwargs):
         config["csa_enable"] = [1] * 64
 
         asic_id = config["meta"]["ASIC_ID"]
-        if asic_id in disabled.keys():
+        if asic_id in disabled:
             for channel in disabled[asic_id]:
                 config["csa_enable"][channel] = 0
 
-        if "meta" in config.keys():
+        if "meta" in config:
             config["meta"]["last_update"] = datetime_now()
 
         with open(file, "w") as f:

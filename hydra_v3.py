@@ -4,19 +4,14 @@
 
 import argparse
 import json
-import os
-import shutil
 import sys
 import time
-from time import perf_counter
 
 import larpix
 import larpix.io
-from tqdm import tqdm
 
 from analysis import plot_hydra_network_10x16
-from base import (config_loader, generate_config, network_base_FSD_v3,
-                  pacman_base, utility_base)
+from base import (network_base_FSD_v3, utility_base)
 from runenv import runenv as RUN
 from utils import datetime_now
 
@@ -124,7 +119,7 @@ def main(
                     utility_base.partition_chip_keys_by_io_group_tile(root_keys)
                 )
 
-                for iog_tile in iog_tile_to_root_keys.keys():
+                for iog_tile in iog_tile_to_root_keys:
                     network_base_FSD_v3.initial_network(
                         c,
                         c.io,

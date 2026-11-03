@@ -1,7 +1,6 @@
 import argparse
 import datetime as dt
 import json
-import logging
 import time
 import warnings
 
@@ -9,13 +8,6 @@ import larpix
 import larpix.io
 
 from base import pacman_base
-from base.utility_base import now
-
-# import influxdb_client
-# from influxdb_client.client.write_api import SYNCHRONOUS
-
-# urllib3 has functions to help with url timeout problems
-# import urllib3
 
 
 warnings.filterwarnings("ignore")

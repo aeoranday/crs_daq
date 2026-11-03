@@ -90,14 +90,14 @@ def enforce_parallel(c, network_keys, unmask_last=True, pbar_desc="p", pbar_posi
         if not ok:
             print("Re-configuring: ", diff)
             ok, diff = c.enforce_configuration(
-                diff.keys(), timeout=0.2, connection_delay=0.1, n=15, n_verify=3
+                diff, timeout=0.2, connection_delay=0.1, n=15, n_verify=3
             )
             if not ok:
                 logger.info("could not configure:" + str(diff))
                 print("Could not configure: ", diff)
-                if len(diff.keys()) < 3:
+                if len(diff) < 3:
                     ok = True
-                    for key in diff.keys():
+                    for key in diff:
                         if len(diff[key]) > 2:
                             ok = False
                 if not ok:
@@ -144,7 +144,7 @@ def enforce_parallel(c, network_keys, unmask_last=True, pbar_desc="p", pbar_posi
             if True:
                 for __ in range(N_WRITE_UNMASK):
                     for chip in c.chips:
-                        if chip.io_group in c.io._io_group_table.keys():
+                        if chip.io_group in c.io._io_group_table:
                             c.multi_write_configuration(
                                 [
                                     (

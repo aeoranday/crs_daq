@@ -615,7 +615,7 @@ def find_potential_parents(chip_id, network, verbose):
             continue
         if (chip_id + i) % 10 == 0 and chip_id % 10 == 1:
             continue
-        if chip_id + i in network.keys():
+        if chip_id + i in network:
             parents.append(network[chip_id + i])
     return parents
 
@@ -906,9 +906,9 @@ def network_v3(controller_config, tiles=None, verbose=False, **kwargs):
             )
 
     # write tx, rx, etc configs
-    for chip_key in c.chips.keys():
-        if not tiles is None:
-            if not utility_base.io_channel_to_tile(chip_key.io_channel) in tiles:
+    for chip_key in c.chips:
+        if tiles is not None:
+            if utility_base.io_channel_to_tile(chip_key.io_channel) not in tiles:
                 continue
 
         registers = []

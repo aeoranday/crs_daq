@@ -1,10 +1,8 @@
-import gc
 import json
 # import asyncio
 import os
 import subprocess
 import time
-from signal import SIGINT, signal
 
 import larpix
 import larpix.format.pacman_msg_format as pacman_msg_fmt
@@ -69,7 +67,7 @@ def get_from_json(file, key, meta_field="configs"):
                 print("Issue opening file {}".format(file))
                 time.sleep(0.1)
 
-    if not meta_field in d.keys():
+    if meta_field not in d:
         if key == "all":
             return d
 
@@ -135,7 +133,7 @@ def update_json(file, key, data, meta_field="configs"):
             if itretry > 10:
                 print("Warning: unable to open file {}".format(file))
 
-    if meta_field in d.keys():
+    if meta_field in d:
         d[meta_field][str(key)] = data
     else:
         d[str(key)] = data
@@ -343,7 +341,7 @@ def get_from_json(file, key, meta_field="configs"):
                 print("Issue opening file {}".format(file))
                 time.sleep(0.1)
 
-    if not meta_field in d.keys():
+    if meta_field not in d:
         if key == "all":
             return d
 
@@ -587,7 +585,7 @@ def iog_tile_to_iog_ioc_cid(io_group_pacman_tile, asic_version, isFSDtile=False)
         for tile in io_group_pacman_tile[iog]:
             io_channel = tile_to_io_channel([tile])
             ioc_root_map = io_channel_to_root_chip(io_channel, asic_version, isFSDtile)
-            for ioc in ioc_root_map.keys():
+            for ioc in ioc_root_map:
                 result.append((iog, ioc, ioc_root_map[ioc]))
     return result
 

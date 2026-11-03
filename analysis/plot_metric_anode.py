@@ -1,5 +1,4 @@
 import argparse
-import json
 from collections import defaultdict
 
 import h5py
@@ -8,7 +7,6 @@ import numpy as np
 import tqdm
 import yaml
 from matplotlib import cm
-from matplotlib.collections import PatchCollection
 from matplotlib.colors import Normalize
 from matplotlib.patches import Rectangle
 
@@ -68,16 +66,16 @@ def parse_file(filename, max_entries):
 
 def plot_1d(d, metric):
 
-    io_groups = set(utils.uid_to_io_group(np.array(list(d.keys()))))
-    tiles = set(utils.uid_to_tiles(np.array(list(d.keys()))))
+    io_groups = set(utils.uid_to_io_group(np.array(list(d))))
+    tiles = set(utils.uid_to_tiles(np.array(list(d))))
 
     for io_group in io_groups:
         for tile in tiles:
             tile_id = "{}-{}".format(io_group, tile)
 
-            mask = utils.uid_to_io_group(np.array(list(d.keys()))) == io_group
+            mask = utils.uid_to_io_group(np.array(list(d))) == io_group
             mask = np.logical_and(
-                mask, utils.uid_to_tiles(np.array(list(d.keys()))) == tile
+                mask, utils.uid_to_tiles(np.array(list(d))) == tile
             )
 
             if not np.any(mask):
@@ -122,7 +120,7 @@ def plot_xy(d, metric, geometry_yaml, geometry_yaml_mod2, normalization):
     with open(geometry_yaml_mod2) as fi2:
         geo_mod2 = yaml.full_load(fi2)
 
-    if "multitile_layout_version" in geo.keys():
+    if "multitile_layout_version" in geo:
         # Adapted from: https://github.com/larpix/larpix-v2-testing-scripts/blob/master/event-display/evd_lib.py
 
         # Module 1, 3, 4 layout

@@ -57,7 +57,7 @@ def main(monitor_dir, ignore_busy):
     config_paths = get_from_json(asic_config_paths_file_, "all", meta_field="configs")
 
     config_monitor_dir = "{}/{}".format(monitor_name, "asic_configs")
-    for io_group in config_paths.keys():
+    for io_group in config_paths:
         path = config_paths[io_group]
         if path is None:
             continue

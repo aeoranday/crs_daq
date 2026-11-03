@@ -4,7 +4,6 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 import yaml
-from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 from RUNENV import *
 
@@ -147,7 +146,7 @@ def plot_hydra_network(
         )
         plt.annotate(str(chipid), [avgX, avgY], ha="center", va="center")
 
-    for chipID in chipID_uart.keys():
+    for chipID in chipID_uart:
         if chipID == "ext":
             continue
         for uart in chipID_uart[chipID]:
@@ -189,8 +188,8 @@ def plot_hydra_network(
 
         plt.gca().add_patch(r)
 
-    for chipID in chipid_pos.keys():
-        if chipID not in chipID_uart.keys():
+    for chipID in chipid_pos:
+        if chipID not in chipID_uart:
             r = Rectangle(
                 (chipid_pos[chipID]["minX"], chipid_pos[chipID]["minY"]),
                 abs(chipid_pos[chipID]["maxX"] - chipid_pos[chipID]["minX"]),

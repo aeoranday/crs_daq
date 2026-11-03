@@ -91,7 +91,7 @@ class NumberedArrangement:
         return [
             i
             for i in range(self.start_index, self.start_index + self.ncols * self.nrows)
-            if not (i in self.excluded_chips)
+            if i not in self.excluded_chips
         ]
 
     # number of steps between two chips

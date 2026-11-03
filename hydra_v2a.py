@@ -1,6 +1,5 @@
 import argparse
 import json
-import os
 import sys
 import time
 
@@ -311,7 +310,7 @@ def main(
         if exclude_roots is None:
             exclude_roots = {t: None for t in pacman_tile}
         for tile in pacman_tile:
-            if not tile in exclude.keys():
+            if tile not in exclude:
                 exclude[tile] = None
             print("excluding chips {} on tile {}".format(exclude[tile], tile))
             d["_include"].append(
@@ -382,13 +381,13 @@ def hydra_chain(
         arr.clear()
     all_roots = [11, 41, 71, 101]
     root_chips = [11, 41, 71, 101]
-    if not exclude is None:
+    if exclude is not None:
         if type(exclude) == str:
             exclude = list(np.array(exclude.split(",")).astype(int))
-    if not exclude_roots is None:
+    if exclude_roots is not None:
         if type(exclude_roots) == str:
             exclude_roots = list(np.array(exclude_roots.split(",")).astype(int))
-    if not exclude is None:
+    if exclude is not None:
         if type(exclude) == int:
             arr.add_excluded_chip(exclude)
             if exlude in root_chips:
@@ -401,7 +400,7 @@ def hydra_chain(
                 if chip in root_chips:
                     root_chips.remove(chip)
 
-    if not exclude_roots is None:
+    if exclude_roots is not None:
         if type(exclude_roots) == int:
             if exclude_roots in root_chips:
                 root_chips.remove(exclude)

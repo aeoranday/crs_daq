@@ -246,7 +246,7 @@ def setup_root_chips(
     i_rx,
 ):
     root_keys = []
-    for ioc in iochannel_root_map.keys():
+    for ioc in iochannel_root_map:
         root_chip_key = setup_root(
             c,
             io,
@@ -674,7 +674,7 @@ def find_potential_parents(chip_id, network, verbose):
             continue
         if (chip_id + i) % 10 == 0 and chip_id % 10 == 1:
             continue
-        if chip_id + i in network.keys():
+        if chip_id + i in network:
             parents.append(network[chip_id + i])
     return parents
 
@@ -960,9 +960,9 @@ def network_v2b(controller_config, tiles=None, verbose=False, **kwargs):
             c.init_network(io_group, io_channel, modify_mosi=True)
 
     # write tx, rx, etc configs
-    for chip_key in c.chips.keys():
-        if not tiles is None:
-            if not utility_base.io_channel_to_tile(chip_key.io_channel) in tiles:
+    for chip_key in c.chips:
+        if tiles is not None:
+            if utility_base.io_channel_to_tile(chip_key.io_channel) not in tiles:
                 continue
 
         c[chip_key].config.ref_current_trim = ref_current_trim

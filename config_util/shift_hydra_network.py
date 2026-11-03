@@ -4,12 +4,10 @@ warnings.filterwarnings("ignore")
 
 import argparse
 import json
-import os
 
 import larpix
 import larpix.io
 import numpy as np
-from tqdm import tqdm
 
 from utils import datetime_now
 
@@ -44,7 +42,7 @@ def main(input_files, controller_config, **kwargs):
 
         _chip_key = None
         _asic_id = None
-        if "meta" in asic_config.keys():
+        if "meta" in asic_config:
             _chip_key = asic_config["meta"]["CHIP_KEY"]
             _asic_id = asic_config["meta"]["ASIC_ID"]
         else:
@@ -57,14 +55,14 @@ def main(input_files, controller_config, **kwargs):
     c = larpix.Controller()
     c.io = larpix.io.FakeIO(print_packets=False)
 
-    for key in configs.keys():
+    for key in configs:
         c.load(configs[key])
 
         for io_group, io_channels in c.network.items():
             for io_channel in io_channels:
                 c.init_network(io_group, io_channel, modify_mosi=False)
 
-        test_chip = list(c.chips.keys())[0]
+        test_chip = list(c.chips)[0]
         hydra_registers = None
         if c[test_chip].asic_version == 2:
             hydra_registers = hydra_registers_v2a

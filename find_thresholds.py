@@ -1,8 +1,6 @@
 import argparse
-import copy
 import json
 import time
-from collections import Counter
 
 import h5py
 import larpix
@@ -12,10 +10,8 @@ import numpy as np
 from RUNENV import *
 from tqdm import tqdm
 
-import base
 from base import config_loader, enforce_parallel, pacman_base, utility_base
 from base.utility_base import *
-from base.utility_base import now
 
 MAX_TOGGLE_ITS = 16
 _default_controller_config = "controller_config.json"
@@ -77,7 +73,7 @@ def measure_background_rate_disable_csa(
                 c.write_configuration(chip_key, "channel_mask")
                 c.write_configuration(chip_key, "channel_mask")
 
-                if not asic_id in csa_disable:
+                if asic_id not in csa_disable:
                     csa_disable[asic_id] = []
                 csa_disable[asic_id].append(channel)
         c.reads = []
@@ -131,7 +127,7 @@ def find_pedestal(pedestal_file, c, verbose):
             pedestal_channel[unique] = dict(mu=np.mean(__adc__), std=np.std(__adc__))
 
     temp, temp_mu, temp_std = [{} for i in range(3)]
-    for unique in pedestal_channel.keys():
+    for unique in pedestal_channel:
         chip_key = unique_to_chip_key(unique)
         if chip_key not in temp:
             temp[chip_key], temp_mu[chip_key], temp_std[chip_key] = [
@@ -144,7 +140,7 @@ def find_pedestal(pedestal_file, c, verbose):
         temp_std[chip_key].append(pedestal_channel[unique]["std"])
 
     pedestal_chip = {}
-    for chip_key in temp.keys():
+    for chip_key in temp:
         pedestal_chip[chip_key] = dict(
             metric=np.mean(temp[chip_key]),
             mu=np.mean(temp_mu[chip_key]),
@@ -191,13 +187,13 @@ def disable_from_file(c, disabled_list, csa_disable):
         chip_register_pairs.append(
             (chip_key, list(range(66, 74)) + list(range(131, 139)))
         )
-        if asic_id in disable_input.keys():
+        if asic_id in disable_input:
             key = asic_id
             if True:
                 for channel in disable_input[key]:
                     c[chip_key].config.csa_enable[channel] = 0
                     c[chip_key].config.channel_mask[channel] = 1
-                    if not asic_id in csa_disable.keys():
+                    if asic_id not in csa_disable:
                         csa_disable[asic_id] = []
                     csa_disable[asic_id].append(channel)
     c.multi_write_configuration(chip_register_pairs, connection_delay=0.01)
@@ -309,7 +305,7 @@ def enable_frontend(c, pacman_configs, channels, csa_disable, config, all_networ
             ntrig = chip_triggers.shape[0]
             print("______Iteration: {}\ttotal packets: {}______".format(ihr_it, ntrig))
             for chip in triggered_chips:
-                if not chip in c.chips:
+                if chip not in c.chips:
                     ckey = larpix.key.Key(chip)
                     print("Unknown chip ID found...")
                     __io_group, __io_channel = ckey.io_group, ckey.io_channel
@@ -353,7 +349,7 @@ def enable_frontend(c, pacman_configs, channels, csa_disable, config, all_networ
                                 chip, channel, ntrig_ch / runtime
                             )
                         )
-                        if not chip in c.chips:
+                        if chip not in c.chips:
                             print("Noisy chip missing from controller!")
                             continue
                         c[chip].config.channel_mask[int(channel)] = 1
@@ -406,7 +402,7 @@ def find_global_dac_seed(c, pedestal_chip, normalization, cryo, vdda, verbose):
         offset = 365  # [mV] at 88 K
     print("PEDESTAL OFFSET: ", offset)
     chip_register_pairs = []
-    for chip_key in pedestal_chip.keys():
+    for chip_key in pedestal_chip:
         if chip_key not in c.chips:
             continue
         # mu_mV = from_ADC_to_mV(c, chip_key, pedestal_chip[chip_key]['mu'], True, vdda)
@@ -449,7 +445,7 @@ def find_global_dac_seed(c, pedestal_chip, normalization, cryo, vdda, verbose):
 
 def update_chip(c, status):
     chip_register_pairs = []
-    for chip_key in status.keys():
+    for chip_key in status:
         chip_register_pairs.append(
             (chip_key, list(range(64)) + list(range(66, 74)) + list(range(131, 139)))
         )
@@ -481,7 +477,7 @@ def toggle_trim(
         l = list(c[chip_key].config.pixel_trim_dac)
         status[chip_key] = dict(pixel_trim=l, active=[True] * 64, disable=[False] * 64)
 
-        if asic_id in csa_disable.keys():
+        if asic_id in csa_disable:
             for channel in range(64):
                 if channel in csa_disable[asic_id]:
                     status[chip_key]["active"][channel] = False
@@ -509,7 +505,7 @@ def toggle_trim(
                 fired_channels[chip_key] = []
             fired_channels[chip_key].append(channel)
             rate = triggered_channels.count([chip_key, channel]) / null_sample_time
-            if chip_key not in status.keys():
+            if chip_key not in status:
                 continue
             if status[chip_key]["active"][channel] == False:
                 continue

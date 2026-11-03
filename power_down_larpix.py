@@ -4,13 +4,12 @@ warnings.filterwarnings("ignore")
 import argparse
 import json
 import logging
-import os
 import sys
 
 import larpix
 import larpix.io
 
-from base import pacman_base, utility_base
+from base import utility_base
 from runenv import runenv as RUN
 
 logger = logging.getLogger(__name__)

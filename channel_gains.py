@@ -1,14 +1,12 @@
 import argparse
-import copy
 import json
-import os
 import sys
 
 import larpix
 import larpix.io
 import numpy as np
 
-from base import config_loader, enforce_parallel, pacman_base, utility_base
+from base import config_loader, pacman_base, utility_base
 from base.utility_base import *
 from runenv import runenv as RUN
 
@@ -26,7 +24,7 @@ def multitile_write(
 
         for key in keys[io_channel]:
 
-            if key in list(disabled_list.keys()) and channel in disabled_list[key]:
+            if key in disabled_list and channel in disabled_list[key]:
                 continue
 
             setattr(c[key].config, register, value)

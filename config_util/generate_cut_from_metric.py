@@ -3,14 +3,8 @@ import json
 
 import h5py
 import matplotlib.pyplot as plt
-import merge_disabled_to_config
 import numpy as np
 import tqdm
-import yaml
-from matplotlib import cm
-from matplotlib.collections import PatchCollection
-from matplotlib.colors import Normalize
-from matplotlib.patches import Rectangle
 
 import utils
 
@@ -103,7 +97,7 @@ def apply_cut_generate_disabled(d, metric, cut, polarity, file):
                 weight = d[key][metric]
                 if (weight > cut and not polarity) or (weight < cut and polarity):
                     key = "{}-{}-{}".format(io_group, tile, chip_id)
-                    if not key in disabled_list.keys():
+                    if key not in disabled_list:
                         disabled_list[key] = []
                     disabled_list[key].append(int(channel_id))
                     nchan += 1

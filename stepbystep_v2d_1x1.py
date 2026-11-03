@@ -3,7 +3,7 @@ import time
 import larpix
 import larpix.io
 
-from base import pacman_base, utility_base
+from base import pacman_base
 
 default_v_cm_lvds_tx = 5
 
@@ -342,8 +342,6 @@ def main():
     #    c.io.set_reg(0x18, int("".join(bitstring),2), io_group)
 
     read(c, chip41_key, "enable_piso_downstream")
-
-    # ok, diff = utility_base.reconcile_configuration(c, chip11_key, verbose=True,n=5,n_verify=5)
 
     # optinally, take a look at the
     # message = c.reads[-1]

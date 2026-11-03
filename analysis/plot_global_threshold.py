@@ -25,7 +25,7 @@ def main(asic_config):
                 max_threshold = this_threshold
         except:
             print(
-                f"chip key {chip_key} not finding 'threshold_global' in {d[chip_key].keys()}"
+                f"chip key {chip_key} not finding 'threshold_global' in {d[chip_key]}"
             )
 
     plt.hist(l, range(0, max_threshold + 1))

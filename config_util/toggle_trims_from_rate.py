@@ -5,11 +5,6 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import tqdm
-import yaml
-from matplotlib import cm
-from matplotlib.collections import PatchCollection
-from matplotlib.colors import Normalize
-from matplotlib.patches import Rectangle
 
 import utils
 
@@ -102,20 +97,20 @@ def toggle_trims_write_increments(d, min_rate, max_rate, file, toggle_filename):
                     if tog < 1:
                         tog = 1
                     key = "{}-{}-{}".format(io_group, tile, chip_id)
-                    if not key in toggle_list.keys():
+                    if key not in toggle_list:
                         toggle_list[key] = []
                     toggle_list[key].append((int(channel_id), tog))
                     nchan += 1
                 elif weight < min_rate:
                     key = "{}-{}-{}".format(io_group, tile, chip_id)
-                    if not key in toggle_list.keys():
+                    if key not in toggle_list:
                         toggle_list[key] = []
                     toggle_list[key].append((int(channel_id), -1))
                     nchan += 1
 
             for chipid in range(11, 171):
                 key = "{}-{}-{}".format(io_group, tile, chipid)
-                if not key in toggle_list.keys():
+                if key not in toggle_list:
                     toggle_list[key] = []
                 for chanid in range(64):
                     if (chipid, chanid) in used_chip_chan:

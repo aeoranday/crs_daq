@@ -10,10 +10,8 @@ import sys
 
 import larpix
 import larpix.io
-from tqdm import tqdm
 
 from base import config_loader, enforce_parallel, pacman_base, utility_base
-from base.utility_base import now
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
@@ -56,7 +54,7 @@ def main(
             CONFIG = utility_base.get_from_json(asic_config_paths_file_, io_group)
         else:
             CONFIG = asic_config
-            if not config_subdir is None:
+            if config_subdir is not None:
                 CONFIG = "{}/{}".format(asic_config, config_subdir)
             utility_base.update_json(asic_config_paths_file_, io_group, CONFIG)
 
@@ -72,7 +70,7 @@ def main(
         remove = []
         for i in range(len(all_network_keys)):
             for j in range(len(all_network_keys[i])):
-                if not all_network_keys[i][j] in c.chips:
+                if all_network_keys[i][j] not in c.chips:
 
                     found = False
                     chip = all_network_keys[i][j]

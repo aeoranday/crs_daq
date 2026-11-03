@@ -1,10 +1,5 @@
-import stepbystep_v2d_5x5
 from base import (asic_base, network_base_FSD, pacman_base, uart_base,
                   utility_base)
-
-# from timebudget import timebudget
-
-# @timebudget
 
 
 def reset_uarts(c, chip_key, verbose):
@@ -40,7 +35,6 @@ def setup_parent_piso(c, io, parent, daughter, verbose, tx_diff, tx_slice):
     return ok, diff
 
 
-# @timebudget
 def setup_daughter(
     c,
     io,

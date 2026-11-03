@@ -1,7 +1,5 @@
 import argparse
 import json
-import shutil
-import threading
 import time
 
 import larpix
@@ -10,10 +8,8 @@ import pickledb
 from RUNENV import *
 from tqdm import tqdm
 
-import record_data
-from base import config_loader, enforce_parallel, pacman_base, utility_base
+from base import config_loader, enforce_parallel, pacman_base
 from base.utility_base import chip_key_to_asic_id
-from utils import datetime_now
 
 _default_verbose = False
 _default_runtime = 0.25
@@ -27,7 +23,7 @@ def main(verbose, threshold, runtime, disabled_list):
     db = pickledb.load(env_db, True)
     rundb = pickledb.load(run_db, True)
     # check DB file to ensure run conditions satisfy requirements
-    for io_group in io_group_pacman_tile_.keys():
+    for io_group in io_group_pacman_tile_:
 
         # check that tiles are configured with hydra network
         TILES_CONFIGURED = db.get("IO_GROUP_{}_TILES_NETWORKED".format(io_group))
@@ -58,7 +54,7 @@ def main(verbose, threshold, runtime, disabled_list):
     # list of network keys in order from root chip, for parallel configuration enforcement
     all_network_keys = []
 
-    for io_group in io_group_pacman_tile_.keys():
+    for io_group in io_group_pacman_tile_:
         print("Using default config")
         CONFIG = db.get("DEFAULT_CONFIG_{}".format(io_group))
 
@@ -70,7 +66,7 @@ def main(verbose, threshold, runtime, disabled_list):
         db.set("IO_GROUP_{}_ASIC_CONFIGS".format(io_group), CONFIG)
         db.set("LAST_UPDATE", datetiem_now())
     # ensure UARTs are enable on pacman to receive configuration packets
-    for io_group in io_group_pacman_tile_.keys():
+    for io_group in io_group_pacman_tile_:
         pacman_base.enable_all_pacman_uart_from_io_group(c.io, io_group)
 
     # Peform test in parallel for one chip per io channel
@@ -79,7 +75,7 @@ def main(verbose, threshold, runtime, disabled_list):
     # 3) disable channels with excessive rate
 
     disabled = {}
-    if not disabled_list is None:
+    if disabled_list is not None:
         with open(disabled_list, "r") as f:
             disabled = json.load(f)
 

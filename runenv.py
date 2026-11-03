@@ -4,7 +4,6 @@ warnings.filterwarnings("ignore")
 import json
 import logging
 import os
-import sys
 
 # set up logger
 
@@ -27,11 +26,11 @@ class runenv:
     with open(config_file, "r") as f:
         config = json.load(f)
 
-    for key in config.keys():
+    for key in config:
         vars()[key] = config[key]
         if type(vars()[key]) == dict:
 
-            subkeys = list(vars()[key].keys()).copy()
+            subkeys = list(vars()[key]).copy()
             for subkey in subkeys:
                 try:
                     vars()[key][int(subkey)] = vars()[key][subkey]
@@ -78,11 +77,11 @@ class runenv:
         with open(self.config_file, "r") as f:
             self.config = json.load(f)
 
-        for key in config.keys():
+        for key in config:
             vars()[key] = config[key]
             if type(vars()[key]) == dict:
 
-                subkeys = list(vars()[key].keys()).copy()
+                subkeys = list(vars()[key]).copy()
                 for subkey in subkeys:
                     try:
                         vars()[key][int(subkey)] = vars()[key][subkey]

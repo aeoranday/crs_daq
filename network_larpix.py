@@ -9,12 +9,10 @@ import sys
 
 import larpix
 import larpix.io
-from tqdm import tqdm
 
 from base import (config_loader, enforce_parallel, network_base,
                   network_base_FSD, network_base_FSD_v3, pacman_base,
                   utility_base)
-from base.utility_base import now
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
@@ -49,15 +47,15 @@ def enforce_iterative(
 
         all_network_keys = []
         io_group_tiles = {}
-        for chip_key in diff.keys():
-            if not chip_key.io_group in io_group_tiles.keys():
+        for chip_key in diff:
+            if chip_key.io_group not in io_group_tiles:
                 io_group_tiles[chip_key.io_group] = set()
             io_group_tiles[chip_key.io_group].add(
                 utility_base.io_channel_to_tile(chip_key.io_channel)
             )
 
         for chip_key in all_keys:
-            if not chip_key.io_group in io_group_tiles:
+            if chip_key.io_group not in io_group_tiles:
                 io_group_tiles[chip_key.io_group] = None
 
         for io_group in io_group_tiles:
@@ -113,8 +111,8 @@ def main(
     for io_group_ip_pair in pacman_configs["io_group"]:
         io_group = io_group_ip_pair[0]
         tiles = None
-        if not io_group_tiles is None:
-            if not (io_group in io_group_tiles.keys()):
+        if io_group_tiles is not None:
+            if io_group not in io_group_tiles:
                 continue
             else:
                 tiles = io_group_tiles[io_group]
@@ -144,7 +142,7 @@ def main(
 
         _tiles = []
         for _, io_channels in c.network.items():
-            _tiles += utility_base.io_channel_list_to_tile(list(io_channels.keys()))
+            _tiles += utility_base.io_channel_list_to_tile(list(io_channels))
 
         _update_now = False
         CONFIG = utility_base.get_from_json(default_asic_config_paths_file_, io_group)

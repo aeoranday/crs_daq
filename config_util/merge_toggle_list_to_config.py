@@ -2,8 +2,6 @@ import argparse
 import json
 import os
 
-import numpy as np
-
 from utils import datetime_now
 
 
@@ -35,7 +33,7 @@ def main(*files, toggle_json, toggle_global, cryo, **kwargs):
 
     toggle_list = parse_toggle_json(toggle_json)
     meta = "unknown-toggle"
-    if "meta" in toggle_list.keys():
+    if "meta" in toggle_list:
         meta = toggle_list["meta"]
         meta["toggle_global"] = toggle_global
     disabled = 0
@@ -53,8 +51,8 @@ def main(*files, toggle_json, toggle_global, cryo, **kwargs):
         # print(chip)
         version = "v2d"
 
-        if chip_key in toggle_list.keys():
-            if not "pixel_trim_dac" in config.keys():
+        if chip_key in toggle_list:
+            if "pixel_trim_dac" not in config:
                 config["pixel_trim_dac"] = [16] * 64
 
             if True:
@@ -72,9 +70,9 @@ def main(*files, toggle_json, toggle_global, cryo, **kwargs):
                     config["pixel_trim_dac"][chan] = 0
                     bottomed += 1
 
-            if "meta" in config.keys():
+            if "meta" in config:
                 config["meta"]["last_update"] = datetime_now()
-                if not "toggle_lists" in config["meta"].keys():
+                if "toggle_lists" not in config["meta"]:
                     config["meta"]["toggle_lists"] = []
                 config["meta"]["toggle_lists"].append(meta)
 

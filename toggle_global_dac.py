@@ -1,7 +1,5 @@
 import argparse
-import copy
 import json
-import os
 import sys
 import time
 
@@ -258,7 +256,7 @@ def toggle_global_dac(
                 channels = channel_triggers[mask]
                 set_channels = set(channels)
                 asic_id = chip_key_to_asic_id(chip)
-                if asic_id in toggle_global_csa_disable.keys():
+                if asic_id in toggle_global_csa_disable:
                     channel_intersection = list(
                         set_channels & set(toggle_global_csa_disable[asic_id])
                     )
@@ -280,7 +278,7 @@ def toggle_global_dac(
                     )
                     kill_fraction[channel] = channel_rate[channel] / chip_rate
                 kill_channel = []
-                for channel in channel_rate.keys():
+                for channel in channel_rate:
                     if (
                         kill_fraction[channel] > max_channel_fraction
                         and channel_rate[channel] > _maxrate_global
@@ -401,7 +399,7 @@ def toggle_global_dac(
             "==>\tCSA disable size: ",
             haha,
             "\t keys: ",
-            len(toggle_global_csa_disable.keys()),
+            len(toggle_global_csa_disable),
             "\n",
         )
 
