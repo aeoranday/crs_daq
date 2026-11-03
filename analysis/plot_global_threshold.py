@@ -17,7 +17,7 @@ def main(asic_config):
 
     l = []
     max_threshold = 0
-    for chip_key in d.keys():
+    for chip_key in d:
         try:
             this_threshold = d[chip_key]["threshold_global"]
             l.append(this_threshold)

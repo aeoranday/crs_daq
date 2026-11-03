@@ -16,7 +16,7 @@ from runenv import runenv as RUN
 from utils import datetime_now
 
 module = sys.modules[__name__]
-for var in RUN.config.keys():
+for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
 arr = graphs.NumberedArrangement()
@@ -302,7 +302,7 @@ def main(
 
     d = {"_config_type": "controller", "_include": []}
     print(exclude)
-    exclude = exclude[io_group] if io_group in exclude.keys() else None
+    exclude = exclude[io_group] if io_group in exclude else None
     if isinstance(pacman_tile, list) or pacman_tile is None:
         if pacman_tile is None:
             pacman_tile = io_group_pacman_tile_[io_group]

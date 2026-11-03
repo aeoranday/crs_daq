@@ -15,7 +15,7 @@ from base.utility_base import *
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
-for var in RUN.config.keys():
+for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
 
@@ -135,7 +135,7 @@ def enable_frontend(c, chips, csa_disable, all_network_keys, pacman_configs):
             c[chip_key].config.channel_mask = [0] * 64
             c[chip_key].config.csa_enable = [1] * 64
             asic_id = chip_key_to_asic_id(chip_key)
-            if asic_id in csa_disable.keys():
+            if asic_id in csa_disable:
                 for channel in csa_disable[asic_id]:
                     c[chip_key].config.channel_mask[channel] = 1
                     c[chip_key].config.csa_enable[channel] = 0
@@ -176,7 +176,7 @@ def reenable_frontend(
                 c[chip_key].config.channel_mask = [0] * 64
                 c[chip_key].config.csa_enable = [1] * 64
                 asic_id = chip_key_to_asic_id(chip_key)
-                if asic_id in csa_disable.keys():
+                if asic_id in csa_disable:
                     for channel in csa_disable[asic_id]:
                         c[chip_key].config.channel_mask[channel] = 1
                         c[chip_key].config.csa_enable[channel] = 0
@@ -476,7 +476,7 @@ def toggle_global_dac(
         for _ in range(10):
             for chip in toggled_chips:
                 asic_id = chip_key_to_asic_id(chip)
-                if asic_id in toggle_global_csa_disable.keys():
+                if asic_id in toggle_global_csa_disable:
                     for channel in set(toggle_global_csa_disable[asic_id]):
                         c[chip].config.channel_mask[channel] = 1
                         c[chip].config.csa_enable[channel] = 0
@@ -562,7 +562,7 @@ def save_config_to_file(c, csa_disable):
         c[chip].config.csa_enable = [1] * 64
         c[chip].config.channel_mask = [0] * 64
         asic_id = chip_key_to_asic_id(chip)
-        if asic_id in csa_disable.keys():
+        if asic_id in csa_disable:
             for channel in csa_disable[asic_id]:
                 c[chip].config.csa_enable[channel] = 0
                 c[chip].config.channel_mask[channel] = 1

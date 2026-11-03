@@ -1013,7 +1013,7 @@ def enable_self_triggering(c, io, io_group, disabled, set_rate=None):
             for ioc in possible_io_channel:
                 # if ioc==chip_key.io_channel: continue
                 candidate = larpix.key.Key(chip_key.io_group, ioc, chip_key.chip_id)
-                if candidate in disabled.keys():
+                if candidate in disabled:
                     for disabled_channel in disabled[candidate]:
                         chip.config.channel_mask[disabled_channel] = 1
                         chip.config.csa_enable[disabled_channel] = 0

@@ -23,7 +23,6 @@ def reset_uarts(c, chip_key, verbose):
     return
 
 
-# @timebudget
 def setup_parent_piso(c, io, parent, daughter, verbose, tx_diff, tx_slice):
     enable_parent_piso_us(c, parent, daughter, verbose, tx_diff, tx_slice)
     pacman_base.enable_pacman_uart_from_io_channel(
@@ -65,8 +64,6 @@ def setup_daughter(
     asic_base.disable_chip_csa_trigger(c, daughter)
     uart_base.enable_parent_posi(c, parent, daughter, verbose, r_term, i_rx)
     # print('CHECK')
-    # stepbystep_v2d_5x5.read(c, parent, 'chip_id')
-    # stepbystep_v2d_5x5.read(c, daughter, 'chip_id')
     # ok, diff = c.enforce_configuration(daughter, timeout=0.001, connection_delay=0.005, n=10, n_verify=3)
     ok, diff = utility_base.reconcile_configuration(
         c, daughter, verbose, timeout=0.02, connection_delay=0.01, n=3, n_verify=2
@@ -77,7 +74,6 @@ def setup_daughter(
     return ok, diff, piso
 
 
-# @timebudget
 def enable_parent_piso_us(c, parent, daughter, verbose, tx_diff, tx_slice):
     if parent.chip_id - daughter.chip_id == 10:
         piso = 3
@@ -103,7 +99,6 @@ def enable_parent_piso_us(c, parent, daughter, verbose, tx_diff, tx_slice):
     return
 
 
-# @timebudget
 def disable_parent_piso_us(c, parent, daughter, verbose, tx_diff, tx_slice):
     if parent.chip_id - daughter.chip_id == 10:
         piso = 3
@@ -131,7 +126,6 @@ def disable_parent_piso_us(c, parent, daughter, verbose, tx_diff, tx_slice):
     return
 
 
-# @timebudget
 def enable_parent_posi(c, parent, daughter, verbose, r_term, i_rx):
     if parent.chip_id - daughter.chip_id == 10:
         posi = 0
@@ -159,7 +153,6 @@ def enable_parent_posi(c, parent, daughter, verbose, r_term, i_rx):
     return
 
 
-# @timebudget
 def enable_daughter_posi(c, parent, daughter, verbose, r_term, i_rx):
     if parent.chip_id - daughter.chip_id == 10:
         posi = 2
@@ -187,7 +180,6 @@ def enable_daughter_posi(c, parent, daughter, verbose, r_term, i_rx):
     return
 
 
-# @timebudget
 def disable_parent_posi(c, parent, daughter, verbose):
     if parent.chip_id - daughter.chip_id == 10:
         posi = 0
@@ -211,7 +203,6 @@ def disable_parent_posi(c, parent, daughter, verbose):
     return
 
 
-# @timebudget
 def enable_daughter_piso(c, parent, daughter, verbose, tx_diff, tx_slice):
     c[daughter].config.enable_piso_upstream = [0] * 4
     c.write_configuration(daughter, "enable_piso_upstream")

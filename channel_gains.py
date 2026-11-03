@@ -13,7 +13,7 @@ from base.utility_base import *
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
-for var in RUN.config.keys():
+for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
 
@@ -65,7 +65,7 @@ def get_disabled(disabled):
         disabled_list = json.load(f)
 
     # Get top-level keys
-    print(f"disabled list:\n{list(disabled_list.keys())})")
+    print(f"disabled list:\n{list(disabled_list)})")
 
     return disabled_list
 

@@ -78,7 +78,7 @@ def start_end(chipID, uart, chipid_pos, epsX, epsY):
 
 
 def chip_to_ioc(chipID, ioc_chip):
-    for ioc in ioc_chip.keys():
+    for ioc in ioc_chip:
         if chipID in ioc_chip[str(ioc)]:
             return int(ioc) - 1
     return
@@ -135,7 +135,7 @@ def plot_hydra_network(
     if int(tile_id) % 2 == 1:
         epsY = -1
 
-    for chipid in chip_pix.keys():
+    for chipid in chip_pix:
         x, y = [[] for i in range(2)]
         for channelid in routed_v2a_channels:
             x.append(epsX * geo["pixels"][chip_pix[chipid][channelid]][1])

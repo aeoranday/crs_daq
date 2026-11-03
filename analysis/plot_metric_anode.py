@@ -84,7 +84,7 @@ def plot_1d(d, metric):
                 continue
 
             fig, ax = plt.subplots(figsize=(8, 8))
-            d_keys = np.array(list(d.keys()))[mask]
+            d_keys = np.array(list(d))[mask]
             a = [d[key][metric] for key in d_keys]
 
             min_bin = int(min(a))  # -1
@@ -311,7 +311,7 @@ def plot_xy(d, metric, geometry_yaml, geometry_yaml_mod2, normalization):
 
         fig, ax = plt.subplots(2, 4, figsize=(40 * 3, 30 * 3))
 
-        uniques = np.array(list(d.keys()))
+        uniques = np.array(list(d))
         for io_group in range(1, 9):
 
             mask = utils.uid_to_io_group(uniques) == io_group

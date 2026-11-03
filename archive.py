@@ -13,7 +13,7 @@ from base.utility_base import get_from_json
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
-for var in RUN.config.keys():
+for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
 
@@ -70,7 +70,7 @@ def main(monitor_dir, ignore_busy):
     hydra_monitor_dir = "{}/{}".format(monitor_name, "hydra_network")
     os.mkdir(hydra_monitor_dir)
 
-    for io_group in hydra_paths.keys():
+    for io_group in hydra_paths:
         path = hydra_paths[io_group]
         if path is None:
             continue

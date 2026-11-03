@@ -14,6 +14,8 @@ from base import (config_loader, enforce_parallel, network_base, pacman_base,
                   utility_base)
 from base.utility_base import now
 
+from base import enforce_parallel, network_base, pacman_base, utility_base
+
 _default_verbose = False
 _default_controller_config = None
 
@@ -37,7 +39,7 @@ def enforce_iterative(
     elif n == 0:
         return ok, diff, unconfigured
     else:
-        all_keys = list(diff.keys())
+        all_keys = list(diff)
         for net in unconfigured:
             all_keys += list(net)
 
@@ -54,7 +56,7 @@ def enforce_iterative(
             if not chip_key.io_group in io_group_tiles:
                 io_group_tiles[chip_key.io_group] = None
 
-        for io_group in io_group_tiles.keys():
+        for io_group in io_group_tiles:
             tiles = io_group_tiles[io_group]
             config = configs[str(io_group)]
             if io_group_asic_version_[io_group] == "2b":

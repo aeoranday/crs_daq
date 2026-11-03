@@ -593,7 +593,7 @@ def save_config_to_file(c, chip_keys, csa_disable, verbose):
         c[chip_key].config.vref_dac = vref_dac
         c[chip_key].config.vcm_dac = vcm_dac
         asic_id = chip_key_to_asic_id(chip_key)
-        if asic_id in csa_disable.keys():
+        if asic_id in csa_disable:
             for channel in csa_disable[asic_id]:
                 c[chip_key].config.csa_enable[channel] = 0
                 c[chip_key].config.channel_mask[channel] = 1

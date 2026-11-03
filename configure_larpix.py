@@ -17,7 +17,7 @@ from base.utility_base import now
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
-for var in RUN.config.keys():
+for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
 logger = logging.getLogger(__name__)

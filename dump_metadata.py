@@ -3,7 +3,6 @@
 # https://dune.github.io/DataCatalogDocs/template.html
 
 import argparse
-import datetime
 import json
 import zlib
 from pathlib import Path

@@ -18,7 +18,7 @@ from base.utility_base import now
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
-for var in RUN.config.keys():
+for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
 
@@ -43,7 +43,7 @@ def enforce_iterative(
     elif n == 0:
         return ok, diff, unconfigured
     else:
-        all_keys = list(diff.keys())
+        all_keys = list(diff)
         for net in unconfigured:
             all_keys += list(net)
 
@@ -60,7 +60,7 @@ def enforce_iterative(
             if not chip_key.io_group in io_group_tiles:
                 io_group_tiles[chip_key.io_group] = None
 
-        for io_group in io_group_tiles.keys():
+        for io_group in io_group_tiles:
             tiles = io_group_tiles[io_group]
             config = configs[str(io_group)]
             if io_group_asic_version_[io_group] == "2b":
@@ -172,7 +172,7 @@ def main(
     logger.info("starting networking: io_groups={}".format(pacman_configs["io_group"]))
     for io_group_ip_pair in pacman_configs["io_group"]:
         io_group = io_group_ip_pair[0]
-        for iog in DCONFIGS.keys():
+        for iog in DCONFIGS:
             config_loader.load_config_from_directory(nc, DCONFIGS[iog])
         pacman_base.enable_pacman_uart_from_io_channel(
             nc.io, io_group, list(set([chip.io_channel for chip in nc.chips]))

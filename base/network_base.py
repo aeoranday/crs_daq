@@ -596,7 +596,7 @@ def find_waitlist(c, io_group, ioc_range):
             continue
         network[chip_key.chip_id] = chip_key
     for chip_id in range(11, 111):
-        if chip_id not in network.keys():
+        if chip_id not in network:
             waitlist.append(chip_id)
     return waitlist, network
 
@@ -784,8 +784,8 @@ def write_network_to_file(
 
     c = configure_asic_network_links(c)
     d["network"] = {}
-    for iog in io_group_pacman_tile.keys():
-        if not iog in c.network.keys():
+    for iog in io_group_pacman_tile:
+        if iog not in c.network:
             continue
         d["network"][iog] = {}
         io_channels = utility_base.tile_to_io_channel(io_group_pacman_tile[iog])
@@ -892,8 +892,8 @@ def network_v2a(controller_config, verbose=False, **kwargs):
     else:
         c.load(controller_config)
 
-    for io_group in c.network.keys():
-        io_channels = np.array(list(c.network[io_group].keys())).astype(int)
+    for io_group in c.network:
+        io_channels = np.array(list(c.network[io_group])).astype(int)
         tiles = utility_base.io_channel_list_to_tile(io_channels)
 
     for io_group, io_channels in c.network.items():

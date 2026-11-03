@@ -97,7 +97,7 @@ def start_end(tile, chipID, uart, chipid_pos):
 
 
 def chip_to_ioc(chipID, ioc_chip):
-    for ioc in ioc_chip.keys():
+    for ioc in ioc_chip:
         if chipID in ioc_chip[str(ioc)]:
             return int(ioc) - 1
     return

@@ -21,7 +21,7 @@ from runenv import runenv as RUN
 from utils import datetime_now
 
 module = sys.modules[__name__]
-for var in RUN.config.keys():
+for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
 _default_file_prefix = None

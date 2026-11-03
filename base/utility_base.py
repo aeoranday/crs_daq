@@ -73,7 +73,7 @@ def get_from_json(file, key, meta_field="configs"):
         if key == "all":
             return d
 
-        if not str(key) in d.keys():
+        if str(key) not in d:
             return None
 
         return d[str(key)]
@@ -81,7 +81,7 @@ def get_from_json(file, key, meta_field="configs"):
     if key == "all":
         return d[meta_field]
 
-    if not str(key) in d[meta_field].keys():
+    if str(key) not in d[meta_field]:
         return None
 
     return d[meta_field][str(key)]
@@ -189,7 +189,7 @@ def broadcast_disable(c, target_chips=None):
 
     target_channels = set()
 
-    if not (target_chips is None):
+    if target_chips is not None:
         for chip in target_chips:
             target_channels.add((chip.io_group, chip.io_channel))
 
@@ -199,11 +199,11 @@ def broadcast_disable(c, target_chips=None):
         for io_channel in io_channels:
             broadcast = broadcast_form.format(io_group, io_channel)
 
-            if not (target_chips is None):
-                if not ((io_group, io_channel) in target_channels):
+            if target_chips is not None:
+                if (io_group, io_channel) not in target_channels:
                     continue
 
-            if not (broadcast in c.chips):
+            if broadcast not in c.chips:
                 c.add_chip(broadcast)
 
             # print('Broadcast disable on (io_group, io_channel)=(', io_group, ',', io_channel, ')' )
@@ -347,7 +347,7 @@ def get_from_json(file, key, meta_field="configs"):
         if key == "all":
             return d
 
-        if not str(key) in d.keys():
+        if str(key) not in d:
             return None
 
         return d[str(key)]
@@ -355,7 +355,7 @@ def get_from_json(file, key, meta_field="configs"):
     if key == "all":
         return d[meta_field]
 
-    if not str(key) in d[meta_field].keys():
+    if str(key) not in d[meta_field]:
         return None
 
     return d[meta_field][str(key)]
@@ -422,10 +422,10 @@ def reconcile_registers(
     # if diff != {}:
     #     flag = True
     #     # print(diff)
-    #     for a in diff.keys():
+    #     for a in diff:
     #         if flag == False:
     #             break
-    #         for b in diff[a].keys():
+    #         for b in diff[a]:
     #             pair = diff[a][b]
     #             if verbose:
     #                 print(a, '\t', n, ':\t', b, '\t', pair)
@@ -469,10 +469,10 @@ def reconcile_registers_bool(
     #    await asyncio.sleep(1.)
     if diff != {}:
         flag = True
-        for a in diff.keys():
+        for a in diff:
             if flag == False:
                 break
-            for b in diff[a].keys():
+            for b in diff[a]:
                 pair = diff[a][b]
                 if verbose:
                     print(a, "\t", n, ":\t", b, "\t", pair)
@@ -532,7 +532,7 @@ def partition_chip_keys_by_io_group_tile(chip_keys):
     for iog in io_group_list:
         for i in range(1, 11):
             d[(iog, i)] = []
-    for key in d.keys():
+    for key in d:
         for ck in chip_keys:
             if ck.io_group == key[0] and io_channel_to_tile(ck.io_channel) == key[1]:
                 d[key].append(ck)
@@ -583,7 +583,7 @@ def chip_key_to_chip_id(ck):
 
 def iog_tile_to_iog_ioc_cid(io_group_pacman_tile, asic_version, isFSDtile=False):
     result = []
-    for iog in io_group_pacman_tile.keys():
+    for iog in io_group_pacman_tile:
         for tile in io_group_pacman_tile[iog]:
             io_channel = tile_to_io_channel([tile])
             ioc_root_map = io_channel_to_root_chip(io_channel, asic_version, isFSDtile)

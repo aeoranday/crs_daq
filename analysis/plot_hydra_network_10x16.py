@@ -75,7 +75,7 @@ def start_end(chipID, uart, chipid_pos):
 
 
 def chip_to_ioc(chipID, ioc_chip):
-    for ioc in ioc_chip.keys():
+    for ioc in ioc_chip:
         if chipID in ioc_chip[str(ioc)]:
             return int(ioc) - 1
     return
@@ -116,7 +116,7 @@ def plot_hydra_network(
         )
 
     chipid_pos = dict()
-    for chipid in chip_pix.keys():
+    for chipid in chip_pix:
         x, y = [[] for i in range(2)]
         for channelid in range(64):
             x.append(geo["pixels"][chip_pix[chipid][channelid]][1])

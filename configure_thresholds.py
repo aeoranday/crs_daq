@@ -16,7 +16,7 @@ from base.utility_base import *
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
-for var in RUN.config.keys():
+for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
 _v2a_nonrouted = [6, 7, 8, 9, 22, 23, 24, 25, 38, 39, 40, 54, 55, 56, 57]
@@ -369,7 +369,7 @@ def setup_status(c, csa_disable):
         trim = list(c[chip].config.pixel_trim_dac)
         status[chip] = dict(pixel_trim=trim, active=[True] * 64, disable=[False] * 64)
 
-        if asic_id in csa_disable.keys():
+        if asic_id in csa_disable:
             for channel in range(64):
                 if channel in csa_disable[asic_id]:
                     status[chip]["active"][channel] = False
@@ -416,7 +416,7 @@ def update_chip(c, status, iteration, track_progress, incremented, decremented):
 
 def increment_remaining_trim(c, status):
     chip_register_pairs = []
-    for chip_key in status.keys():
+    for chip_key in status:
         for channel in range(64):
             if (
                 status[chip_key]["disable"][channel] == False
@@ -582,7 +582,7 @@ def save_config_to_file(c, csa_disable):
         c[chip].config.csa_enable = [1] * 64
         c[chip].config.channel_mask = [0] * 64
         asic_id = chip_key_to_asic_id(chip)
-        if asic_id in csa_disable.keys():
+        if asic_id in csa_disable:
             for channel in csa_disable[asic_id]:
                 c[chip].config.csa_enable[channel] = 0
                 c[chip].config.channel_mask[channel] = 1

@@ -57,7 +57,7 @@ def main(verbose, pacman_config):
                 c.io, io_group, "v1rev5", range(1, 11)
             )
 
-            # for t in readback.keys():
+            # for t in readback:
             #     p = influxdb_client.Point(measurement).tag("io_group", io_group).tag("tile", t).field("vdda",
             #                                                                                           float(readback[t][
             #                                                                                               0]))

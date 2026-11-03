@@ -232,7 +232,7 @@ def plot_xy(d, metric, geometry_yaml, normalization, filename):
             )
 
             chipid_pos = dict()
-            for chipid in chip_pix.keys():
+            for chipid in chip_pix:
                 x, y = [[] for i in range(2)]
                 for channelid in routed_v2a_channels:
                     x.append(geo["pixels"][chip_pix[chipid][channelid]][1])
