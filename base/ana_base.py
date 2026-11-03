@@ -2,7 +2,6 @@ import glob
 import json
 
 import h5py
-import larpix
 import numpy as np
 
 from base import utility_base
@@ -26,7 +25,7 @@ def find_pixel_trim_adc(
 ):
     result = {}
     found_keys = 0
-    for chip_key in pedestal.keys():
+    for chip_key in pedestal:
         adc = 0
         keys = chip_key.split("-")
         iog, ioch, chid = int(keys[0]), int(keys[1]), int(keys[2])
@@ -35,8 +34,8 @@ def find_pixel_trim_adc(
         _global = []
         lookup_key = "{}-{}-{}".format(iog, 4 * tile, chid)
         if not (
-            (lookup_key in trim_scale_dict.keys())
-            and (lookup_key in global_scale_dict.keys())
+            (lookup_key in trim_scale_dict)
+            and (lookup_key in global_scale_dict)
         ):
             # print('not found!!!')
             trims = [2.34] * 64
@@ -47,7 +46,7 @@ def find_pixel_trim_adc(
             global_slopes = global_scale_dict[lookup_key]
             adc = ref_adc[lookup_key][0]
 
-        if not lookup_key in ref_adc.keys():
+        if lookup_key not in ref_adc:
             continue
 
         threshold_global = chip_global[chip_key]
@@ -112,7 +111,7 @@ def find_pixel_trim(
     if cryo == True:
         _default_trim_scale = 2.34
         _default_offset = 363  # 465
-    for chip_key in pedestal.keys():
+    for chip_key in pedestal:
         if chip_key not in result:
             result[chip_key] = [0] * 64
         keys = chip_key.split("-")
@@ -120,15 +119,15 @@ def find_pixel_trim(
         tile = utility_base.io_channel_to_tile(ioch)
         possible_io_channel = utility_base.tile_to_io_channel([tile])
         found = False
-        if not calo_measured is None:
-            if str(utility_base.unique(iog, ioch, chid, 0)) in calo_measured.keys():
+        if calo_measured is not None:
+            if str(utility_base.unique(iog, ioch, chid, 0)) in calo_measured:
                 found = True
         chid = utility_base.chip_key_to_chip_id(chip_key)
         trims = []
         offsets = []
         lookup_key = "{}-{}-{}".format(iog, 4 * tile, chid)
         if not (
-            lookup_key in trim_scale_dict.keys() and (lookup_key in offset_dict.keys())
+            lookup_key in trim_scale_dict and lookup_key in offset_dict
         ):
             trims = [2.3] * 64
             offsets = [360] * 64
@@ -137,8 +136,8 @@ def find_pixel_trim(
             offsets = offset_dict[lookup_key]
 
         channel_offsets = [0] * 64
-        if not calo_measured is None:
-            if lookup_key in calo_measured.keys() and not (calo_threshold is None):
+        if calo_measured is not None:
+            if lookup_key in calo_measured and calo_threshold is not None:
                 for i in range(64):
                     if calo_measured[lookup_key][i] < 0:
                         calo_measured[lookup_key][i] = calo_threshold
@@ -193,7 +192,7 @@ def debug_find_pixel_trim(
     offset = 210
     if cryo == True:
         offset = 363  # 465
-    for chip_key in pedestal.keys():
+    for chip_key in pedestal:
         if chip_key not in result:
             result[chip_key] = [0] * 64
         for channel_id in range(64):
@@ -230,11 +229,11 @@ def debug_find_pixel_trim(
 def adc_dict(pedestal, disabled, vdda):
     result = {}
 
-    for chip_key in pedestal.keys():
+    for chip_key in pedestal:
         if chip_key not in result:
             result[chip_key] = (10000, -1)
         for channel_id in range(64):
-            if chip_key in disabled.keys():
+            if chip_key in disabled:
                 if pedestal[chip_key][channel_id][0] < 0:
                     continue
                 if channel_id in disabled[chip_key]:
@@ -251,11 +250,11 @@ def adc_dict(pedestal, disabled, vdda):
 def dV_dict(pedestal, disabled, vdda, vref_dac, vcm_dac):
     result = {}
 
-    for chip_key in pedestal.keys():
+    for chip_key in pedestal:
         if chip_key not in result:
             result[chip_key] = (10000, -1)
         for channel_id in range(64):
-            if chip_key in disabled.keys():
+            if chip_key in disabled:
                 if pedestal[chip_key][channel_id][0] < 0:
                     continue
                 if channel_id in disabled[chip_key]:
@@ -277,7 +276,7 @@ def debug_find_global_dac(d, vdda, target, trim_scale, bits=2**8, cryo=True):
     if cryo == True:
         offset = 363  # 465
     result = {}
-    for key in d.keys():
+    for key in d:
         global_step = vdda / bits
         global_mV = target + d[key][1] - trim_scale * 16
         global_DAC = int((global_mV - offset) / global_step)
@@ -307,7 +306,7 @@ def find_global_dac_adc(
     found_keys = 0
     _sum = 0
     n = 0
-    for key in d.keys():
+    for key in d:
         keys = key.split("-")
         iog, ioch, chid = int(keys[0]), int(keys[1]), int(keys[2])
         tile = utility_base.io_channel_to_tile(ioch)
@@ -315,8 +314,8 @@ def find_global_dac_adc(
         _globals = []
         lookup_key = "{}-{}-{}".format(iog, 4 * tile, chid)
         if not (
-            lookup_key in trim_scale_dict.keys()
-            and lookup_key in global_scale_dict.keys()
+            lookup_key in trim_scale_dict
+            and lookup_key in global_scale_dict
         ):
             trims = [2.34] * 64
             _globals = [vdda / bits] * 64
@@ -324,7 +323,7 @@ def find_global_dac_adc(
             found_keys += 1
             trims = trim_scale_dict[lookup_key]
             _globals = global_scale_dict[lookup_key]
-        if not lookup_key in ref_adc.keys():
+        if lookup_key not in ref_adc:
             continue
 
         trim_scale = np.median([val for val in trims if val > 0])
@@ -350,7 +349,7 @@ def find_global_dac_adc(
         _sum += global_dac
         n += 1
 
-    print("FOUND KEYS:", found_keys, "/", len(d.keys()))
+    print("FOUND KEYS:", found_keys, "/", len(d))
     return result, int(_sum / n)
 
 
@@ -368,7 +367,7 @@ def find_global_dac(
     # if cryo==True: trim_scale=2.34; offset=363 #465
     result = {}
     found_keys = 0
-    for key in d.keys():
+    for key in d:
         keys = key.split("-")
         iog, ioch, chid = int(keys[0]), int(keys[1]), int(keys[2])
         tile = utility_base.io_channel_to_tile(ioch)
@@ -376,7 +375,7 @@ def find_global_dac(
         offsets = []
         lookup_key = "{}-{}-{}".format(iog, 4 * tile, chid)
         if not (
-            lookup_key in trim_scale_dict.keys() and lookup_key in offsets_dict.keys()
+            lookup_key in trim_scale_dict and lookup_key in offsets_dict
         ):
             trims = [2.34] * 64
             offsets = [360] * 64
@@ -396,7 +395,7 @@ def find_global_dac(
         result[key] = global_DAC if global_DAC > 0 else 0
     #    print(d[key][1], global_mV, global_DAC)
 
-    print("FOUND KEYS:", found_keys, "/", len(d.keys()))
+    print("FOUND KEYS:", found_keys, "/", len(d))
     return result
 
 
@@ -404,7 +403,7 @@ def global_dac_from_pedestal(c, chip_pedestal, vdda=1700.0):
     d = {}
     global_dac_lsb = vdda / 256.0
     chip_config_pairs = []
-    for ck in chip_pedestal.keys():
+    for ck in chip_pedestal:
         mV = utility_base.ADC_to_mV(
             vdda,
             c[ck].config.vref_dac,
@@ -437,7 +436,7 @@ def chip_pedestal(adc, unique_id, disable, noise_cut):
         channel_pedestal[i] = dict(mu=mu, std=std)
 
     temp, temp_mu, temp_std = [{} for i in range(3)]
-    for i in channel_pedestal.keys():
+    for i in channel_pedestal:
         ck = utility_base.unique_to_chip_key(i)
         if ck not in temp:
             temp[ck], temp_mu[ck], temp_std[ck] = [[] for i in range(3)]
@@ -446,7 +445,7 @@ def chip_pedestal(adc, unique_id, disable, noise_cut):
         temp_std[ck].append(channel_pedestal[i]["std"])
 
     chip_pedestal = {}
-    for ck in temp.keys():
+    for ck in temp:
         chip_pedestal[ck] = dict(
             metric=np.mean(temp[ck]),
             mu=np.mean(temp_mu[ck]),

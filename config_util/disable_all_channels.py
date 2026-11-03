@@ -6,7 +6,7 @@ v2a_nonrouted_channels = [6, 7, 8, 9, 22, 23, 24, 25, 38, 39, 40, 54, 55, 56, 57
 
 def main(*files, disabled_list=None, **kwargs):
     disabled = {}
-    if not disabled_list is None:
+    if disabled_list is not None:
         with open(disabled_list, "r") as f:
             disabled = json.load(f)
 

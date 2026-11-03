@@ -5,14 +5,7 @@ import argparse
 import json
 import logging
 
-import larpix
-import larpix.io
-from RUNENV import *
-from tqdm import tqdm
-
-from base import (config_loader, enforce_parallel, network_base, pacman_base,
-                  utility_base)
-from base.utility_base import now
+from base import enforce_parallel, network_base, pacman_base, utility_base
 
 _default_verbose = False
 _default_controller_config = None
@@ -37,24 +30,24 @@ def enforce_iterative(
     elif n == 0:
         return ok, diff, unconfigured
     else:
-        all_keys = list(diff.keys())
+        all_keys = list(diff)
         for net in unconfigured:
             all_keys += list(net)
 
         all_network_keys = []
         io_group_tiles = {}
-        for chip_key in diff.keys():
-            if not chip_key.io_group in io_group_tiles.keys():
+        for chip_key in diff:
+            if chip_key.io_group not in io_group_tiles:
                 io_group_tiles[chip_key.io_group] = set()
             io_group_tiles[chip_key.io_group].add(
                 utility_base.io_channel_to_tile(chip_key.io_channel)
             )
 
         for chip_key in all_keys:
-            if not chip_key.io_group in io_group_tiles:
+            if chip_key.io_group not in io_group_tiles:
                 io_group_tiles[chip_key.io_group] = None
 
-        for io_group in io_group_tiles.keys():
+        for io_group in io_group_tiles:
             tiles = io_group_tiles[io_group]
             config = configs[str(io_group)]
             if io_group_asic_version_[io_group] == "2b":
@@ -134,7 +127,7 @@ def main(
 
     _tiles = []
     for _, io_channels in c.network.items():
-        _tiles += utility_base.io_channel_list_to_tile(list(io_channels.keys()))
+        _tiles += utility_base.io_channel_list_to_tile(list(io_channels))
     pacman_base.enable_pacman_uart_from_tile(c.io, io_group, [pacman_tile])
     if True:
         ok, diff, unconfigured = enforce_iterative(

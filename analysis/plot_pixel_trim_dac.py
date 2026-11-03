@@ -1,5 +1,4 @@
 import argparse
-import json
 import os
 
 import matplotlib.pyplot as plt
@@ -16,7 +15,7 @@ def main(asic_config):
             d[filename.split(".")[0].split("_")[-1]] = json.load(ff)
 
     l = []
-    for chip_key in d.keys():
+    for chip_key in d:
         [l.append(v) for v in d[chip_key]["pixel_trim_dac"]]
     plt.hist(l, bins=30, range=[0, 31])
     plt.xlabel("pixel_trim_dac")

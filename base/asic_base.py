@@ -61,7 +61,7 @@ def regulate_rate_fractional(
         dname = "disable-current.json"
         print("Saving disabled list: {}".format(dname))
         new_disable = {}
-        for key in disable.keys():
+        for key in disable:
             new_disable[str(key)] = disable[key]
         with open(dname, "w") as f:
             json.dump(new_disable, f)
@@ -111,7 +111,7 @@ def regulate_rate(c, io, io_group, set_rate, disable, sample_time=0.5):
 
 def update_chip(c, status):
     chip_register_pairs = []
-    for chip_key in status.keys():
+    for chip_key in status:
         chip_register_pairs.append(
             (chip_key, list(range(64)) + list(range(66, 74)) + list(range(131, 139)))
         )
@@ -207,7 +207,7 @@ def toggle_pixel_trim_dac(
                 fired_channels[chip_key] = []
             fired_channels[chip_key].append(channel)
             rate = triggers.count([chip_key, channel]) / sample_time
-            if chip_key not in status.keys():
+            if chip_key not in status:
                 continue
             if status[chip_key]["active"][channel] == False:
                 continue
@@ -301,7 +301,7 @@ def global_dac_from_file(c, global_json):
     c.multi_write_configuration(chip_config_pairs)
 
     ok, diff = c.enforce_configuration(
-        list(c.chips.keys()), timeout=0.01, connection_delay=0.01, n=10, n_verify=10
+        list(c.chips), timeout=0.01, connection_delay=0.01, n=10, n_verify=10
     )
     return ok, diff
 
@@ -328,7 +328,7 @@ def enable_selftrigger_config(c, io, io_group, periodic_reset_cycles=64):
         chip_config_pairs, write_read=0, connection_delay=0.01
     )
     ok, diff = c.enforce_configuration(
-        list(c.chips.keys()), timeout=0.01, connection_delay=0.01, n=10, n_verify=10
+        list(c.chips), timeout=0.01, connection_delay=0.01, n=10, n_verify=10
     )
     io.set_reg(0x18, 0, io_group=io_group)
     io.group_packets_by_io_group = False
@@ -632,14 +632,14 @@ def enable_fixed_target_trigger_config_by_io_channel(
     )
 
     default_global_dac = int(
-        sum([chip_global[kk] for kk in chip_global.keys()]) / len(chip_global.keys())
+        sum([chip_global[kk] for kk in chip_global]) / len(chip_global)
     )  # +8
     default_pixel_trim_dac = [20] * 64
     io.set_reg(0x18, 0, io_group=chips[0].io_group)
     chip_config_pairs = []
     for chip_key in chips:
         initial_config = deepcopy(c[chip_key].config)
-        if not chip_key in chip_global:
+        if chip_key not in chip_global:
             # !!! make IO channel agnostic owing to different networks by
             # using IO group tile ID \
             tile = utility_base.io_channel_to_tile(chip_key.io_channel)
@@ -731,14 +731,14 @@ def enable_response_trigger_config_by_io_channel(
     )
 
     default_global_dac = int(
-        sum([chip_global[kk] for kk in chip_global.keys()]) / len(chip_global.keys())
+        sum([chip_global[kk] for kk in chip_global]) / len(chip_global)
     )  # +8
     default_pixel_trim_dac = [20] * 64
     io.set_reg(0x18, 0, io_group=chips[0].io_group)
     chip_config_pairs = []
     for chip_key in chips:
         initial_config = deepcopy(c[chip_key].config)
-        if not chip_key in chip_global:
+        if chip_key not in chip_global:
             # !!! make IO channel agnostic owing to different networks by
             # using IO group tile ID \
             tile = utility_base.io_channel_to_tile(chip_key.io_channel)
@@ -805,8 +805,8 @@ def enable_response_trigger_config_by_io_channel(
     if all_ok:
         print("Done")
     # if not ok:
-    #    print('Configuration error; re-enforcing correct registers on chips', diff.keys())
-    #    ok, diff = c.enforce_configuration(list(diff.keys()), timeout=0.05, \
+    #    print('Configuration error; re-enforcing correct registers on chips', diff)
+    #    ok, diff = c.enforce_configuration(list(diff), timeout=0.05, \
     #                                   connection_delay=0.01, \
     #                                   n=10, n_verify=10)
 
@@ -844,14 +844,14 @@ def enable_leakage_current_config(
         chip_config_pairs, write_read=0, connection_delay=0.01
     )
     ok, diff = c.enforce_configuration(
-        list(c.chips.keys()), timeout=0.01, connection_delay=0.01, n=10, n_verify=10
+        list(c.chips), timeout=0.01, connection_delay=0.01, n=10, n_verify=10
     )
     if not ok:
         print(
-            "Configuration error; re-enforcing correct registers on chips", diff.keys()
+            "Configuration error; re-enforcing correct registers on chips", diff
         )
         ok, diff = c.enforce_configuration(
-            list(diff.keys()), timeout=0.05, connection_delay=0.01, n=10, n_verify=10
+            list(diff), timeout=0.05, connection_delay=0.01, n=10, n_verify=10
         )
     io.set_reg(0x18, 0, io_group=io_group)
     io.group_packets_by_io_group = False
@@ -918,7 +918,7 @@ def disable_leakage_current_config(c, io, io_group, periodic_reset_cycles):
         chip_config_pairs, write_read=0, connection_delay=0.01
     )
     ok, diff = c.enforce_configuration(
-        list(c.chips.keys()), timeout=0.01, connection_delay=0.01, n=10, n_verify=10
+        list(c.chips), timeout=0.01, connection_delay=0.01, n=10, n_verify=10
     )
     io.set_reg(0x18, 0, io_group=io_group)
     io.group_packets_by_io_group = False
@@ -946,7 +946,7 @@ def disable_pedestal_config(c, io, io_group, periodic_reset_cycles=4096):
     pacman_tile = utility_base.all_chip_key_to_tile(c, io_group)
     pacman_base.enable_pacman_uart_from_tile(io, io_group, pacman_tile)
     ok, diff = c.enforce_configuration(
-        list(c.chips.keys()), timeout=0.01, connection_delay=0.01, n=10, n_verify=10
+        list(c.chips), timeout=0.01, connection_delay=0.01, n=10, n_verify=10
     )
     io.set_reg(0x18, 0, io_group=io_group)
     io.group_packets_by_io_group = False
@@ -966,7 +966,7 @@ def enable_periodic_triggering(c, io, io_group, disabled):
         chip.config.periodic_trigger_mask = [0] * 64
         chip.config.channel_mask = [0] * 64
         chip.config.csa_enable = [1] * 64
-        if chip_key in disabled.keys():
+        if chip_key in disabled:
             for disabled_channel in disabled[chip_key]:
                 chip.config.periodic_trigger_mask[disabled_channel] = 1
                 chip.config.channel_mask[disabled_channel] = 1
@@ -979,7 +979,7 @@ def enable_periodic_triggering(c, io, io_group, disabled):
     pacman_base.enable_pacman_uart_from_tile(io, io_group, pacman_tile)
     c.multi_write_configuration(chip_config_pairs)
 
-    #    ok, diff = c.enforce_configuration(list(c.chips.keys()), timeout=0.01, \
+    #    ok, diff = c.enforce_configuration(list(c.chips), timeout=0.01, \
     #                                       connection_delay=0.01, \
     #                                       n=10, n_verify=10)
     io.set_reg(0x18, 0, io_group=io_group)
@@ -1002,7 +1002,7 @@ def enable_self_triggering(c, io, io_group, disabled, set_rate=None):
             continue
         chip.config.channel_mask = [0] * 64
         chip.config.csa_enable = [1] * 64
-        # if chip_key in disabled.keys():
+        # if chip_key in disabled:
         #    for disabled_channel in disabled[chip_key]:
         #        chip.config.channel_mask[disabled_channel]=1
         #        chip.config.csa_enable[disabled_channel]=0
@@ -1013,12 +1013,12 @@ def enable_self_triggering(c, io, io_group, disabled, set_rate=None):
             for ioc in possible_io_channel:
                 # if ioc==chip_key.io_channel: continue
                 candidate = larpix.key.Key(chip_key.io_group, ioc, chip_key.chip_id)
-                if candidate in disabled.keys():
+                if candidate in disabled:
                     for disabled_channel in disabled[candidate]:
                         chip.config.channel_mask[disabled_channel] = 1
                         chip.config.csa_enable[disabled_channel] = 0
 
-        if chip_key in disabled.keys():
+        if chip_key in disabled:
             chip_config_pairs_write_first.append((chip_key, registers_to_write))
         chip_config_pairs.append((chip_key, registers_to_write))
 
@@ -1028,7 +1028,7 @@ def enable_self_triggering(c, io, io_group, disabled, set_rate=None):
     for ioc in io_channels_to_enable:
         ##evaluate rate and disable channels here if flag is set!!!
         pacman_base.enable_pacman_uart_from_io_channel(io, io_group, [ioc])
-        if not (set_rate is None):
+        if set_rate is not None:
             print("Regulate rate on io_channel:", ioc)
             disabled = regulate_rate_fractional(
                 c, io, io_group, set_rate, disabled, sample_time=0.5, ioch=[ioc]
@@ -1042,10 +1042,10 @@ def enable_self_triggering(c, io, io_group, disabled, set_rate=None):
     c.multi_write_configuration(chip_config_pairs)
 
     # for chip_key, chip in reversed(c.chips.items()):
-    #    if chip_key in disabled.keys():
+    #    if chip_key in disabled:
     # print(chip.config.csa_enable)
 
-    # ok, diff = c.enforce_configuration(list(c.chips.keys()), timeout=0.01, \
+    # ok, diff = c.enforce_configuration(list(c.chips), timeout=0.01, \
     #                                   connection_delay=0.01, \
     #                                   n=10, n_verify=10)
     # print(ok, diff)
@@ -1067,7 +1067,7 @@ def enable_periodic_triggering_by_io_channel(c, io, chips, disabled):
         c[chip_key].config.periodic_trigger_mask = [0] * 64
         c[chip_key].config.channel_mask = [0] * 64
         c[chip_key].config.csa_enable = [1] * 64
-        if chip_key in disabled.keys():
+        if chip_key in disabled:
             for disabled_channel in disabled[chip_key]:
                 c[chip_key].config.periodic_trigger_mask[disabled_channel] = 1
                 c[chip_key].config.channel_mask[disabled_channel] = 1
@@ -1095,7 +1095,7 @@ def enable_self_triggering_by_io_channel(c, io, chips, disabled):
     for chip_key in chips:
         c[chip_key].config.channel_mask = [0] * 64
         c[chip_key].config.csa_enable = [1] * 64
-        if chip_key in disabled.keys():
+        if chip_key in disabled:
             for disabled_channel in disabled[chip_key]:
                 c[chip_key].config.channel_mask[disabled_channel] = 1
                 c[chip_key].config.csa_enable[disabled_channel] = 0
@@ -1131,7 +1131,7 @@ def disable_periodic_triggering(c, io, io_group):
     pacman_base.enable_pacman_uart_from_tile(io, io_group, pacman_tile)
     c.multi_write_configuration(chip_config_pairs)
     ok, diff = c.enforce_configuration(
-        list(c.chips.keys()), timeout=0.01, connection_delay=0.01, n=10, n_verify=10
+        list(c.chips), timeout=0.01, connection_delay=0.01, n=10, n_verify=10
     )
     io.set_reg(0x18, 0, io_group=io_group)
     io.group_packets_by_io_group = False
@@ -1142,7 +1142,7 @@ def disable_periodic_triggering(c, io, io_group):
 def enable_csa_trigger(c, io, io_group, disable):
     io.set_reg(0x18, 0, io_group=io_group)
     chip_register_pairs = []
-    for ck in disable.keys():
+    for ck in disable:
         if ck not in c.chips:
             continue
         c[ck].config.csa_enable = [1] * 64

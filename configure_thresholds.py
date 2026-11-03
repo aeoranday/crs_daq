@@ -1,12 +1,10 @@
 import argparse
-import copy
 import json
 import sys
 import time
 
 import larpix
 import larpix.io
-import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
@@ -16,7 +14,7 @@ from base.utility_base import *
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
-for var in RUN.config.keys():
+for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
 _v2a_nonrouted = [6, 7, 8, 9, 22, 23, 24, 25, 38, 39, 40, 54, 55, 56, 57]
@@ -54,7 +52,7 @@ def disable_dict_from_file(c, disabled_list):
     for chip_key in c.chips:
         if c[chip_key].asic_version == 2:
             asic_id = chip_key_to_asic_id(chip_key)
-            if asic_id in csa_disable.keys():
+            if asic_id in csa_disable:
                 for chan in _v2a_nonrouted:
                     csa_disable[asic_id].append(chan)
             else:
@@ -103,7 +101,7 @@ def enable_frontend(c, csa_disable, all_network_keys, pacman_configs):
             c[chip_key].config.channel_mask = [0] * 64
             c[chip_key].config.csa_enable = [1] * 64
             asic_id = chip_key_to_asic_id(chip_key)
-            if asic_id in csa_disable.keys():
+            if asic_id in csa_disable:
                 for channel in csa_disable[asic_id]:
                     c[chip_key].config.channel_mask[channel] = 1
                     c[chip_key].config.csa_enable[channel] = 0
@@ -219,7 +217,7 @@ def toggle_global_dac(c, all_network_keys, max_channel_fraction=0.9):
                 # Add here to flag "disabled" channels that still trigger
                 # Some action could be taken here, but right now it just ignores it
                 asic_id = chip_key_to_asic_id(chip)
-                if asic_id in toggle_global_csa_disable.keys():
+                if asic_id in toggle_global_csa_disable:
                     if not (
                         len(set_channels)
                         == len(set_channels - set(toggle_global_csa_disable[asic_id]))
@@ -243,7 +241,7 @@ def toggle_global_dac(c, all_network_keys, max_channel_fraction=0.9):
                     kill_fraction[channel] = channel_rate[channel] / chip_rate
                 exceed_channel = []
                 kill_channel = []
-                for channel in channel_rate.keys():
+                for channel in channel_rate:
                     if channel_rate[channel] > 1e2:
                         exceed_channel.append(channel)
                     if (
@@ -263,7 +261,7 @@ def toggle_global_dac(c, all_network_keys, max_channel_fraction=0.9):
                     channel_mask_count += 1
                     c[chip].config.channel_mask[int(channel)] = 1
                     c[chip].config.csa_enable[int(channel)] = 0
-                    if asic_id not in toggle_global_csa_disable.keys():
+                    if asic_id not in toggle_global_csa_disable:
                         toggle_global_csa_disable[asic_id] = []
                     toggle_global_csa_disable[asic_id].append(int(channel))
                     chip_register_pairs.append(
@@ -345,13 +343,13 @@ def toggle_global_dac(c, all_network_keys, max_channel_fraction=0.9):
         bookkeep_masked_channels += channel_mask_count
 
         haha = 0
-        for key in toggle_global_csa_disable.keys():
+        for key in toggle_global_csa_disable:
             haha += len(set(toggle_global_csa_disable[key]))
         print(
             "CSA disable size: ",
             haha,
             "\t keys: ",
-            len(toggle_global_csa_disable.keys()),
+            len(toggle_global_csa_disable),
             "\n",
         )
 
@@ -369,7 +367,7 @@ def setup_status(c, csa_disable):
         trim = list(c[chip].config.pixel_trim_dac)
         status[chip] = dict(pixel_trim=trim, active=[True] * 64, disable=[False] * 64)
 
-        if asic_id in csa_disable.keys():
+        if asic_id in csa_disable:
             for channel in range(64):
                 if channel in csa_disable[asic_id]:
                     status[chip]["active"][channel] = False
@@ -387,7 +385,7 @@ def update_chip(c, status, iteration, track_progress, incremented, decremented):
     chip_register_pairs = []
     active_chips = 0
     active_channels = 0
-    for chip_key in status.keys():
+    for chip_key in status:
         chip_register_pairs.append(
             (chip_key, list(range(64)) + list(range(66, 74)) + list(range(131, 139)))
         )
@@ -416,7 +414,7 @@ def update_chip(c, status, iteration, track_progress, incremented, decremented):
 
 def increment_remaining_trim(c, status):
     chip_register_pairs = []
-    for chip_key in status.keys():
+    for chip_key in status:
         for channel in range(64):
             if (
                 status[chip_key]["disable"][channel] == False
@@ -499,7 +497,7 @@ def toggle_trim_dac(
                     if status[chip]["active"][channel] == False:
                         continue
 
-                    if channel in channel_rate.keys():
+                    if channel in channel_rate:
                         if channel_rate[channel] > maxrate_trim:
                             status[chip]["pixel_trim"][channel] += 1
                             incremented += 1
@@ -507,7 +505,7 @@ def toggle_trim_dac(
                                 status[chip]["pixel_trim"][channel] = 31
                                 deactivate_status(status, chip, channel)
                                 asic_id = chip_key_to_asic_id(chip)
-                                if asic_id not in toggle_trim_csa_disable.keys():
+                                if asic_id not in toggle_trim_csa_disable:
                                     toggle_trim_csa_disable[asic_id] = []
                                 toggle_trim_csa_disable[asic_id].append(channel)
                         if (
@@ -540,7 +538,7 @@ def toggle_trim_dac(
         update_chip(c, status, iteration, track_progress, incremented, decremented)
 
         active_chip_count = 0
-        for chip_key in status.keys():
+        for chip_key in status:
             if True in status[chip_key]["active"]:
                 active_chip_count += 1
             if active_chip_count == 1:
@@ -565,7 +563,7 @@ def toggle_trim_dac(
 
 def recast_dictionary(d):
     out = {}
-    for k in d.keys():
+    for k in d:
         out[str(k)] = d[k]
     return out
 
@@ -582,7 +580,7 @@ def save_config_to_file(c, csa_disable):
         c[chip].config.csa_enable = [1] * 64
         c[chip].config.channel_mask = [0] * 64
         asic_id = chip_key_to_asic_id(chip)
-        if asic_id in csa_disable.keys():
+        if asic_id in csa_disable:
             for channel in csa_disable[asic_id]:
                 c[chip].config.csa_enable[channel] = 0
                 c[chip].config.channel_mask[channel] = 1
@@ -662,13 +660,13 @@ def main(
     time_log["toggle_global"] = timeEnd
 
     after_global = {}
-    for key in csa_disable.keys():
+    for key in csa_disable:
         if key not in after_global:
             after_global[key] = []
         for chan in csa_disable[key]:
             if chan not in after_global[key]:
                 after_global[key].append(chan)
-    for key in toggle_global_csa_disable.keys():
+    for key in toggle_global_csa_disable:
         if key not in after_global:
             after_global[key] = []
         for chan in toggle_global_csa_disable[key]:
@@ -716,13 +714,13 @@ def main(
     #    time_log['toggle_trim_it']=timeEnd
 
     after_trim = {}
-    for key in after_global.keys():
+    for key in after_global:
         if key not in after_trim:
             after_trim[key] = []
         for chan in after_global[key]:
             if chan not in after_trim[key]:
                 after_trim[key].append(chan)
-    for key in toggle_trim_csa_disable.keys():
+    for key in toggle_trim_csa_disable:
         if key not in after_trim:
             after_trim[key] = []
         for chan in toggle_trim_csa_disable[key]:
@@ -758,7 +756,7 @@ def main(
         )
         global_dac[chip_string] = c[chip].config.threshold_global
         asic_id = chip_key_to_asic_id(chip)
-        if asic_id in csa_disable.keys():
+        if asic_id in csa_disable:
             trim_dac[chip_string] = [-1] * 64
             for channel in range(64):
                 if channel in csa_disable[asic_id]:

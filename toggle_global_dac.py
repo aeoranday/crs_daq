@@ -1,7 +1,5 @@
 import argparse
-import copy
 import json
-import os
 import sys
 import time
 
@@ -15,7 +13,7 @@ from runenv import runenv as RUN
 from utils import datetime_now
 
 module = sys.modules[__name__]
-for var in RUN.config.keys():
+for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
 
@@ -50,7 +48,7 @@ def disable_dict_from_file(c, disabled_list):
     for chip_key in c.chips:
         if c[chip_key].asic_version == 2:
             asic_id = chip_key_to_asic_id(chip_key)
-            if asic_id in csa_disable.keys():
+            if asic_id in csa_disable:
                 for chan in _v2a_nonrouted:
                     csa_disable[asic_id].append(chan)
             else:
@@ -108,7 +106,7 @@ def enable_frontend(c, chips_to_test, csa_disable, all_network_keys, pacman_conf
             c[chip_key].config.channel_mask = [0] * 64
             c[chip_key].config.csa_enable = [1] * 64
             asic_id = chip_key_to_asic_id(chip_key)
-            if asic_id in csa_disable.keys():
+            if asic_id in csa_disable:
                 for channel in csa_disable[asic_id]:
                     c[chip_key].config.channel_mask[channel] = 1
                     c[chip_key].config.csa_enable[channel] = 0
@@ -151,7 +149,7 @@ def silence_highest_rate(c, chip, channel_rate, toggle_global_csa_disable):
         c[chip].config.channel_mask[highest_channel] = 1
         c[chip].config.csa_enable[highest_channel] = 0
         asic_id = chip_key_to_asic_id(chip)
-        if asic_id not in toggle_global_csa_disable.keys():
+        if asic_id not in toggle_global_csa_disable:
             toggle_global_csa_disable[asic_id] = []
         toggle_global_csa_disable[asic_id].append(highest_channel)
 
@@ -258,15 +256,15 @@ def toggle_global_dac(
                 channels = channel_triggers[mask]
                 set_channels = set(channels)
                 asic_id = chip_key_to_asic_id(chip)
-                if asic_id in toggle_global_csa_disable.keys():
+                if asic_id in toggle_global_csa_disable:
                     channel_intersection = list(
                         set_channels & set(toggle_global_csa_disable[asic_id])
                     )
                     if len(channel_intersection) > 0:
-                        if chip not in offenders.keys():
+                        if chip not in offenders:
                             offenders[chip] = {}
                         for cid in channel_intersection:
-                            if cid not in offenders[chip].keys():
+                            if cid not in offenders[chip]:
                                 offenders[chip][cid] = 1
                             else:
                                 offenders[chip][cid] += 1
@@ -280,7 +278,7 @@ def toggle_global_dac(
                     )
                     kill_fraction[channel] = channel_rate[channel] / chip_rate
                 kill_channel = []
-                for channel in channel_rate.keys():
+                for channel in channel_rate:
                     if (
                         kill_fraction[channel] > max_channel_fraction
                         and channel_rate[channel] > _maxrate_global
@@ -294,7 +292,7 @@ def toggle_global_dac(
                     channel_mask_count += 1
                     c[chip].config.channel_mask[int(channel)] = 1
                     c[chip].config.csa_enable[int(channel)] = 0
-                    if asic_id not in toggle_global_csa_disable.keys():
+                    if asic_id not in toggle_global_csa_disable:
                         toggle_global_csa_disable[asic_id] = []
                     toggle_global_csa_disable[asic_id].append(int(channel))
                     chip_register_pairs.append(
@@ -356,7 +354,7 @@ def toggle_global_dac(
         for _ in range(10):
             for chip in toggled_chips:
                 asic_id = chip_key_to_asic_id(chip)
-                if asic_id in toggle_global_csa_disable.keys():
+                if asic_id in toggle_global_csa_disable:
                     for channel in set(toggle_global_csa_disable[asic_id]):
                         c[chip].config.channel_mask[channel] = 1
                         c[chip].config.csa_enable[channel] = 0
@@ -365,7 +363,7 @@ def toggle_global_dac(
                     )
             c.multi_write_configuration(chip_register_pairs, connection_delay=0.01)
 
-        for ck in offenders.keys():
+        for ck in offenders:
             for cid in offenders[ck]:
                 if offenders[ck][cid] > _bail_threshold:
                     print(
@@ -395,13 +393,13 @@ def toggle_global_dac(
         track_progress[iteration] = len(masked_chip_set)
 
         haha = 0
-        for key in toggle_global_csa_disable.keys():
+        for key in toggle_global_csa_disable:
             haha += len(set(toggle_global_csa_disable[key]))
         print(
             "==>\tCSA disable size: ",
             haha,
             "\t keys: ",
-            len(toggle_global_csa_disable.keys()),
+            len(toggle_global_csa_disable),
             "\n",
         )
 
@@ -419,7 +417,7 @@ def toggle_global_dac(
 
 def recast_dictionary(d):
     out = {}
-    for k in d.keys():
+    for k in d:
         out[str(k)] = d[k]
     return out
 
@@ -442,7 +440,7 @@ def save_config_to_file(c, csa_disable):
         c[chip].config.csa_enable = [1] * 64
         c[chip].config.channel_mask = [0] * 64
         asic_id = chip_key_to_asic_id(chip)
-        if asic_id in csa_disable.keys():
+        if asic_id in csa_disable:
             for channel in csa_disable[asic_id]:
                 c[chip].config.csa_enable[channel] = 0
                 c[chip].config.channel_mask[channel] = 1
@@ -540,13 +538,13 @@ def main(pacman_config, disabled_list, chip_list, diagnostic_dir, **kwargs):
     time_log["toggle_global"] = timeEnd
 
     after_global = {}
-    for key in global_disable.keys():
+    for key in global_disable:
         if key not in after_global:
             after_global[key] = []
         for chan in global_disable[key]:
             if chan not in after_global[key]:
                 after_global[key].append(chan)
-    for key in toggle_global_csa_disable.keys():
+    for key in toggle_global_csa_disable:
         if key not in after_global:
             after_global[key] = []
         for chan in toggle_global_csa_disable[key]:

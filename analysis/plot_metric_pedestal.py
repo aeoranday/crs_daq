@@ -1,5 +1,4 @@
 import argparse
-import json
 from statistics import mean, mode, stdev
 
 import h5py
@@ -8,7 +7,6 @@ import numpy as np
 import tqdm
 import yaml
 from matplotlib import cm
-from matplotlib.collections import PatchCollection
 from matplotlib.colors import Normalize
 from matplotlib.patches import Rectangle
 
@@ -62,23 +60,23 @@ def parse_file(filename, max_entries=-1):
 
 
 def plot_1d(d, metric):
-    io_groups = set(utils.uid_to_io_group(np.array(list(d.keys()))))
-    tiles = set(utils.uid_to_tiles(np.array(list(d.keys()))))
+    io_groups = set(utils.uid_to_io_group(np.array(list(d))))
+    tiles = set(utils.uid_to_tiles(np.array(list(d))))
 
     for io_group in io_groups:
         for tile in tiles:
             tile_id = "{}-{}".format(io_group, tile)
 
-            mask = utils.uid_to_io_group(np.array(list(d.keys()))) == io_group
+            mask = utils.uid_to_io_group(np.array(list(d))) == io_group
             mask = np.logical_and(
-                mask, utils.uid_to_tiles(np.array(list(d.keys()))) == tile
+                mask, utils.uid_to_tiles(np.array(list(d))) == tile
             )
 
             if not np.any(mask):
                 continue
 
             fig, ax = plt.subplots(figsize=(8, 8))
-            d_keys = np.array(list(d.keys()))[mask]
+            d_keys = np.array(list(d))[mask]
             a = [d[key][metric] for key in d_keys]
 
             min_bin = int(min(a))  # -1
@@ -185,22 +183,22 @@ def plot_xy(d, metric, geometry_yaml, normalization, filename):
     #                           23, 24, 25, 38, 39, 40, 54, 55, 56, 57]
     routed_v2a_channels = [i for i in range(64) if i not in nonrouted_v2a_channels]
 
-    io_groups = set(utils.uid_to_io_group(np.array(list(d.keys()))))
-    tiles = set(utils.uid_to_tiles(np.array(list(d.keys()))))
+    io_groups = set(utils.uid_to_io_group(np.array(list(d))))
+    tiles = set(utils.uid_to_tiles(np.array(list(d))))
 
     for io_group in io_groups:
         for tile in tiles:
             tile_id = "{}-{}".format(io_group, tile)
-            mask = utils.uid_to_io_group(np.array(list(d.keys()))) == io_group
+            mask = utils.uid_to_io_group(np.array(list(d))) == io_group
             mask = np.logical_and(
-                mask, utils.uid_to_tiles(np.array(list(d.keys()))) == tile
+                mask, utils.uid_to_tiles(np.array(list(d))) == tile
             )
 
             if not np.any(mask):
                 continue
 
             # print('studying tile {}'.format(tile_id))
-            d_keys = np.array(list(d.keys()))[mask]
+            d_keys = np.array(list(d))[mask]
             # print(len(d_keys))
 
             fig, ax = plt.subplots(figsize=(16, 10))
@@ -232,7 +230,7 @@ def plot_xy(d, metric, geometry_yaml, normalization, filename):
             )
 
             chipid_pos = dict()
-            for chipid in chip_pix.keys():
+            for chipid in chip_pix:
                 x, y = [[] for i in range(2)]
                 for channelid in routed_v2a_channels:
                     x.append(geo["pixels"][chip_pix[chipid][channelid]][1])

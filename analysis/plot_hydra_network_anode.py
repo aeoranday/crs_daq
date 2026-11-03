@@ -5,7 +5,6 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 import yaml
-from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 
 plt.rcParams.update({"font.size": 20})
@@ -97,7 +96,7 @@ def start_end(tile, chipID, uart, chipid_pos):
 
 
 def chip_to_ioc(chipID, ioc_chip):
-    for ioc in ioc_chip.keys():
+    for ioc in ioc_chip:
         if chipID in ioc_chip[str(ioc)]:
             return int(ioc) - 1
     return
@@ -236,7 +235,7 @@ def plot_hydra_network(geometry_yaml, iog):
         chipID_uart, missingIO, root_chips, ioc_chip = parse_hydra_network(tile, iog)
         if missingIO[0] == "no test performed":
             missingIO = {}
-        for chipID in chipID_uart.keys():
+        for chipID in chipID_uart:
             if chipID == "ext":
                 continue
             for uart in chipID_uart[chipID]:
@@ -251,8 +250,8 @@ def plot_hydra_network(geometry_yaml, iog):
                     alpha=0.9,
                 )
 
-        for chipID in chipid_pos.keys():
-            if chipID[2] not in chipID_uart.keys() and chipID[1] == tile:
+        for chipID in chipid_pos:
+            if chipID[2] not in chipID_uart and chipID[1] == tile:
                 r = Rectangle(
                     (chipid_pos[chipID]["minX"], chipid_pos[chipID]["minY"]),
                     abs(chipid_pos[chipID]["maxX"] - chipid_pos[chipID]["minX"]),

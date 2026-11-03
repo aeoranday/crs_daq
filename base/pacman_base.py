@@ -2,20 +2,14 @@
 ### (1) change version to pacman version (discriminate from asic version)
 ### (2) substitute inversion table for hex(0x0201c+0x01000*ioc)
 ### (3) debug enable_pacman_uart bit declaration
-import argparse
-import asyncio
-import math
 import sys
 import time
-
-import larpix
-import larpix.io
 
 from base import utility_base
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
-for var in RUN.config.keys():
+for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
 

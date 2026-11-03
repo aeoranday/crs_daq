@@ -2,8 +2,6 @@ import argparse
 import json
 import os
 
-import numpy as np
-
 from utils import datetime_now
 
 
@@ -35,7 +33,7 @@ def main(*files, toggle_json, toggle_global, cryo, **kwargs):
 
     toggle_list = parse_toggle_json(toggle_json)
     meta = "unknown-toggle"
-    if "meta" in toggle_list.keys():
+    if "meta" in toggle_list:
         meta = toggle_list["meta"]
         meta["toggle_global"] = toggle_global
     disabled = 0
@@ -53,40 +51,10 @@ def main(*files, toggle_json, toggle_global, cryo, **kwargs):
         # print(chip)
         version = "v2d"
 
-        if chip_key in toggle_list.keys():
-            if not "pixel_trim_dac" in config.keys():
+        if chip_key in toggle_list:
+            if "pixel_trim_dac" not in config:
                 config["pixel_trim_dac"] = [16] * 64
 
-            # if toggle_global:
-            #    #global toggling code here
-            #    for pair in toggle_list[chip_key]:
-            #        config['pixel_trim_dac'][pair[0]] += pair[1]
-            #
-            #    #check for bottomed out trims
-            #    if np.any(np.array(config['pixel_trim_dac']) < 0):
-            #        decrement=False
-            #        #check for room to decrease global threshold
-            #        max_ptd = np.max(config['pixel_trim_dac'])
-            #        if (31-max_ptd) > glob_scale_ / trim_scale_:
-            #            decrement=True
-            #        else:
-            #            count_bottomed=np.sum([ 1 if ptd < 1 else 0 for ptd in config['pixel_trim_dac']   ] )
-            #            if count_bottomed > 32:
-            #                decrement=True
-            #
-            #        if decrement:
-            #            config['threshold_global'] -= 1
-            #            config['pixel_trim_dac'] = [ ptd + int(glob_scale_/trim_scale_) for ptd in config['pixel_trim_dac'] ]
-            #
-            #    #check for maxed out trims, see if room to incrememnt global up
-            #    if np.any( np.array(config['pixel_trim_dac']) > 31):
-            #        # some channels too high, might need to raise global threshold
-            #        min_ptd = np.min(config['pixel_trim_dac'])
-            #        if min_ptd > glob_scale_ / trim_scale_:
-            #            #room to increment global up
-            #            config['threshold_global'] += 1
-            #            config['pixel_trim_dac'] = [ ptd - int(glob_scale_/trim_scale_) + 1 for ptd in config['pixel_trim_dac'] ]
-            #
             if True:
                 for pair in toggle_list[chip_key]:
                     config["pixel_trim_dac"][pair[0]] += pair[1]
@@ -102,9 +70,9 @@ def main(*files, toggle_json, toggle_global, cryo, **kwargs):
                     config["pixel_trim_dac"][chan] = 0
                     bottomed += 1
 
-            if "meta" in config.keys():
+            if "meta" in config:
                 config["meta"]["last_update"] = datetime_now()
-                if not "toggle_lists" in config["meta"].keys():
+                if "toggle_lists" not in config["meta"]:
                     config["meta"]["toggle_lists"] = []
                 config["meta"]["toggle_lists"].append(meta)
 

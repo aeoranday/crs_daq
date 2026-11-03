@@ -9,14 +9,12 @@ import sys
 
 import larpix
 import larpix.io
-from tqdm import tqdm
 
 from base import config_loader, enforce_parallel, pacman_base, utility_base
-from base.utility_base import now
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
-for var in RUN.config.keys():
+for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
 logger = logging.getLogger(__name__)
@@ -78,7 +76,7 @@ def main(verbose, asic_config, config_subdir, pacman_config, pid_logged=False):
     remove = []
     for chip in c.chips:
         diff = c[chip].config.compare(nc[chip].config)
-        if len(diff.keys()) == 0:
+        if len(diff) == 0:
             remove.append(chip)
 
     for chip in remove:

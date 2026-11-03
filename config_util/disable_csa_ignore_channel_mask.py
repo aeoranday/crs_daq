@@ -8,7 +8,7 @@ v2a_nonrouted_channels = [6, 7, 8, 9, 22, 23, 24, 25, 38, 39, 40, 54, 55, 56, 57
 
 def main(*files, disabled_list=None, **kwargs):
     disabled = {}
-    if not disabled_list is None:
+    if disabled_list is not None:
         with open(disabled_list, "r") as f:
             disabled = json.load(f)
 
@@ -20,7 +20,7 @@ def main(*files, disabled_list=None, **kwargs):
         config["csa_enable"] = [0] * 64
 
         asic_id = config["meta"]["ASIC_ID"]
-        if asic_id in disabled.keys():
+        if asic_id in disabled:
             for channel in disabled[asic_id]:
                 config["channel_mask"][channel] = 1
                 config["csa_enable"][channel] = 0
@@ -30,7 +30,7 @@ def main(*files, disabled_list=None, **kwargs):
                 config["channel_mask"][channel] = 1
                 config["csa_enable"][channel] = 0
 
-        if "meta" in config.keys():
+        if "meta" in config:
             config["meta"]["last_update"] = datetime_now()
 
         with open(file, "w") as f:

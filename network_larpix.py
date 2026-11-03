@@ -9,16 +9,14 @@ import sys
 
 import larpix
 import larpix.io
-from tqdm import tqdm
 
 from base import (config_loader, enforce_parallel, network_base,
                   network_base_FSD, network_base_FSD_v3, pacman_base,
                   utility_base)
-from base.utility_base import now
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
-for var in RUN.config.keys():
+for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
 
@@ -43,24 +41,24 @@ def enforce_iterative(
     elif n == 0:
         return ok, diff, unconfigured
     else:
-        all_keys = list(diff.keys())
+        all_keys = list(diff)
         for net in unconfigured:
             all_keys += list(net)
 
         all_network_keys = []
         io_group_tiles = {}
-        for chip_key in diff.keys():
-            if not chip_key.io_group in io_group_tiles.keys():
+        for chip_key in diff:
+            if chip_key.io_group not in io_group_tiles:
                 io_group_tiles[chip_key.io_group] = set()
             io_group_tiles[chip_key.io_group].add(
                 utility_base.io_channel_to_tile(chip_key.io_channel)
             )
 
         for chip_key in all_keys:
-            if not chip_key.io_group in io_group_tiles:
+            if chip_key.io_group not in io_group_tiles:
                 io_group_tiles[chip_key.io_group] = None
 
-        for io_group in io_group_tiles.keys():
+        for io_group in io_group_tiles:
             tiles = io_group_tiles[io_group]
             config = configs[str(io_group)]
             if io_group_asic_version_[io_group] == "2b":
@@ -113,8 +111,8 @@ def main(
     for io_group_ip_pair in pacman_configs["io_group"]:
         io_group = io_group_ip_pair[0]
         tiles = None
-        if not io_group_tiles is None:
-            if not (io_group in io_group_tiles.keys()):
+        if io_group_tiles is not None:
+            if io_group not in io_group_tiles:
                 continue
             else:
                 tiles = io_group_tiles[io_group]
@@ -144,7 +142,7 @@ def main(
 
         _tiles = []
         for _, io_channels in c.network.items():
-            _tiles += utility_base.io_channel_list_to_tile(list(io_channels.keys()))
+            _tiles += utility_base.io_channel_list_to_tile(list(io_channels))
 
         _update_now = False
         CONFIG = utility_base.get_from_json(default_asic_config_paths_file_, io_group)
@@ -172,7 +170,7 @@ def main(
     logger.info("starting networking: io_groups={}".format(pacman_configs["io_group"]))
     for io_group_ip_pair in pacman_configs["io_group"]:
         io_group = io_group_ip_pair[0]
-        for iog in DCONFIGS.keys():
+        for iog in DCONFIGS:
             config_loader.load_config_from_directory(nc, DCONFIGS[iog])
         pacman_base.enable_pacman_uart_from_io_channel(
             nc.io, io_group, list(set([chip.io_channel for chip in nc.chips]))

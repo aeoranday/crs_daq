@@ -11,16 +11,16 @@ def main(*files, **kwargs):
         with open(file, "r") as f:
             flist = json.load(f)
 
-        for key in flist.keys():
+        for key in flist:
             if key == "meta":
-                if not key in full_list.keys():
+                if key not in full_list:
                     full_list[key] = {}
 
-                for subkey in flist[key].keys():
+                for subkey in flist[key]:
                     full_list[key][subkey] = flist[key][subkey]
             else:
 
-                if not key in full_list.keys():
+                if key not in full_list:
                     full_list[key] = flist[key]
                 else:
                     full_list[key] = list(set(flist[key] + full_list[key]))

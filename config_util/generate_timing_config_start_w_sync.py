@@ -5,11 +5,6 @@
 
 import argparse
 import json
-import os
-
-import larpix
-import larpix.io
-from tqdm import tqdm
 
 from utils import datetime_now
 
@@ -81,11 +76,11 @@ def main(
         config["tx_slices2"] = 1
         config["tx_slices3"] = 1
 
-        if not vref_dac is None:
+        if vref_dac is not None:
             config["vref_dac"] = vref_dac
         config["periodic_trigger_cycles"] = periodic_trigger_cycles
         config["periodic_reset_cycles"] = periodic_reset_cycles
-        if "meta" in config.keys():
+        if "meta" in config:
             config["meta"]["last_update"] = datetime_now()
             config["meta"]["description"] = "pedestal"
 

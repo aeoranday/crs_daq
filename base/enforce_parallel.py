@@ -18,15 +18,15 @@ def get_chips_by_io_group_io_channel(network_config, tiles=None, use_keys=None):
     all_keys = []
     for io_group, io_channels in dc.network.items():
         for io_channel in io_channels:
-            if not tiles is None:
-                if not utility_base.io_channel_to_tile(io_channel) in tiles:
+            if tiles is not None:
+                if utility_base.io_channel_to_tile(io_channel) not in tiles:
                     continue
             keys = dc.get_network_keys(io_group, io_channel, root_first_traversal=True)
 
-            if not use_keys is None:
+            if use_keys is not None:
                 remove = []
                 for key in keys:
-                    if not key in use_keys:
+                    if key not in use_keys:
                         remove.append(key)
                 for key in remove:
                     keys.remove(key)
@@ -90,21 +90,21 @@ def enforce_parallel(c, network_keys, unmask_last=True, pbar_desc="p", pbar_posi
         if not ok:
             print("Re-configuring: ", diff)
             ok, diff = c.enforce_configuration(
-                diff.keys(), timeout=0.2, connection_delay=0.1, n=15, n_verify=3
+                diff, timeout=0.2, connection_delay=0.1, n=15, n_verify=3
             )
             if not ok:
                 logger.info("could not configure:" + str(diff))
                 print("Could not configure: ", diff)
-                if len(diff.keys()) < 3:
+                if len(diff) < 3:
                     ok = True
-                    for key in diff.keys():
+                    for key in diff:
                         if len(diff[key]) > 2:
                             ok = False
                 if not ok:
                     break
 
                 # ok, diff = c.enforce_configuration(
-                #     diff.keys(), timeout=0.02, connection_delay=0.01, n=15, n_verify=5, msg_length=1)
+                #     diff, timeout=0.02, connection_delay=0.01, n=15, n_verify=5, msg_length=1)
         # ok, diff = c.enforce_configuration(
         #     current_chips, timeout=0.01, connection_delay=0.001, n=12, n_verify=4)
 
@@ -133,7 +133,7 @@ def enforce_parallel(c, network_keys, unmask_last=True, pbar_desc="p", pbar_posi
 
     send = False
     if unmask_last:
-        for chip in reversed(list(masks.keys())):
+        for chip in reversed(masks):
             c[chip].config.channel_mask = masks[chip]
             c[chip].config.csa_enable = csas[chip]
             c[chip].config.periodic_trigger_mask = ptmasks[chip]
@@ -144,7 +144,7 @@ def enforce_parallel(c, network_keys, unmask_last=True, pbar_desc="p", pbar_posi
             if True:
                 for __ in range(N_WRITE_UNMASK):
                     for chip in c.chips:
-                        if chip.io_group in c.io._io_group_table.keys():
+                        if chip.io_group in c.io._io_group_table:
                             c.multi_write_configuration(
                                 [
                                     (

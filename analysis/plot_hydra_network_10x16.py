@@ -7,7 +7,6 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import yaml
-from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 
 logger = logging.getLogger("plotting_logger")
@@ -75,7 +74,7 @@ def start_end(chipID, uart, chipid_pos):
 
 
 def chip_to_ioc(chipID, ioc_chip):
-    for ioc in ioc_chip.keys():
+    for ioc in ioc_chip:
         if chipID in ioc_chip[str(ioc)]:
             return int(ioc) - 1
     return
@@ -116,7 +115,7 @@ def plot_hydra_network(
         )
 
     chipid_pos = dict()
-    for chipid in chip_pix.keys():
+    for chipid in chip_pix:
         x, y = [[] for i in range(2)]
         for channelid in range(64):
             x.append(geo["pixels"][chip_pix[chipid][channelid]][1])
@@ -128,7 +127,7 @@ def plot_hydra_network(
         )
         plt.annotate(str(chipid), [avgX, avgY], ha="center", va="center")
 
-    for chipID in chipID_uart.keys():
+    for chipID in chipID_uart:
         if chipID == "ext":
             continue
         for uart in chipID_uart[chipID]:
@@ -170,8 +169,8 @@ def plot_hydra_network(
 
         plt.gca().add_patch(r)
 
-    for chipID in chipid_pos.keys():
-        if chipID not in chipID_uart.keys():
+    for chipID in chipid_pos:
+        if chipID not in chipID_uart:
             r = Rectangle(
                 (chipid_pos[chipID]["minX"], chipid_pos[chipID]["minY"]),
                 abs(chipid_pos[chipID]["maxX"] - chipid_pos[chipID]["minX"]),

@@ -4,7 +4,6 @@ warnings.filterwarnings("ignore")
 import argparse
 import json
 import logging
-import os
 import sys
 import time
 
@@ -12,7 +11,6 @@ import larpix
 import larpix.io
 
 from base import pacman_base, utility_base
-from base.utility_base import now
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +23,7 @@ skip_readback = False
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
-for var in RUN.config.keys():
+for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
 

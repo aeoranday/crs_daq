@@ -11,18 +11,14 @@ from runenv import runenv as RUN
 from utils import datetime_now
 
 module = sys.modules[__name__]
-for var in RUN.config.keys():
+for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
 
 import os
-import shutil
-import subprocess
 from signal import SIGINT, signal
 
-import base.utility_base
-from base import config_loader, utility_base
-from base.utility_base import now
+from base import utility_base
 
 _default_file_count = -1
 _default_runtime = 300
@@ -32,7 +28,7 @@ _default_packet = False
 
 def ctrlc_handler(signal_received, frame):
 
-    base.utility_base._dump_and_exit_ = True
+    utility_base._dump_and_exit_ = True
     print("CTRL-C detected. Starting Dump.")
 
 
@@ -51,7 +47,7 @@ def main(
     **args
 ):
 
-    if not filename is None and file_count > 1:
+    if filename is not None and file_count > 1:
         raise RuntimeError("All files will have same filename and will be overwritten")
 
     global _global_record_metadata_
@@ -84,7 +80,7 @@ def main(
     ctr = 0
     while (
         ctr < file_count or file_count < 0
-    ) and not base.utility_base._dump_and_exit_:
+    ) and not utility_base._dump_and_exit_:
 
         run_start = datetime_now()
 
