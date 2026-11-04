@@ -7,7 +7,7 @@ import warnings
 import larpix
 import larpix.io
 
-from base import pacman_base
+from crs_daq.base import pacman
 
 
 warnings.filterwarnings("ignore")
@@ -39,7 +39,7 @@ def main(verbose, pacman_config):
         for io_group in range(1, 2):
             print("Looking at IO Group {}".format(io_group))
 
-            readback = pacman_base.power_readback(
+            readback = pacman.power_readback(
                 c.io, io_group, "v1rev5", range(1, 11)
             )
 

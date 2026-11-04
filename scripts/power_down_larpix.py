@@ -9,7 +9,7 @@ import sys
 import larpix
 import larpix.io
 
-from base import utility_base
+from crs_daq.base import utility
 from runenv import runenv as RUN
 
 logger = logging.getLogger(__name__)
@@ -43,8 +43,8 @@ def main(verbose, pacman_config):
         c.io.set_reg(0x00000010, 0, io_group=io_group)
         c.io.set_reg(0x00000014, 0, io_group=io_group)
 
-        utility_base.update_json(asic_config_paths_file_, io_group, None)
-        utility_base.update_json(network_config_paths_file_, io_group, None)
+        utility.update_json(asic_config_paths_file_, io_group, None)
+        utility.update_json(network_config_paths_file_, io_group, None)
     logger.info("powered down")
 
 

@@ -6,8 +6,8 @@ import larpix
 import larpix.io
 import numpy as np
 
-from base import config_loader, pacman_base, utility_base
-from base.utility_base import *
+from crs_daq.base import config_loader, pacman, utility
+from crs_daq.base.utility import *
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
@@ -37,7 +37,7 @@ def get_keys(c, io_group, tiles):
 
     keys = [[] for _ in range(41)]
 
-    io_channels = utility_base.tile_to_io_channel(tiles)
+    io_channels = utility.tile_to_io_channel(tiles)
     print(f"\nTesting io_channels {io_channels}")
 
     for io_channel in io_channels:
@@ -81,7 +81,7 @@ def main(io_group, pacman_config, high_dac, disabled):
         CONFIG = d[str(io_group)]
     config_loader.load_config_from_directory(c, CONFIG)
 
-    pacman_base.enable_pacman_uart_from_io_channel(
+    pacman.enable_pacman_uart_from_io_channel(
         c.io, io_group, list(set([chip.io_channel for chip in c.chips]))
     )
 

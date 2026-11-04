@@ -10,7 +10,7 @@ import sys
 import larpix
 import larpix.io
 
-from base import config_loader, enforce_parallel, pacman_base, utility_base
+from crs_daq.base import config_loader, enforce_parallel, pacman, utility
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
@@ -41,9 +41,9 @@ def main(verbose, asic_config, config_subdir, pacman_config, pid_logged=False):
 
         CONFIG = None
         print("Loading current config...")
-        CONFIG = utility_base.get_from_json(asic_config_paths_file_, io_group)
+        CONFIG = utility.get_from_json(asic_config_paths_file_, io_group)
 
-        network_config_file = utility_base.get_from_json(
+        network_config_file = utility.get_from_json(
             network_config_paths_file_, io_group
         )
         all_network_keys += enforce_parallel.get_chips_by_io_group_io_channel(
@@ -61,11 +61,11 @@ def main(verbose, asic_config, config_subdir, pacman_config, pid_logged=False):
         CONFIG = None
         CONFIG = "{}/{}".format(asic_config, config_subdir)
 
-        network_config_file = utility_base.get_from_json(
+        network_config_file = utility.get_from_json(
             network_config_paths_file_, io_group
         )
         config_loader.load_config_from_directory(nc, CONFIG)
-        utility_base.update_json(asic_config_paths_file_, io_group, CONFIG)
+        utility.update_json(asic_config_paths_file_, io_group, CONFIG)
 
     # now, nc has the new configuration loaded, c has the old configuration
     # parse these and get all differences
@@ -87,13 +87,13 @@ def main(verbose, asic_config, config_subdir, pacman_config, pid_logged=False):
     # ensure UARTs are enable on pacman to receive configuration packets
     for io_group_ip_pair in pacman_configs["io_group"]:
         io_group = io_group_ip_pair[0]
-        pacman_base.enable_all_pacman_uart_from_io_group(c.io, io_group)
+        pacman.enable_all_pacman_uart_from_io_group(c.io, io_group)
 
     pos = 0
     tag = "configuring..."
     if pid_logged:
         pid = os.getpid()
-        tag = utility_base.get_from_process_log(pid)
+        tag = utility.get_from_process_log(pid)
         pos = enforce_parallel.tag_to_config_map[tag]
 
     # enforce all configurations in parallel (one chip per io channel per cycle)

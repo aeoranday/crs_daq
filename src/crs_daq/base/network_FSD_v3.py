@@ -4,20 +4,19 @@ import time
 import larpix
 import numpy as np
 
-from base import asic_base, pacman_base, uart_base, utility_base
+from base import asic, pacman, uart, utility
 from utils import datetime_now
 
 # from timebudget import timebudget
 # import asyncio
 
-ref_current_trim = 0
-i_tx_diff = 4
-tx_slices = 7
-r_term = 2
-i_rx = 8
+i_tx_diff = 7
+tx_slices = 15
+r_term = 7
+i_rx = 3
+v_cm_lvds_tx = 5
 
 _default_clk_ctrl = 0
-_uart_phase = 2
 
 clk_ctrl_2_clk_ratio_map = {0: 10, 1: 20, 2: 40, 3: 80}
 
@@ -67,17 +66,17 @@ def configure_chip_id(c, io_group, ioc, chip_id, asic_version):
 
 # @timebudget
 def configure_root_chip(
-    c, chip_key, asic_version, ref_current_trim, tx_diff, tx_slice, r_term, i_rx
+    c, chip_key, asic_version, v_cm_lvds_tx, tx_diff, tx_slice, r_term, i_rx
 ):
-    if asic_version in ["2b", "2d"]:
-        c[chip_key].config.ref_current_trim = ref_current_trim
-        c.write_configuration(chip_key, "ref_current_trim")
+    if asic_version in [3]:
         registers = []
         for uart in range(4):
             setattr(c[chip_key].config, f"i_rx{uart}", i_rx)
             registers.append(c[chip_key].config.register_map[f"i_rx{uart}"])
             setattr(c[chip_key].config, f"r_term{uart}", r_term)
             registers.append(c[chip_key].config.register_map[f"r_term{uart}"])
+            setattr(c[chip_key].config, f"v_cm_lvds_tx{uart}", v_cm_lvds_tx)
+            registers.append(c[chip_key].config.register_map[f"v_cm_lvds_tx{uart}"])
         for reg in registers:
             c.write_configuration(chip_key, reg)
         for reg in registers:
@@ -112,7 +111,7 @@ def setup_root(
     chip_id,
     verbose,
     asic_version,
-    ref_current_trim,
+    v_cm_lvds_tx,
     tx_diff,
     tx_slice,
     r_term,
@@ -120,25 +119,32 @@ def setup_root(
 ):
 
     chip_key = configure_chip_id(c, io_group, io_channel, chip_id, asic_version)
-    asic_base.disable_chip_csa_trigger(c, chip_key)
+    if verbose:
+        print("Setting up root: ", chip_key)
+    asic.disable_chip_csa_trigger(c, chip_key)
     configure_root_chip(
-        c, chip_key, asic_version, ref_current_trim, tx_diff, tx_slice, r_term, i_rx
+        c, chip_key, asic_version, v_cm_lvds_tx, tx_diff, tx_slice, r_term, i_rx
     )
 
-    pacman_base.enable_pacman_uart_from_io_channel(io, io_group, io_channel)
+    pacman.enable_pacman_uart_from_io_channel(io, io_group, io_channel)
 
-    print("reconcile config")
-    print(chip_key, "downstream enabled:", c[chip_key].config.enable_piso_downstream)
-    ok, diff = utility_base.reconcile_configuration(c, chip_key, verbose)
+    if verbose:
+        print("reconcile config")
+    if verbose:
+        print(
+            chip_key, "downstream enabled:", c[chip_key].config.enable_piso_downstream
+        )
+    ok, diff = utility.reconcile_configuration(c, chip_key, verbose)
     if ok:
         if verbose:
             print(chip_key, " configured")
         return chip_key
-    if verbose:
-        print(chip_key, " NOT configured")
-    uart_base.reset_uarts(c, chip_key, verbose)
-    c.remove_chip(chip_key)
-    return None
+    if not ok:
+        if verbose:
+            print(chip_key, " NOT configured")
+        uart.reset_uarts(c, chip_key, verbose)
+        c.remove_chip(chip_key)
+        return None
 
 
 # @timebudget
@@ -185,6 +191,23 @@ def find_daughter_id(parent_piso, parent_chip_id):
     return daughter_id
 
 
+def read(c, key, param):
+    c.reads = []
+    c.read_configuration(key, param, timeout=0.1)
+    message = c.reads[-1]
+    for msg in message:
+        if not isinstance(msg, larpix.packet.packet_v3.Packet_v3):
+            continue
+        if msg.packet_type not in [
+            larpix.packet.packet_v3.Packet_v3.CONFIG_READ_PACKET
+        ]:
+            continue
+        if verbose:
+            print(msg)
+        # return msg.chip_id
+    return 0
+
+
 # @timebudget
 def initial_network(
     c,
@@ -193,7 +216,7 @@ def initial_network(
     root_keys,
     verbose,
     asic_version,
-    ref_current_trim,
+    v_cm_lvds_tx,
     tx_diff,
     tx_slice,
     r_term,
@@ -212,8 +235,8 @@ def initial_network(
                 "\n CONFIGURED: ", cnt_configured, "\t UNCONFIGURED: ", cnt_unconfigured
             )
 
-        pacman_base.enable_pacman_uart_from_io_channel(io, io_group, root.io_channel)
-        ok, diff = utility_base.reconcile_configuration(c, root, verbose)
+        pacman.enable_pacman_uart_from_io_channel(io, io_group, root.io_channel)
+        ok, diff = utility.reconcile_configuration(c, root, verbose)
         if ok:
             cnt_configured += 1
         if not ok:
@@ -221,14 +244,15 @@ def initial_network(
             cnt_unconfigured = len(waitlist)
             print("Parent ", root, " failed to configure")
             continue
-        print(
-            root,
-            "\tconfigured: ",
-            cnt_configured,
-            "\t unconfigured: ",
-            cnt_unconfigured,
-        )
-        pacman_base.disable_all_pacman_uart(io, io_group)
+        if verbose:
+            print(
+                root,
+                "\tconfigured: ",
+                cnt_configured,
+                "\t unconfigured: ",
+                cnt_unconfigured,
+            )
+        pacman.disable_all_pacman_uart(io, io_group)
 
         bail = False
         last_chip_id = root.chip_id
@@ -243,7 +267,8 @@ def initial_network(
                     break
                 excluded = False
                 daughter_id = find_daughter_id(parent_piso_us, last_chip_id)
-                print("LOOKING AT DAUGHTER: ", daughter_id)
+                if verbose:
+                    print("LOOKING AT DAUGHTER: ", daughter_id)
                 # UGLY HACK
                 if (last_chip_id, daughter_id) not in last_daughter:
                     last_daughter.append((last_chip_id, daughter_id))
@@ -251,7 +276,7 @@ def initial_network(
                     bail = True
                 if (
                     daughter_id
-                    in exclude[str(utility_base.io_channel_to_tile(root.io_channel))]
+                    in exclude[str(utility.io_channel_to_tile(root.io_channel))]
                 ):
                     print("bailing due to excluded chip!")
                     bail = True
@@ -273,7 +298,7 @@ def initial_network(
 
                 skip_link = False
                 for link in exclude_links[
-                    str(utility_base.io_channel_to_tile(root.io_channel))
+                    str(utility.io_channel_to_tile(root.io_channel))
                 ]:
                     if link[0] == last_chip_id and link[1] == daughter_id:
                         print("Will skip: ", link)
@@ -288,10 +313,8 @@ def initial_network(
                     continue
 
                 # Manual re-routing to avoid issues on 10x16 v2d tiles
-                if daughter_id == 27 and last_chip_id == 26:
-                    continue
-                if daughter_id == 158 and last_chip_id == 157:
-                    continue
+                # if daughter_id == 27 and last_chip_id == 26: continue
+                # if daughter_id == 158 and last_chip_id == 157: continue
                 cks = []
                 for ck in c.chips:
                     if ck.io_channel in root_ioc:
@@ -303,60 +326,84 @@ def initial_network(
                     continue
                 daughter = larpix.key.Key(root.io_group, root.io_channel, daughter_id)
 
-                ok, diff = uart_base.setup_parent_piso(
+                ok, diff = uart.setup_parent_piso(
                     c, io, parent, daughter, verbose, tx_diff, tx_slice
                 )
                 if not ok or excluded:
                     print("\t\t==> PARENT PISO US ", parent, "failed to configure")
-                    uart_base.disable_parent_piso_us(
+                    uart.disable_parent_piso_us(
                         c, parent, daughter, verbose, tx_diff, tx_slice
                     )
                     waitlist = append_upstream_chip_ids(
                         root.io_channel, daughter.chip_id, waitlist
                     )
                     cnt_unconfigured = len(waitlist)
-                    print(
-                        daughter,
-                        "\tconfigured: ",
-                        cnt_configured,
-                        "\t unconfigured: ",
-                        cnt_unconfigured,
-                    )
+                    if verbose:
+                        print(
+                            daughter,
+                            "\tconfigured: ",
+                            cnt_configured,
+                            "\t unconfigured: ",
+                            cnt_unconfigured,
+                        )
                     bail = True
                     continue
 
-                ok, diff, piso = uart_base.setup_daughter(
+                ok, diff, piso = uart.setup_daughter(
                     c,
                     io,
                     parent,
                     daughter,
                     verbose,
                     asic_version,
-                    ref_current_trim,
+                    v_cm_lvds_tx,
                     tx_diff,
                     tx_slice,
                     r_term,
                     i_rx,
                 )
 
+                if daughter_id == 141:
+                    while False:
+                        ok, diff, piso = uart.setup_daughter(
+                            c,
+                            io,
+                            parent,
+                            daughter,
+                            verbose,
+                            asic_version,
+                            v_cm_lvds_tx,
+                            tx_diff,
+                            tx_slice,
+                            r_term,
+                            i_rx,
+                        )
+
+                        for i in range(256):
+                            read(c, "1-1-151", i)
+                            read(c, "1-1-141", i)
+                        time.sleep(1)
+                        # break
+
                 if ok:
                     cnt_configured += 1
-                    print(
-                        daughter,
-                        "\tconfigured: ",
-                        cnt_configured,
-                        "\t unconfigured: ",
-                        cnt_unconfigured,
-                    )
+                    if verbose:
+                        print(
+                            daughter,
+                            "\tconfigured: ",
+                            cnt_configured,
+                            "\t unconfigured: ",
+                            cnt_unconfigured,
+                        )
                     ok_daughters.append(daughter.chip_id)
                     # last_chip_id = daughter.chip_id
                 if not ok:
                     print("\t\t==> DAUGHTER ", daughter, "failed to configure")
-                    uart_base.reset_uarts(c, daughter, verbose)
-                    uart_base.disable_parent_piso_us(
+                    uart.reset_uarts(c, daughter, verbose)
+                    uart.disable_parent_piso_us(
                         c, parent, daughter, verbose, tx_diff, tx_slice
                     )
-                    uart_base.disable_parent_posi(c, parent, daughter, verbose)
+                    uart.disable_parent_posi(c, parent, daughter, verbose)
                     c.remove_chip(daughter)
 
                     if parent_piso_us == 0:
@@ -373,14 +420,15 @@ def initial_network(
                             "\t unconfigured ",
                             cnt_unconfigured,
                         )
-                pacman_base.disable_all_pacman_uart(io, io_group)
+                pacman.disable_all_pacman_uart(io, io_group)
             if len(ok_daughters) > 0:
                 ok_daughters.sort()
                 # 0*len(ok_daughters)//2
                 last_chip_id = ok_daughters[len(ok_daughters) // 2]
                 # last_chip_id = ok_daughters[0]
             else:
-                print("STOPPING AT: ", last_chip_id)
+                if verbose:
+                    print("STOPPING AT: ", last_chip_id)
         firstIteration = False
     return
 
@@ -422,7 +470,7 @@ def iterate_waitlist(
     io_channels,
     verbose,
     asic_version,
-    ref_current_trim,
+    v_cm_lvds_tx,
     tx_diff,
     tx_slice,
     r_term,
@@ -430,7 +478,8 @@ def iterate_waitlist(
     exclude=None,
     exclude_links=None,
 ):
-    print("\n\n----- Iterating waitlist ----\n")
+    if verbose:
+        print("\n\n----- Iterating waitlist ----\n")
     flag = True
     outstanding = []
     while flag == True:
@@ -444,13 +493,13 @@ def iterate_waitlist(
                 daughter = larpix.key.Key(parent.io_group, parent.io_channel, chip_id)
                 if (
                     chip_id
-                    in exclude[str(utility_base.io_channel_to_tile(parent.io_channel))]
+                    in exclude[str(utility.io_channel_to_tile(parent.io_channel))]
                 ):
                     continue
 
                 skip_link = False
                 for link in exclude_links[
-                    str(utility_base.io_channel_to_tile(parent.io_channel))
+                    str(utility.io_channel_to_tile(parent.io_channel))
                 ]:
                     if link[0] == chip_id and link[1] == parent.chip_id:
                         print("Will skip: ", link)
@@ -470,25 +519,25 @@ def iterate_waitlist(
                 if chip_id == 158 and parent.chip_id == 157:
                     continue
 
-                ok, diff = uart_base.setup_parent_piso(
+                ok, diff = uart.setup_parent_piso(
                     c, io, parent, daughter, verbose, tx_diff, tx_slice
                 )
                 if not ok:
                     print("\t\t==> PARENT PISO US ", parent, "failed to configure")
-                    uart_base.disable_parent_piso_us(
+                    uart.disable_parent_piso_us(
                         c, parent, daughter, verbose, tx_diff, tx_slice
                     )
-                    pacman_base.disable_all_pacman_uart(io, io_group)
+                    pacman.disable_all_pacman_uart(io, io_group)
                     continue
 
-                ok, diff, piso = uart_base.setup_daughter(
+                ok, diff, piso = uart.setup_daughter(
                     c,
                     io,
                     parent,
                     daughter,
                     verbose,
                     asic_version,
-                    ref_current_trim,
+                    v_cm_lvds_tx,
                     tx_diff,
                     tx_slice,
                     r_term,
@@ -496,24 +545,26 @@ def iterate_waitlist(
                 )
                 if ok:
                     waitlist.remove(chip_id)
-                    print("WAITLIST RESOLVED\t", daughter)
+                    if verbose:
+                        print("WAITLIST RESOLVED\t", daughter)
                     break
                 if not ok:
                     print("\t\t==> DAUGHTER ", daughter, " failed to configure")
-                    uart_base.reset_uarts(c, daughter, verbose)
-                    uart_base.disable_parent_piso_us(
+                    uart.reset_uarts(c, daughter, verbose)
+                    uart.disable_parent_piso_us(
                         c, parent, daughter, verbose, tx_diff, tx_slice
                     )
-                    uart_base.disable_parent_posi(c, parent, daughter, verbose)
+                    uart.disable_parent_posi(c, parent, daughter, verbose)
                     c.remove_chip(daughter)
                     outstanding.append((daughter, piso))
-                pacman_base.disable_all_pacman_uart(io, io_group)
+                pacman.disable_all_pacman_uart(io, io_group)
 
         if n_waitlist == len(waitlist):
             print("\n", len(waitlist), " NON-CONFIGURED chips\n", waitlist, "\n")
             flag = False
         else:
-            print("\n\n*****RE-TESTING ", len(waitlist), " CHIPS\n", waitlist)
+            if verbose:
+                print("\n\n*****RE-TESTING ", len(waitlist), " CHIPS\n", waitlist)
     return outstanding
 
 
@@ -597,12 +648,7 @@ def miso_us_chip_id_list(chip2chip_pair, miso_us):
 
 
 def write_network_to_file(
-    c,
-    file_prefix,
-    io_group_pacman_tile,
-    unconfigured,
-    layout="2.5.1",
-    asic_version="2b",
+    c, file_prefix, io_group_pacman_tile, unconfigured, layout="2.5.1", asic_version="3"
 ):
 
     d = dict()
@@ -617,7 +663,7 @@ def write_network_to_file(
         if iog not in c.network:
             continue
         d["network"][iog] = {}
-        io_channels = utility_base.tile_to_io_channel(io_group_pacman_tile[iog])
+        io_channels = utility.tile_to_io_channel(io_group_pacman_tile[iog])
         for ioc in io_channels:
             d["network"][iog][ioc] = {}
             d["network"][iog][ioc]["nodes"] = []
@@ -660,10 +706,10 @@ def write_network_to_file(
     return fname
 
 
-def network_v2b(controller_config, tiles=None, verbose=False):
+def network_v3(controller_config, tiles=None, verbose=False):
 
     c = larpix.Controller()
-    c.io = larpix.io.PACMAN_IO(relaxed=True)
+    c.io = larpix.io.PACMAN_IO(relaxed=True, asic_version=3)
 
     if controller_config is None:
         raise RuntimeError("No controller config specified!")
@@ -671,6 +717,7 @@ def network_v2b(controller_config, tiles=None, verbose=False):
         c.load(controller_config)
 
     for io_group, io_channels in c.network.items():
+        pacman.disable_all_pacman_uart(c.io, io_group)
         if tiles is None:
             if verbose:
                 print("resetting io group:", io_group)
@@ -690,19 +737,24 @@ def network_v2b(controller_config, tiles=None, verbose=False):
     for io_group, io_channels in c.network.items():
         for io_channel in io_channels:
             if tiles is not None:
-                if utility_base.io_channel_to_tile(io_channel) not in tiles:
+                if utility.io_channel_to_tile(io_channel) not in tiles:
                     continue
-            c.init_network(io_group, io_channel, modify_mosi=True)
+            c.init_network(
+                io_group,
+                io_channel,
+                modify_mosi=True,
+                tx_slices=tx_slices,
+                i_tx_diff=i_tx_diff,
+            )
 
     # write tx, rx, etc configs
     for chip_key in c.chips:
         if tiles is not None:
-            if utility_base.io_channel_to_tile(chip_key.io_channel) not in tiles:
+            if utility.io_channel_to_tile(chip_key.io_channel) not in tiles:
                 continue
 
-        c[chip_key].config.ref_current_trim = ref_current_trim
-        c.write_configuration(chip_key, "ref_current_trim")
         registers = []
+        # print('Settin registers for ', chip_key)
         for uart in range(4):
             setattr(c[chip_key].config, f"i_rx{uart}", i_rx)
             registers.append(c[chip_key].config.register_map[f"i_rx{uart}"])
@@ -712,22 +764,23 @@ def network_v2b(controller_config, tiles=None, verbose=False):
             registers.append(c[chip_key].config.register_map[f"i_tx_diff{uart}"])
             setattr(c[chip_key].config, f"tx_slices{uart}", tx_slices)
             registers.append(c[chip_key].config.register_map[f"tx_slices{uart}"])
+            setattr(c[chip_key].config, f"v_cm_lvds_tx{uart}", v_cm_lvds_tx)
+            registers.append(c[chip_key].config.register_map[f"v_cm_lvds_tx{uart}"])
 
         #        ok, diff = c.enforce_configuration([chip_key], timeout=0.01, connection_delay=0.003, n=20, n_verify=7)
         #        if not ok:
         #            raise RuntimeError('Enforcing failed', diff)
         for reg in registers:
-            c.write_configuration(chip_key, reg)
-        #            c.write_configuration(chip_key, reg, connection_delay=0.005)
-        #            c.write_configuration(chip_key, reg, connection_delay=0.005)
-        for reg in registers:
-            #            c.write_configuration(chip_key, reg, connection_delay=0.005)
-            #            c.write_configuration(chip_key, reg, connection_delay=0.005)
-            c.write_configuration(chip_key, reg)
+            # c.write_configuration(chip_key, reg)
+            c.write_configuration(chip_key, reg, connection_delay=0.005)
+            c.write_configuration(chip_key, reg, connection_delay=0.005)
+        # for reg in registers:
+        #     #            c.write_configuration(chip_key, reg, connection_delay=0.005)
+        #     #            c.write_configuration(chip_key, reg, connection_delay=0.005)
+        #     c.write_configuration(chip_key, reg)
     # ok, diff = c.enforce_configuration([chip_key], timeout=0.01, connection_delay=0.003, n=20, n_verify=7)
     # if not ok:
     #    raise RuntimeError('Enforcing failed', diff)
-
     # # set uart speed (v2a at 2.5 MHz transmit clock, v2b fine at 5 MHz transmit clock)
     # for io_group, io_channels in c.network.items():
     #     for io_channel in io_channels:
@@ -766,7 +819,7 @@ def network_v2a(controller_config, verbose=False):
 
     for io_group in c.network:
         io_channels = np.array(list(c.network[io_group])).astype(int)
-        tiles = utility_base.io_channel_list_to_tile(io_channels)
+        tiles = utility.io_channel_list_to_tile(io_channels)
 
     for io_group, io_channels in c.network.items():
         if verbose:

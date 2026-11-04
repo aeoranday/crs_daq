@@ -11,9 +11,9 @@ import larpix
 import larpix.io
 
 from analysis import plot_hydra_network_10x16
-from base import (network_base_FSD_v3, utility_base)
+from crs_daq.base import (network_FSD_v3, utility)
 from runenv import runenv as RUN
-from utils import datetime_now
+from crs_daq.utils import datetime_now
 
 module = sys.modules[__name__]
 for var in RUN.config:
@@ -62,11 +62,11 @@ def main(
     # VERSION_SPECIFIC
     # if io_group_asic_version_[iog]=='2b':
     #    print('inverting io group {} tiles {}'.format(iog, io_group_pacman_tile_[iog]))
-    #    pacman_base.invert_pacman_uart(c.io, iog, io_group_asic_version_[iog], \
+    #    pacman.invert_pacman_uart(c.io, iog, io_group_asic_version_[iog], \
     #                               io_group_pacman_tile_[iog])
 
     # for g_c_id in iog_ioc_cid:
-    #     network_base_FSD.network_ext_node_from_tuple(c, g_c_id)
+    #     network_FSD.network_ext_node_from_tuple(c, g_c_id)
 
     for iog in [io_group]:
         print("Working on io_group={}".format(iog))
@@ -82,15 +82,15 @@ def main(
             for tile in tiles:
 
                 root_keys = []
-                io_channels = utility_base.tile_to_io_channel([tile])
+                io_channels = utility.tile_to_io_channel([tile])
                 for io_channel in io_channels:
                     cid = v3_10x16_root_ids[(io_channel - 1) % 4]
-                    network_base_FSD_v3.network_ext_node_from_tuple(
+                    network_FSD_v3.network_ext_node_from_tuple(
                         c, iog, io_channel, cid
                     )
                     if cid in iog_exclude[iog][str(tile)]:
                         continue
-                    candidate_root = network_base_FSD_v3.setup_root(
+                    candidate_root = network_FSD_v3.setup_root(
                         c,
                         c.io,
                         iog,
@@ -110,11 +110,11 @@ def main(
                 print(f"\n\nTile {tile} ROOT KEYS: ", root_keys)
 
                 iog_tile_to_root_keys = (
-                    utility_base.partition_chip_keys_by_io_group_tile(root_keys)
+                    utility.partition_chip_keys_by_io_group_tile(root_keys)
                 )
 
                 for iog_tile in iog_tile_to_root_keys:
-                    network_base_FSD_v3.initial_network(
+                    network_FSD_v3.initial_network(
                         c,
                         c.io,
                         iog_tile[0],
@@ -131,11 +131,11 @@ def main(
                     )
 
                 unconfigured = []
-                out_of_network = network_base_FSD_v3.iterate_waitlist(
+                out_of_network = network_FSD_v3.iterate_waitlist(
                     c,
                     c.io,
                     iog,
-                    utility_base.tile_to_io_channel([tile]),
+                    utility.tile_to_io_channel([tile]),
                     verbose,
                     io_group_asic_version_[iog],
                     v_cm_lvds_tx,
@@ -148,7 +148,7 @@ def main(
                 )
                 unconfigured.extend(out_of_network)
 
-                network_file = network_base_FSD_v3.write_network_to_file(
+                network_file = network_FSD_v3.write_network_to_file(
                     c,
                     f"iog_{io_group}-tile_{tile}",
                     {io_group: [tile]},

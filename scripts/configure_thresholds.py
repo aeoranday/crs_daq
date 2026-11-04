@@ -9,8 +9,8 @@ import numpy as np
 from tqdm import tqdm
 
 # from RUNENV import *
-from base import config_loader, enforce_parallel, pacman_base, utility_base
-from base.utility_base import *
+from crs_daq.base import config_loader, enforce_parallel, pacman, utility
+from crs_daq.base.utility import *
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
@@ -116,7 +116,7 @@ def enable_frontend(c, csa_disable, all_network_keys, pacman_configs):
 
     for io_group_ip_pair in pacman_configs["io_group"]:
         io_group = io_group_ip_pair[0]
-        pacman_base.enable_all_pacman_uart_from_io_group(c.io, io_group)
+        pacman.enable_all_pacman_uart_from_io_group(c.io, io_group)
 
     return
 
@@ -610,14 +610,14 @@ def main(
             d = json.load(ff)
             CONFIG = d[str(io_group)]
         all_network_keys += enforce_parallel.get_chips_by_io_group_io_channel(
-            utility_base.get_from_json(network_config_paths_file_, io_group)
+            utility.get_from_json(network_config_paths_file_, io_group)
         )
         config_loader.load_config_from_directory(c, CONFIG)
 
     # ATTENTION: is this called implicitly within enforce_parallel above
     for io_group_ip_pair in pacman_configs["io_group"]:
         io_group = io_group_ip_pair[0]
-        pacman_base.enable_all_pacman_uart_from_io_group(c.io, io_group)
+        pacman.enable_all_pacman_uart_from_io_group(c.io, io_group)
 
     timeStart = time.time()
     csa_disable = disable_dict_from_file(c, disabled_list)  # , csa_disable)

@@ -4,7 +4,7 @@ import time
 import larpix
 import numpy as np
 
-from base import asic_base, uart_base, utility_base
+from base import asic, uart, utility
 from utils import datetime_now
 
 # from timebudget import timebudget
@@ -109,7 +109,7 @@ def setup_root(
 ):
 
     chip_key = configure_chip_id(c, io_group, io_channel, chip_id, asic_version)
-    asic_base.disable_chip_csa_trigger(c, chip_key)
+    asic.disable_chip_csa_trigger(c, chip_key)
     configure_root_chip(
         c, chip_key, asic_version, ref_current_trim, tx_diff, tx_slice, r_term, i_rx
     )
@@ -117,14 +117,14 @@ def setup_root(
     io.set_reg(0x18, 2 ** (io_channel - 1), io_group=io_group)
     print("reconcile config")
     print(chip_key, "downstream enabled:", c[chip_key].config.enable_piso_downstream)
-    ok, diff = utility_base.reconcile_configuration(c, chip_key, verbose)
+    ok, diff = utility.reconcile_configuration(c, chip_key, verbose)
     if ok:
         if verbose:
             print(chip_key, " configured")
         return chip_key
     if verbose:
         print(chip_key, " NOT configured")
-    uart_base.reset_uarts(c, chip_key, verbose)
+    uart.reset_uarts(c, chip_key, verbose)
     c.remove_chip(chip_key)
     return None
 
@@ -191,7 +191,7 @@ def initial_network(
             )
 
         io.set_reg(0x18, 2 ** (root.io_channel - 1), io_group=io_group)
-        ok, diff = utility_base.reconcile_configuration(c, root, verbose)
+        ok, diff = utility.reconcile_configuration(c, root, verbose)
         if ok:
             cnt_configured += 1
         if not ok:
@@ -248,12 +248,12 @@ def initial_network(
                     continue
                 daughter = larpix.key.Key(root.io_group, root.io_channel, daughter_id)
 
-                ok, diff = uart_base.setup_parent_piso(
+                ok, diff = uart.setup_parent_piso(
                     c, io, parent, daughter, verbose, tx_diff, tx_slice
                 )
                 if not ok:
                     print("\t\t==> PARENT PISO US ", parent, "failed to configure")
-                    uart_base.disable_parent_piso_us(
+                    uart.disable_parent_piso_us(
                         c, parent, daughter, verbose, tx_diff, tx_slice
                     )
                     waitlist = append_upstream_chip_ids(
@@ -270,7 +270,7 @@ def initial_network(
                     bail = True
                     continue
 
-                ok, diff, piso = uart_base.setup_daughter(
+                ok, diff, piso = uart.setup_daughter(
                     c,
                     io,
                     parent,
@@ -296,11 +296,11 @@ def initial_network(
                     last_chip_id = daughter.chip_id
                 if not ok:
                     print("\t\t==> DAUGHTER ", daughter, "failed to configure")
-                    uart_base.reset_uarts(c, daughter, verbose)
-                    uart_base.disable_parent_piso_us(
+                    uart.reset_uarts(c, daughter, verbose)
+                    uart.disable_parent_piso_us(
                         c, parent, daughter, verbose, tx_diff, tx_slice
                     )
-                    uart_base.disable_parent_posi(c, parent, daughter, verbose)
+                    uart.disable_parent_posi(c, parent, daughter, verbose)
                     c.remove_chip(daughter)
 
                     if parent_piso_us == 2:
@@ -378,18 +378,18 @@ def iterate_waitlist(
             for parent in potential_parents:
                 daughter = larpix.key.Key(parent.io_group, parent.io_channel, chip_id)
 
-                ok, diff = uart_base.setup_parent_piso(
+                ok, diff = uart.setup_parent_piso(
                     c, io, parent, daughter, verbose, tx_diff, tx_slice
                 )
                 if not ok:
                     print("\t\t==> PARENT PISO US ", parent, "failed to configure")
-                    uart_base.disable_parent_piso_us(
+                    uart.disable_parent_piso_us(
                         c, parent, daughter, verbose, tx_diff, tx_slice
                     )
                     io.set_reg(0x18, 0, io_group=io_group)
                     continue
 
-                ok, diff, piso = uart_base.setup_daughter(
+                ok, diff, piso = uart.setup_daughter(
                     c,
                     io,
                     parent,
@@ -408,11 +408,11 @@ def iterate_waitlist(
                     break
                 if not ok:
                     print("\t\t==> DAUGHTER ", daughter, " failed to configure")
-                    uart_base.reset_uarts(c, daughter, verbose)
-                    uart_base.disable_parent_piso_us(
+                    uart.reset_uarts(c, daughter, verbose)
+                    uart.disable_parent_piso_us(
                         c, parent, daughter, verbose, tx_diff, tx_slice
                     )
-                    uart_base.disable_parent_posi(c, parent, daughter, verbose)
+                    uart.disable_parent_posi(c, parent, daughter, verbose)
                     c.remove_chip(daughter)
                     outstanding.append((daughter, piso))
                 io.set_reg(0x18, 0, io_group=io_group)
@@ -525,7 +525,7 @@ def write_network_to_file(
         if iog not in c.network:
             continue
         d["network"][iog] = {}
-        io_channels = utility_base.tile_to_io_channel(io_group_pacman_tile[iog])
+        io_channels = utility.tile_to_io_channel(io_group_pacman_tile[iog])
         for ioc in io_channels:
             d["network"][iog][ioc] = {}
             d["network"][iog][ioc]["nodes"] = []
@@ -630,7 +630,7 @@ def network_v2a(controller_config, verbose=False):
 
     for io_group in c.network:
         io_channels = np.array(list(c.network[io_group])).astype(int)
-        tiles = utility_base.io_channel_list_to_tile(io_channels)
+        tiles = utility.io_channel_list_to_tile(io_channels)
 
     for io_group, io_channels in c.network.items():
         if verbose:

@@ -10,7 +10,7 @@ import time
 import larpix
 import larpix.io
 
-from base import pacman_base, utility_base
+from crs_daq.base import pacman, utility
 
 logger = logging.getLogger(__name__)
 
@@ -67,9 +67,9 @@ def main(verbose, pacman_config):
         c.io.set_reg(0x101C, 0x4, io_group=io_group)
         time.sleep(0.1)
 
-        for IO_CHAN in utility_base.tile_to_io_channel(io_group_pacman_tile_[io_group]):
+        for IO_CHAN in utility.tile_to_io_channel(io_group_pacman_tile_[io_group]):
 
-            uart = pacman_base.convert_io_channel_to_uart(IO_CHAN)
+            uart = pacman.convert_io_channel_to_uart(IO_CHAN)
             if uart:
                 c.io.set_uart_clock_ratio(uart, 1)
                 time.sleep(0.01)
@@ -136,7 +136,7 @@ def main(verbose, pacman_config):
         if io_group_asic_version_[io_group] == "2b":
             if verbose:
                 print("Inverting PACMAN UARTs on io_group={}".format(io_group))
-            pacman_base.invert_pacman_uart(
+            pacman.invert_pacman_uart(
                 c.io,
                 io_group,
                 io_group_asic_version_[io_group],
@@ -144,7 +144,7 @@ def main(verbose, pacman_config):
             )
 
         if not skip_readback:
-            readback = pacman_base.power_readback(
+            readback = pacman.power_readback(
                 c.io, io_group, pacman_version, io_group_pacman_tile_[io_group]
             )
         #   - toggle reset bit
@@ -158,12 +158,12 @@ def main(verbose, pacman_config):
         # Set sync mask
         c.io.set_reg(0x18, 0x3FF, io_group=io_group)
 
-        pacman_base.disable_all_pacman_uart(c.io, io_group)
+        pacman.disable_all_pacman_uart(c.io, io_group)
 
-        pacman_base.set_packet_delay(c.io, io_group)
+        pacman.set_packet_delay(c.io, io_group)
 
-        utility_base.update_json(asic_config_paths_file_, io_group, None)
-        utility_base.update_json(network_config_paths_file_, io_group, None)
+        utility.update_json(asic_config_paths_file_, io_group, None)
+        utility.update_json(network_config_paths_file_, io_group, None)
 
     logger.info("completed")
 

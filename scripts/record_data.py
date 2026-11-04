@@ -8,7 +8,7 @@ import sys
 import larpix
 
 from runenv import runenv as RUN
-from utils import datetime_now
+from crs_daq.utils import datetime_now
 
 module = sys.modules[__name__]
 for var in RUN.config:

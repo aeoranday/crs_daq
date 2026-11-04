@@ -3,8 +3,7 @@ import time
 import larpix
 import larpix.io
 
-# from base import utility_base
-from base import pacman_base
+from crs_daq.base import pacman
 
 
 def read(c, key, param):
@@ -213,7 +212,7 @@ def main():
     c.io.set_reg(0x00000010, tile_enable_val, io_group)
     time.sleep(0.03)
     print("enable tilereg 0x10 , ", tile_enable_val)
-    readback = pacman_base.power_readback(
+    readback = pacman.power_readback(
         c.io, io_group, pacman_version, pacman_tile
     )
 
@@ -226,7 +225,7 @@ def main():
     time.sleep(0.5)
 
     # c.io.set_reg(0x24010+(PACMAN_TILE-1), 44500, io_group)
-    readback = pacman_base.power_readback(c.io, io_group, pacman_version, [PACMAN_TILE])
+    readback = pacman.power_readback(c.io, io_group, pacman_version, [PACMAN_TILE])
 
     chip11_key = larpix.key.Key(IO_GROUP, IO_CHAN, 11)
     conf_root(c, chip11_key, 11, IO_GROUP, IO_CHAN)
@@ -349,7 +348,7 @@ def main():
 
     #    c.io.set_reg(0x18, int("".join(bitstring),2), io_group)
 
-    # ok, diff = utility_base.reconcile_configuration(c, chip11_key, verbose=True,n=5,n_verify=5)
+    # ok, diff = utility.reconcile_configuration(c, chip11_key, verbose=True,n=5,n_verify=5)
     # optinally, take a look at the
     # message = c.reads[-1]
     # for msg in message:
@@ -399,7 +398,7 @@ def main():
         # chipcount = chipcount + 1/54 * read(c, chip54_key, 'chip_id')
         # chipcount = chipcount + 1/55 * read(c, chip55_key, 'chip_id')
         print("chips", chipcount)
-        readback = pacman_base.power_readback(
+        readback = pacman.power_readback(
             c.io, io_group, pacman_version, pacman_tile
         )
         time.sleep(1)

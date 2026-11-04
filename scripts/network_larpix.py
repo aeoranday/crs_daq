@@ -10,9 +10,9 @@ import sys
 import larpix
 import larpix.io
 
-from base import (config_loader, enforce_parallel, network_base,
-                  network_base_FSD, network_base_FSD_v3, pacman_base,
-                  utility_base)
+from crs_daq.base import (config_loader, enforce_parallel, network,
+                  network_FSD, network_FSD_v3, pacman,
+                  utility)
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
@@ -51,7 +51,7 @@ def enforce_iterative(
             if chip_key.io_group not in io_group_tiles:
                 io_group_tiles[chip_key.io_group] = set()
             io_group_tiles[chip_key.io_group].add(
-                utility_base.io_channel_to_tile(chip_key.io_channel)
+                utility.io_channel_to_tile(chip_key.io_channel)
             )
 
         for chip_key in all_keys:
@@ -62,13 +62,13 @@ def enforce_iterative(
             tiles = io_group_tiles[io_group]
             config = configs[str(io_group)]
             if io_group_asic_version_[io_group] == "2b":
-                c = network_base.network_v2b(config)
+                c = network.network_v2b(config)
 
             elif io_group_asic_version_[io_group] in [2, "lightpix-1"]:
-                c = network_base.network_v2a(config)
+                c = network.network_v2a(config)
 
             elif io_group_asic_version_[io_group] in [3]:
-                c = network_base_FSD_v3.network_v3(config, tiles=tiles)
+                c = network_FSD_v3.network_v3(config, tiles=tiles)
 
             all_network_keys += enforce_parallel.get_chips_by_io_group_io_channel(
                 config, use_keys=all_keys
@@ -120,15 +120,15 @@ def main(
         c = None
 
         config = configs[str(io_group)]
-        _ = utility_base.update_json(network_config_paths_file_, io_group, config)
+        _ = utility.update_json(network_config_paths_file_, io_group, config)
         if io_group_asic_version_[io_group] in ["2b", "2d"]:
-            c = network_base_FSD.network_v2b(config)
+            c = network_FSD.network_v2b(config)
         elif io_group_asic_version_[io_group] in [3]:
-            c = network_base_FSD_v3.network_v3(config, tiles=tiles)
+            c = network_FSD_v3.network_v3(config, tiles=tiles)
         elif io_group_asic_version_[io_group] in [2, "lightpix-1"]:
             if verbose:
                 print("loading network_v2a")
-            c = network_base.network_v2a(config)
+            c = network.network_v2a(config)
             if verbose:
                 print("done")
 
@@ -138,25 +138,25 @@ def main(
 
         _tiles = []
         for _, io_channels in c.network.items():
-            _tiles += utility_base.io_channel_list_to_tile(list(io_channels))
+            _tiles += utility.io_channel_list_to_tile(list(io_channels))
 
         _update_now = False
-        CONFIG = utility_base.get_from_json(default_asic_config_paths_file_, io_group)
+        CONFIG = utility.get_from_json(default_asic_config_paths_file_, io_group)
         if update_default or CONFIG is None:
             config_path = config_loader.write_config_to_file(c, config_path)
             _update_now = True
 
         DCONFIG = None
         if _update_now:
-            _ = utility_base.update_json(
+            _ = utility.update_json(
                 default_asic_config_paths_file_, io_group, config_path
             )
             DCONFIG = config_path
         else:
-            DCONFIG = utility_base.get_from_json(
+            DCONFIG = utility.get_from_json(
                 default_asic_config_paths_file_, io_group
             )
-        _ = utility_base.update_json(asic_config_paths_file_, io_group, DCONFIG)
+        _ = utility.update_json(asic_config_paths_file_, io_group, DCONFIG)
         DCONFIGS[io_group] = DCONFIG
 
     nc = larpix.Controller()
@@ -168,7 +168,7 @@ def main(
         io_group = io_group_ip_pair[0]
         for iog in DCONFIGS:
             config_loader.load_config_from_directory(nc, DCONFIGS[iog])
-        pacman_base.enable_pacman_uart_from_io_channel(
+        pacman.enable_pacman_uart_from_io_channel(
             nc.io, io_group, list(set([chip.io_channel for chip in nc.chips]))
         )
     pos = 0
@@ -176,7 +176,7 @@ def main(
     tag = "networking..."
     if pid_logged:
         pid = os.getpid()
-        tag = utility_base.get_from_process_log(pid)
+        tag = utility.get_from_process_log(pid)
         pos = enforce_parallel.tag_to_config_map[tag]
 
     ok, diff, unconfigured = enforce_iterative(
