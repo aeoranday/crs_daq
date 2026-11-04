@@ -285,7 +285,6 @@ def toggle_global_dac(
 
     high_rate = True
     iteration = 0
-    masked_chip_count = 0
     masked_chip_set = set()
     offenders = {}
     while high_rate:
@@ -336,7 +335,6 @@ def toggle_global_dac(
                 all_lowered_active_chips += 1
                 if c[chip].config.threshold_global == 0:
                     mask_chip(c, chip, chip_register_pairs)
-                    masked_chip_count += 1
                     masked_chip_set.add(chip)
                 else:
                     c[chip].config.threshold_global -= 1
@@ -368,7 +366,6 @@ def toggle_global_dac(
             ):
                 chip_reevaluate_queue.add(chip)
                 mask_chip(c, chip, chip_register_pairs)
-                masked_chip_count += 1
                 masked_chip_set.add(chip)
 
             if chip in triggered_chips:
@@ -439,7 +436,6 @@ def toggle_global_dac(
                     else:
                         #                        print(chip,'\trate: ',chip_rate,'\t global DAC: ',c[chip].config.threshold_global)
                         mask_chip(c, chip, chip_register_pairs)
-                        masked_chip_count += 1
                         masked_chip_set.add(chip)
                 if chip_rate < _minrate_global:
                     if packets.shape[0] > _maxtriggers:
@@ -448,7 +444,6 @@ def toggle_global_dac(
                     decrement_count += 1
                     if c[chip].config.threshold_global == 0:
                         mask_chip(c, chip, chip_register_pairs)
-                        masked_chip_count += 1
                         masked_chip_set.add(chip)
                     else:
                         c[chip].config.threshold_global -= 1
@@ -464,7 +459,6 @@ def toggle_global_dac(
                 decrement_count += 1
                 if c[chip].config.threshold_global == 0:
                     mask_chip(c, chip, chip_register_pairs)
-                    masked_chip_count += 1
                     masked_chip_set.add(chip)
                 else:
                     c[chip].config.threshold_global -= 1

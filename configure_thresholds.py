@@ -152,7 +152,6 @@ def toggle_global_dac(c, all_network_keys, max_channel_fraction=0.9):
 
     high_rate = True
     iteration = 0
-    masked_chip_count = 0
     masked_chip_set = set()
     while high_rate:
         iteration += 1
@@ -187,7 +186,6 @@ def toggle_global_dac(c, all_network_keys, max_channel_fraction=0.9):
                     continue
                 if c[chip].config.threshold_global == 0:
                     mask_chip(c, chip, chip_register_pairs)
-                    masked_chip_count += 1
                     masked_chip_set.add(chip)
                 else:
                     c[chip].config.threshold_global -= 1
@@ -289,7 +287,6 @@ def toggle_global_dac(c, all_network_keys, max_channel_fraction=0.9):
                         )
                         continue
                     mask_chip(c, chip, chip_register_pairs)
-                    masked_chip_count += 1
                     masked_chip_set.add(chip)
                 if chip_rate < _minrate_global:
                     if packets.shape[0] > _maxtriggers:
@@ -298,7 +295,6 @@ def toggle_global_dac(c, all_network_keys, max_channel_fraction=0.9):
                     decrement_count += 1
                     if c[chip].config.threshold_global == 0:
                         mask_chip(c, chip, chip_register_pairs)
-                        masked_chip_count += 1
                         masked_chip_set.add(chip)
                     else:
                         c[chip].config.threshold_global -= 1
@@ -317,7 +313,6 @@ def toggle_global_dac(c, all_network_keys, max_channel_fraction=0.9):
                 decrement_count += 1
                 if c[chip].config.threshold_global == 0:
                     mask_chip(c, chip, chip_register_pairs)
-                    masked_chip_count += 1
                     masked_chip_set.add(chip)
                 else:
                     c[chip].config.threshold_global -= 1
