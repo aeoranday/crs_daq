@@ -9,10 +9,10 @@ import larpix.logger
 import numpy as np
 from tqdm import tqdm
 
-from base import generate_config, graphs, pacman_base, utility_base
-from base.network_base import _default_clk_ctrl, clk_ctrl_2_clk_ratio_map
+from crs_daq.base import generate_config, graphs, pacman, utility
+from crs_daq.base.network import _default_clk_ctrl, clk_ctrl_2_clk_ratio_map
 from runenv import runenv as RUN
-from utils import datetime_now
+from crs_daq.utils import datetime_now
 
 module = sys.modules[__name__]
 for var in RUN.config:
@@ -98,7 +98,7 @@ def get_initial_controller(io_group, io_channels, vdda=0, pacman_version="v1rev3
 
     tiles = set()
     for io_channel in io_channels:
-        tiles.add(utility_base.io_channel_to_tile(io_channel))
+        tiles.add(utility.io_channel_to_tile(io_channel))
     tiles = list(tiles)
     # resetting larpix
     c.io.reset_tiles(tiles=tiles, length=10240, io_group=io_group)
@@ -122,7 +122,7 @@ def get_initial_controller(io_group, io_channels, vdda=0, pacman_version="v1rev3
 def reset_board_get_controller(c, io_group, io_channels):
     tiles = set()
     for io_channel in io_channels:
-        tiles.add(utility_base.io_channel_to_tile(io_channel))
+        tiles.add(utility.io_channel_to_tile(io_channel))
     tiles = list(tiles)
     # resetting larpix
     c.io.reset_tiles(tiles=tiles, length=10240, io_group=io_group)
@@ -413,7 +413,7 @@ def hydra_chain(
     )
     c = get_initial_controller(io_group, io_channels, vdda, pacman_version)
 
-    pacman_base.enable_all_pacman_uart_from_io_group(c.io, io_group)
+    pacman.enable_all_pacman_uart_from_io_group(c.io, io_group)
     root_chips, io_channels = get_good_roots(c, io_group, io_channels, root_chips)
     print("found root chips:", root_chips)
     c = reset_board_get_controller(c, io_group, io_channels)

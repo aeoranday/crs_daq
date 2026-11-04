@@ -10,8 +10,8 @@ import numpy as np
 from RUNENV import *
 from tqdm import tqdm
 
-from base import config_loader, enforce_parallel, pacman_base, utility_base
-from base.utility_base import *
+from crs_daq.base import config_loader, enforce_parallel, pacman, utility
+from crs_daq.base.utility import *
 
 MAX_TOGGLE_ITS = 16
 _default_controller_config = "controller_config.json"
@@ -248,7 +248,7 @@ def enable_frontend(c, pacman_configs, channels, csa_disable, config, all_networ
 
     for io_group_ip_pair in pacman_configs["io_group"]:
         io_group = io_group_ip_pair[0]
-        pacman_base.enable_all_pacman_uart_from_io_group(c.io, io_group)
+        pacman.enable_all_pacman_uart_from_io_group(c.io, io_group)
     for chip_register_pairs in chip_reg_pairs_list:
         # print(chip_register_pairs)
         # print(type(chip_register_pairs))
@@ -641,14 +641,14 @@ def main(
             d = json.load(ff)
             CONFIG = d["configs"][str(io_group)]
         all_network_keys += enforce_parallel.get_chips_by_io_group_io_channel(
-            utility_base.get_from_json(network_config_paths_file_, io_group)
+            utility.get_from_json(network_config_paths_file_, io_group)
         )
         config_loader.load_config_from_directory(c, CONFIG)
 
         # ensure UARTs are enable on pacman to receive configuration packets
     for io_group_ip_pair in pacman_configs["io_group"]:
         io_group = io_group_ip_pair[0]
-        pacman_base.enable_all_pacman_uart_from_io_group(c.io, io_group)
+        pacman.enable_all_pacman_uart_from_io_group(c.io, io_group)
 
     print("START THRESHOLDING\n")
 

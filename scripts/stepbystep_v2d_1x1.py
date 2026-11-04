@@ -3,7 +3,7 @@ import time
 import larpix
 import larpix.io
 
-from base import pacman_base
+from crs_daq.base import pacman
 
 default_v_cm_lvds_tx = 5
 
@@ -204,7 +204,7 @@ def main():
         c.io.set_reg(0x00000010, tile_enable_val, io_group)
         time.sleep(0.03)
         print("enable tilereg 0x10 , ", tile_enable_val)
-        readback = pacman_base.power_readback(
+        readback = pacman.power_readback(
             c.io, io_group, pacman_version, pacman_tile
         )
 

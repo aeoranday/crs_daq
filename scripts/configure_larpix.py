@@ -11,7 +11,7 @@ import sys
 import larpix
 import larpix.io
 
-from base import config_loader, enforce_parallel, pacman_base, utility_base
+from crs_daq.base import config_loader, enforce_parallel, pacman, utility
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
@@ -51,14 +51,14 @@ def main(
         CONFIG = None
         if asic_config is None:
             print("Loading current config...")
-            CONFIG = utility_base.get_from_json(asic_config_paths_file_, io_group)
+            CONFIG = utility.get_from_json(asic_config_paths_file_, io_group)
         else:
             CONFIG = asic_config
             if config_subdir is not None:
                 CONFIG = "{}/{}".format(asic_config, config_subdir)
-            utility_base.update_json(asic_config_paths_file_, io_group, CONFIG)
+            utility.update_json(asic_config_paths_file_, io_group, CONFIG)
 
-        network_config_file = utility_base.get_from_json(
+        network_config_file = utility.get_from_json(
             network_config_paths_file_, io_group
         )
         all_network_keys += enforce_parallel.get_chips_by_io_group_io_channel(
@@ -74,7 +74,7 @@ def main(
 
                     found = False
                     chip = all_network_keys[i][j]
-                    tile = utility_base.io_channel_to_tile(chip.io_channel)
+                    tile = utility.io_channel_to_tile(chip.io_channel)
                     io_channels = [1 + 4 * (tile - 1) + n for n in range(4)]
 
                     for io_channel in io_channels:
@@ -98,7 +98,7 @@ def main(
     # ensure UARTs are enable on pacman to receive configuration packets
     for io_group_ip_pair in pacman_configs["io_group"]:
         io_group = io_group_ip_pair[0]
-        pacman_base.enable_pacman_uart_from_io_channel(
+        pacman.enable_pacman_uart_from_io_channel(
             c.io, io_group, list(set([chip.io_channel for chip in c.chips]))
         )
         # logger.info('starting configuration enforce: io_group={}'.format(io_group))
@@ -107,7 +107,7 @@ def main(
     tag = "configuring..."
     if pid_logged:
         pid = os.getpid()
-        tag = utility_base.get_from_process_log(pid)
+        tag = utility.get_from_process_log(pid)
         pos = enforce_parallel.tag_to_config_map[tag]
 
     logger.info(

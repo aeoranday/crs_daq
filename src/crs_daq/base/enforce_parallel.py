@@ -5,7 +5,7 @@ import larpix
 import numpy as np
 from tqdm import tqdm
 
-from base import utility_base
+from base import utility
 
 logger = logging.getLogger(__name__)
 tag_to_config_map = {"MOD1": 0, "MOD2": 1, "MOD3": 2, "MOD4": 3, None: 0}
@@ -19,7 +19,7 @@ def get_chips_by_io_group_io_channel(network_config, tiles=None, use_keys=None):
     for io_group, io_channels in dc.network.items():
         for io_channel in io_channels:
             if tiles is not None:
-                if utility_base.io_channel_to_tile(io_channel) not in tiles:
+                if utility.io_channel_to_tile(io_channel) not in tiles:
                     continue
             keys = dc.get_network_keys(io_group, io_channel, root_first_traversal=True)
 

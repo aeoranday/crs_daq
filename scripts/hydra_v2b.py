@@ -11,9 +11,9 @@ import larpix
 import larpix.io
 
 from analysis import plot_hydra_network_10x16
-from base import (network_base_FSD, utility_base)
+from crs_daq.base import (network_FSD, utility)
 from runenv import runenv as RUN
-from utils import datetime_now
+from crs_daq.utils import datetime_now
 
 module = sys.modules[__name__]
 for var in RUN.config:
@@ -76,13 +76,13 @@ def main(
             for tile in tiles:
 
                 root_keys = []
-                io_channels = utility_base.tile_to_io_channel([tile])
+                io_channels = utility.tile_to_io_channel([tile])
                 for io_channel in io_channels:
                     cid = v2d_10x16_root_ids[(io_channel - 1) % 4]
-                    network_base_FSD.network_ext_node_from_tuple(
+                    network_FSD.network_ext_node_from_tuple(
                         c, iog, io_channel, cid
                     )
-                    candidate_root = network_base_FSD.setup_root(
+                    candidate_root = network_FSD.setup_root(
                         c,
                         c.io,
                         iog,
@@ -102,11 +102,11 @@ def main(
                 print("ROOT KEYS: ", root_keys)
 
                 iog_tile_to_root_keys = (
-                    utility_base.partition_chip_keys_by_io_group_tile(root_keys)
+                    utility.partition_chip_keys_by_io_group_tile(root_keys)
                 )
 
                 for iog_tile in iog_tile_to_root_keys:
-                    network_base_FSD.initial_network(
+                    network_FSD.initial_network(
                         c,
                         c.io,
                         iog_tile[0],
@@ -123,11 +123,11 @@ def main(
                     )
 
                 unconfigured = []
-                out_of_network = network_base_FSD.iterate_waitlist(
+                out_of_network = network_FSD.iterate_waitlist(
                     c,
                     c.io,
                     iog,
-                    utility_base.tile_to_io_channel([tile]),
+                    utility.tile_to_io_channel([tile]),
                     verbose,
                     io_group_asic_version_[iog],
                     ref_current_trim,
@@ -140,7 +140,7 @@ def main(
                 )
                 unconfigured.extend(out_of_network)
 
-                network_file = network_base_FSD.write_network_to_file(
+                network_file = network_FSD.write_network_to_file(
                     c,
                     f"iog_{io_group}-tile_{tile}",
                     {io_group: [tile]},

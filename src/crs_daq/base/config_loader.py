@@ -4,7 +4,7 @@ import os
 import larpix
 import larpix.io
 
-from base import utility_base
+from base import utility
 from runenv import runenv as RUN
 from utils import datetime_now
 
@@ -48,7 +48,7 @@ def write_config_to_file(c, path=None, chip_key=None, description="default"):
             chip_dict["meta"]["CHIP_KEY"] = str(chip)
             chip_dict["meta"]["ASIC_ID"] = "{}-{}-{}".format(
                 chip.io_group,
-                utility_base.io_channel_to_tile(chip.io_channel),
+                utility.io_channel_to_tile(chip.io_channel),
                 chip.chip_id,
             )
             chip_dict["meta"]["ASIC_VERSION"] = c[chip].asic_version
@@ -99,11 +99,11 @@ def load_config_from_file(c, config):
     chip_key = asic_config["meta"]["CHIP_KEY"]
     asic_key = asic_config["meta"]["ASIC_ID"]
     version = asic_config["meta"]["ASIC_VERSION"]
-    key_tile = utility_base.io_channel_to_tile(larpix.key.Key(chip_key).io_channel)
+    key_tile = utility.io_channel_to_tile(larpix.key.Key(chip_key).io_channel)
 
     if chip_key not in c.chips:
         # check other possible io_channels it could correspond to
-        io_channels = utility_base.tile_to_io_channel([key_tile])
+        io_channels = utility.tile_to_io_channel([key_tile])
 
         found = False
         for io_ch in io_channels:

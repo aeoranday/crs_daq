@@ -5,9 +5,7 @@ import argparse
 import json
 import logging
 
-from base import enforce_parallel, network_base, pacman_base, utility_base
-
-from base import enforce_parallel, network_base, pacman_base, utility_base
+from crs_daq.base import enforce_parallel, network, pacman, utility
 
 _default_verbose = False
 _default_controller_config = None
@@ -42,7 +40,7 @@ def enforce_iterative(
             if chip_key.io_group not in io_group_tiles:
                 io_group_tiles[chip_key.io_group] = set()
             io_group_tiles[chip_key.io_group].add(
-                utility_base.io_channel_to_tile(chip_key.io_channel)
+                utility.io_channel_to_tile(chip_key.io_channel)
             )
 
         for chip_key in all_keys:
@@ -53,12 +51,12 @@ def enforce_iterative(
             tiles = io_group_tiles[io_group]
             config = configs[str(io_group)]
             if io_group_asic_version_[io_group] == "2b":
-                c = network_base.network_v2b(
+                c = network.network_v2b(
                     config, tiles=tiles, io_group=io_group, pacman_config=pacman_config
                 )
 
             elif io_group_asic_version_[io_group] in [2, "lightpix-1"]:
-                c = network_base.network_v2a(
+                c = network.network_v2a(
                     config, tiles=tiles, io_group=io_group, pacman_config=pacman_config
                 )
 
@@ -114,14 +112,14 @@ def main(
     if io_group_asic_version_[io_group] == "2b":
         if verbose:
             print("loading network_v2b")
-        c = network_base.network_v2b(config, tiles=tiles, io_group=io_group)
+        c = network.network_v2b(config, tiles=tiles, io_group=io_group)
         if verbose:
             print("done")
 
     elif io_group_asic_version_[io_group] in [2, "lightpix-1"]:
         if verbose:
             print("loading network_v2a")
-        c = network_base.network_v2a(config, tiles=tiles, io_group=io_group)
+        c = network.network_v2a(config, tiles=tiles, io_group=io_group)
         if verbose:
             print("done")
 
@@ -129,8 +127,8 @@ def main(
 
     _tiles = []
     for _, io_channels in c.network.items():
-        _tiles += utility_base.io_channel_list_to_tile(list(io_channels))
-    pacman_base.enable_pacman_uart_from_tile(c.io, io_group, [pacman_tile])
+        _tiles += utility.io_channel_list_to_tile(list(io_channels))
+    pacman.enable_pacman_uart_from_tile(c.io, io_group, [pacman_tile])
     ok, diff, unconfigured = enforce_iterative(
         c,
         all_network_keys,

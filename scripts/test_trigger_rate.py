@@ -8,8 +8,8 @@ import pickledb
 from RUNENV import *
 from tqdm import tqdm
 
-from base import config_loader, enforce_parallel, pacman_base
-from base.utility_base import chip_key_to_asic_id
+from crs_daq.base import config_loader, enforce_parallel, pacman
+from crs_daq.base.utility import chip_key_to_asic_id
 
 _default_verbose = False
 _default_runtime = 0.25
@@ -66,7 +66,7 @@ def main(verbose, threshold, runtime, disabled_list):
         db.set("LAST_UPDATE", datetiem_now())
     # ensure UARTs are enable on pacman to receive configuration packets
     for io_group in io_group_pacman_tile_:
-        pacman_base.enable_all_pacman_uart_from_io_group(c.io, io_group)
+        pacman.enable_all_pacman_uart_from_io_group(c.io, io_group)
 
     # Peform test in parallel for one chip per io channel
     # 1) enable all channels to trigger with default given threshold

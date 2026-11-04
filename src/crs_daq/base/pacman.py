@@ -4,7 +4,7 @@
 ### (3) debug enable_pacman_uart bit declaration
 import sys
 
-from base import utility_base
+from base import utility
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
@@ -58,7 +58,7 @@ def invert_pacman_uart(io, io_group, asic_version, tile):
         31: 0x2101C,
         32: 0x2201C,
     }
-    io_channel = utility_base.tile_to_io_channel(tile)
+    io_channel = utility.tile_to_io_channel(tile)
     for ioc in io_channel:
         io.set_reg(inversion_registers[ioc], 0b11, io_group=io_group)
     return
@@ -142,7 +142,7 @@ def enable_all_pacman_uart_from_io_group(io, io_group, true_all=False):
 
 def enable_pacman_uart_from_tile(io, io_group, tile):
     bits = list("11111111111111111111111111111111")
-    io_channel = utility_base.tile_to_io_channel(tile)
+    io_channel = utility.tile_to_io_channel(tile)
     for ioc in io_channel:
         uart = convert_io_channel_to_uart(ioc)
         if uart is None:

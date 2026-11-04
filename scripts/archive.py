@@ -8,8 +8,8 @@ import sys
 
 import numpy as np
 
-from base import utility_base
-from base.utility_base import get_from_json
+from crs_daq.base import utility
+from crs_daq.base.utility import get_from_json
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]
@@ -48,7 +48,7 @@ def main(monitor_dir):
     # WRITE status=1 (BUSY) into logger_status_file
 
     print("archiving process: {}".format(os.getpid()))
-    now = utility_base.now()
+    now = utility.now()
     monitor_name = ".temp.monitor-{}".format(now)
     os.mkdir(monitor_name)
 
