@@ -40,7 +40,7 @@ v2d_10x16_root_ids = [21, 61, 101, 151]
 def main(
     io_group,
     file_prefix=_default_file_prefix,
-    disable_logger=_default_disable_logger,
+    disable_logger=_default_disable_logger,  # FIXME AEO: This argument is set but never used.
     verbose=_default_verbose,
     ref_current_trim=_default_ref_current_trim,
     tx_diff=_default_tx_diff,

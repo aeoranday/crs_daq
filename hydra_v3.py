@@ -36,7 +36,7 @@ v3_10x16_root_ids = [151, 111, 61, 21]
 def main(
     io_group,
     file_prefix=_default_file_prefix,
-    disable_logger=_default_disable_logger,
+    disable_logger=_default_disable_logger,  # FIXME AEO: Remove unused argument.
     verbose=_default_verbose,
     v_cm_lvds_tx=_default_v_cm_lvds_tx,
     tx_diff=_default_tx_diff,

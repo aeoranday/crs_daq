@@ -255,7 +255,7 @@ def test_network(c, io_group, io_channels, paths):
             c.write_configuration(next_key, "enable_miso_downstream")
 
             ok, diff = c.enforce_configuration(next_key, timeout=0.02, n=5, n_verify=3)
-            if False and next_key.chip_id > 40 and next_key.chip_id < 61:
+            if False and next_key.chip_id > 40 and next_key.chip_id < 61:  # FIXME AEO: Find out why `False and`.
                 print("checking", next_key)
                 for i in range(500):
                     c.verify_registers([(next_key, 0)], timeout=0.01)

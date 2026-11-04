@@ -607,7 +607,7 @@ def save_to_json(filename, d):
 def main(
     controller_config=_default_controller_config,
     pedestal_file=_default_pedestal_file,
-    trim_sigma_file=_default_trim_sigma_file,
+    trim_sigma_file=_default_trim_sigma_file,  # FIXME AEO: This argument is set but never used.
     disabled_list=_default_disabled_list,
     pacman_config="io/pacman.json",
     null_sample_time=_default_null_sample_time,
