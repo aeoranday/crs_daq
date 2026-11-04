@@ -21,7 +21,7 @@ logging.basicConfig(
 class runenv:
 
     # INITIATE DEFAULT PARAMETERS FROM DEFAULT FILE
-    config_file = "RUN_CONFIG.json"
+    config_file = "configs/RUN_CONFIG.json"
     config = {}
     with open(config_file, "r") as f:
         config = json.load(f)
@@ -69,10 +69,10 @@ class runenv:
         with open(disabled_list_log_file_, "w") as f:
             json.dump(d, f)
 
-    def __init__(self, config_file="RUN_CONFIG.json"):
+    def __init__(self, config_file="configs/RUN_CONFIG.json"):
         """Constructor for specific instance with non-default config file name"""
 
-        self.config_file = "RUN_CONFIG.json"
+        self.config_file = "configs/RUN_CONFIG.json"
         self.config = {}
         with open(self.config_file, "r") as f:
             self.config = json.load(f)

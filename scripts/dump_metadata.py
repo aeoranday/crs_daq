@@ -133,7 +133,7 @@ def main():
 
     args = ap.parse_args()
 
-    conf = json.load(open("RUN_CONFIG.json"))
+    conf = json.load(open("configs/RUN_CONFIG.json"))
     dest = conf["destination_dir_"]
 
     with h5py.File(f"{dest}/{args.datafile}") as f:

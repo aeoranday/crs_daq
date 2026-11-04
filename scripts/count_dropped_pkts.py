@@ -1,12 +1,9 @@
 import argparse
-import sys
 
 import larpix
 import larpix.io
 
 from base import config_loader
-
-verbose = False
 
 
 def main(io_group, pacman_config, asic_config):
@@ -33,10 +30,6 @@ def main(io_group, pacman_config, asic_config):
         10,
         11,
         12,
-        13,
-        14,
-        15,
-        16,
         17,
         18,
         19,
@@ -62,28 +55,23 @@ def main(io_group, pacman_config, asic_config):
         39,
         40,
     ]
+    # io_channels = [29,30,31,32]
 
-    # Loops through each of the io channels and
+    # Loops through each of the io channels and sends a read request for the number of dropped packets (register 120)
     for io_channel in io_channels:
 
         try:
             # Fetch a list of the chip ids from the controller
             keys = c.get_network_keys(io_group, io_channel)
-            if verbose:
-                print(f"Network Keys: {keys}")
-            print(f"\nStarting external trigger on io_channel {io_channel}")
-
+            print(f"\nIO_channel {io_channel} Network Keys: {keys}")
         except:
-            # Skips any io_channels that are not configured properly
-            print(f"\nSkipping io channel {io_channel}")
+            # Skips any channels that are not configured properly
+            print(f"\nIO_channel {io_channel} had no chips")
             continue
 
         for key in keys:
             # Send the read request
-            c[key].config.enable_external_sync = 0
-            c.write_configuration(key, "enable_external_sync")
-            c[key].config.enable_external_trigger = 1
-            c.write_configuration(key, "enable_external_trigger")
+            c.read_configuration(key, 120)
 
 
 if __name__ == "__main__":
@@ -95,7 +83,7 @@ if __name__ == "__main__":
     #                    type=int, help='''PACMAN tile to work with''')
     parser.add_argument(
         "--pacman_config",
-        default="io/pacman.json",
+        default="configs/io/pacman.json",
         type=str,
         help="""PACMAN config file to use""",
     )

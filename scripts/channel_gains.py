@@ -164,7 +164,7 @@ if __name__ == "__main__":
     parser.add_argument("--io_group", default=1, type=int, help="""IO group""")
     parser.add_argument(
         "--pacman_config",
-        default="io/pacman.json",
+        default="configs/io/pacman.json",
         type=str,
         help="""PACMAN config file""",
     )

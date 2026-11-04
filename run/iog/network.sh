@@ -73,7 +73,7 @@ if [[ "$1" == *"1"* ]]; then
 		fi
 	fi
 
-	python network_larpix.py --controller_config configs/controller_config.json --pacman_config io/pacman_io1.json --config_path $config_dir_m0 --pid_logged &
+	python network_larpix.py --controller_config configs/controller_config.json --pacman_config configs/io/pacman_io1.json --config_path $config_dir_m0 --pid_logged &
 	PID=$!
 	sed -i "s/IOG1_PID=[0-9]*/IOG1_PID=${PID}/" .envrc
 
@@ -91,7 +91,7 @@ if [[ "$1" == *"2"* ]]; then
 
 
 		
-	python network_larpix.py --controller_config configs/controller_config.json --pacman_config io/pacman_io2.json --config_path $config_dir_m0 --pid_logged &
+	python network_larpix.py --controller_config configs/controller_config.json --pacman_config configs/io/pacman_io2.json --config_path $config_dir_m0 --pid_logged &
 	PID=$!
 	sed -i "s/IOG2_PID=[0-9]*/IOG2_PID=${PID}/" .envrc
 
@@ -107,8 +107,8 @@ if [[ "$1" == *"3"* ]]; then
 			mkdir $config_dir_m1
 		fi
 	fi
-	echo "python network_larpix.py --controller_config configs/controller_config.json --pacman_config io/pacman_io3.json --config_path $config_dir_m1 --pid_logged & "
-        python network_larpix.py --controller_config configs/controller_config.json --pacman_config io/pacman_io3.json --config_path $config_dir_m1 --pid_logged &
+	echo "python network_larpix.py --controller_config configs/controller_config.json --pacman_config configs/io/pacman_io3.json --config_path $config_dir_m1 --pid_logged & "
+        python network_larpix.py --controller_config configs/controller_config.json --pacman_config configs/io/pacman_io3.json --config_path $config_dir_m1 --pid_logged &
         PID=$!
         sed -i "s/IOG3_PID=[0-9]*/IOG3_PID=${PID}/" .envrc
 fi
@@ -124,7 +124,7 @@ if [[ "$1" == *"4"* ]]; then
 
 
 
-        python network_larpix.py --controller_config configs/controller_config.json --pacman_config io/pacman_io4.json --config_path $config_dir_m1 --pid_logged &
+        python network_larpix.py --controller_config configs/controller_config.json --pacman_config configs/io/pacman_io4.json --config_path $config_dir_m1 --pid_logged &
 	PID=$!
         sed -i "s/IOG4_PID=[0-9]*/IOG4_PID=${PID}/" .envrc
 fi
@@ -142,7 +142,7 @@ if [[ "$1" == *"5"* ]]; then
 		fi
 	fi
 
-        python network_larpix.py --controller_config configs/controller_config.json --pacman_config io/pacman_io5.json --config_path $config_dir_m2 --pid_logged &
+        python network_larpix.py --controller_config configs/controller_config.json --pacman_config configs/io/pacman_io5.json --config_path $config_dir_m2 --pid_logged &
         PID=$!
         sed -i "s/IOG5_PID=[0-9]*/IOG5_PID=${PID}/" .envrc
 fi
@@ -156,7 +156,7 @@ if [[ "$1" == *"6"* ]]; then
 		fi
 	fi
 
-        python network_larpix.py --controller_config configs/controller_config.json --pacman_config io/pacman_io6.json --config_path $config_dir_m2 --pid_logged &
+        python network_larpix.py --controller_config configs/controller_config.json --pacman_config configs/io/pacman_io6.json --config_path $config_dir_m2 --pid_logged &
         PID=$!
         sed -i "s/IOG6_PID=[0-9]*/IOG6_PID=${PID}/" .envrc
 fi
@@ -174,7 +174,7 @@ if [[ "$1" == *"7"* ]]; then
 		fi
 	fi
 
-        python network_larpix.py --controller_config configs/controller_config.json --pacman_config io/pacman_io7.json --config_path $config_dir_m3 --pid_logged &
+        python network_larpix.py --controller_config configs/controller_config.json --pacman_config configs/io/pacman_io7.json --config_path $config_dir_m3 --pid_logged &
         PID=$!
         sed -i "s/IOG7_PID=[0-9]*/IOG7_PID=${PID}/" .envrc
 fi
@@ -188,7 +188,7 @@ if [[ "$1" == *"8"* ]]; then
 		fi
 	fi
 
-        python network_larpix.py --controller_config configs/controller_config.json --pacman_config io/pacman_io8.json --config_path $config_dir_m3 --pid_logged &
+        python network_larpix.py --controller_config configs/controller_config.json --pacman_config configs/io/pacman_io8.json --config_path $config_dir_m3 --pid_logged &
         PID=$!
         sed -i "s/IOG8_PID=[0-9]*/IOG8_PID=${PID}/" .envrc
 fi

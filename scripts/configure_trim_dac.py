@@ -479,7 +479,7 @@ def save_config_to_file(c, csa_disable):
 
 
 def main(
-    pacman_config="io/pacman.json",
+    pacman_config="configs/io/pacman.json",
     disabled_list=_default_disabled_list,
     iteration=_default_iteration,
 ):
@@ -658,7 +658,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--pacman_config",
-        default="io/pacman.json",
+        default="configs/io/pacman.json",
         type=str,
         help="""PACMAN config file""",
     )

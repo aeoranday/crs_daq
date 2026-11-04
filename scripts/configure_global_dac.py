@@ -10,30 +10,30 @@ import numpy as np
 from base import config_loader, enforce_parallel, pacman_base, utility_base
 from base.utility_base import *
 from runenv import runenv as RUN
-from utils import datetime_now
 
 module = sys.modules[__name__]
 for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
 
-_initial_global_dac = 50  # 100 ### initial global DAC set value
-_runtime_global = 0.5  # 0.1 ### runtime to assess chip trigger rate
-_maxrate_global = 1000.0  # maximum chip trigger rate to set global DAC
-_minrate_global = 10.0  # minimum chip trigger rate to set global DAC
-# disable maximum rate channel, and reassess rate if global DAC above this value
-_maxdac_global = 50
-_mindac_global = 5  # re-evaluate chip if global DAC set below this value
-# 200000. ### do not lower global DACs if total packet count exceeds this value
-_maxtriggers = 1e6
-_bail_threshold = 3
+_initial_global_dac = 50  ### initial global DAC set value
+_runtime_global = 0.1  ### runtime to assess chip trigger rate
+_maxrate_global = 1000.0  ### maximum chip trigger rate to set global DAC
+_minrate_global = 10.0  ### minimum chip trigger rate to set global DAC
+_maxdac_global = 40  ### disable maximum rate channel, and reassess rate if global DAC above this value
+_mindac_global = 20  ### re-evaluate chip if global DAC set below this value
+_maxtriggers = (
+    200000.0  ### do not lower global DACs if total packet count exceeds this value
+)
 
 _v2a_nonrouted = [6, 7, 8, 9, 22, 23, 24, 25, 38, 39, 40, 54, 55, 56, 57]
+_initial_trim_dac = 16
+_vref_dac = 185
+_vcm_dac = 41
 
-_vref_dac = 220
 
 _default_disabled_list = None
-_default_chip_list = None
+_default_iteration = 999
 
 
 def disable_dict_from_file(c, disabled_list):
@@ -56,36 +56,28 @@ def disable_dict_from_file(c, disabled_list):
     return csa_disable
 
 
-def chips_to_test_from_file(chip_list):
-    print("\n loading chip list: ", chip_list)
-    with open(chip_list, "r") as f:
-        asic_id_list = json.load(f)
-    return asic_id_list
-
-
 def initial_asic_config(c, chips):
     chip_register_pairs = []
     for chip in chips:
         c[chip].config.vref_dac = _vref_dac  # register 82
+        c[chip].config.vcm_dac = _vcm_dac  # register 82
+        c[chip].config.pixel_trim_dac = [_initial_trim_dac] * 64  # regiseters [0-63]
         c[chip].config.threshold_global = _initial_global_dac  # register 64
         c[chip].config.enable_periodic_reset = 1  # register 128
         c[chip].config.enable_rolling_periodic_reset = 1  # regiseter 128
-        c[chip].config.dropped_packets = 15  # register 120 ADC hold delay
-        c[chip].config.periodic_reset_cycles = 4  # registers [163-165]
-        chip_register_pairs.append((chip, [64, 82, 120, 128, 163, 164, 165]))
+        c[chip].config.adc_hold_delay = 15  # register 129
+        c[chip].config.periodic_reset_cycles = 64  # registers [163-165]
+        chip_register_pairs.append(
+            (chip, list(range(0, 65)) + [82, 83, 128, 129, 163, 164, 165])
+        )
 
-    # ok, diff = c.enforce_configuration(
-    #        chips, timeout=0.1, connection_delay=0.05, n=2, n_verify=1)
-    # if not ok:
-    #    print('initial config')
-    #    raise RuntimeError(diff)
-    #    print(diff)
-    for i in range(10):
-        c.multi_write_configuration(chip_register_pairs, connection_delay=0.01)
+    for i in range(1):
+        c.multi_write_configuration(chip_register_pairs, connection_delay=0.1)
+
     return
 
 
-def enable_frontend(c, chips_to_test, csa_disable, all_network_keys, pacman_configs):
+def disable_frontend_downstream_uart(c, all_network_keys):
     ichip = -1
     while True:
         chip_register_pairs = []
@@ -101,7 +93,41 @@ def enable_frontend(c, chips_to_test, csa_disable, all_network_keys, pacman_conf
             break
 
         for chip_key in current_chips:
-            if chip_key not in chips_to_test:
+            c[chip_key].config.channel_mask = [1] * 64
+            c[chip_key].config.csa_enable = [0] * 64
+            if c[chip_key].asic_version == 2:
+                c[chip_key].config.enable_miso_downstream = [0] * 4
+            else:
+                c[chip_key].config.enable_piso_downstream = [0] * 4
+            chip_register_pairs.append(
+                (chip_key, list(range(66, 74)) + list(range(131, 139)) + [125])
+            )
+
+        if len(chip_register_pairs) > 0:
+            for i in range(10):
+                c.multi_write_configuration(chip_register_pairs, connection_delay=0.1)
+                c.multi_write_configuration(chip_register_pairs, connection_delay=0.1)
+
+    return
+
+
+def enable_frontend(c, chips, csa_disable, all_network_keys, pacman_configs):
+    ichip = -1
+    while True:
+        chip_register_pairs = []
+        current_chips = []
+        ichip += 1
+        working = False
+        for net in all_network_keys:
+            if ichip >= len(net):
+                continue
+            working = True
+            current_chips.append(net[ichip])
+        if not working:
+            break
+
+        for chip_key in current_chips:
+            if chip_key not in chips:
                 continue
             c[chip_key].config.channel_mask = [0] * 64
             c[chip_key].config.csa_enable = [1] * 64
@@ -114,16 +140,56 @@ def enable_frontend(c, chips_to_test, csa_disable, all_network_keys, pacman_conf
                 (chip_key, list(range(66, 74)) + list(range(131, 139)))
             )
 
-        # ok, diff = c.enforce_configuration(
-        #        current_chips, timeout=0.1, connection_delay=0.05, n=2, n_verify=1)
-        # if not ok: print(diff)
-
         for i in range(10):
-            c.multi_write_configuration(chip_register_pairs, connection_delay=0.01)
+            c.multi_write_configuration(chip_register_pairs, connection_delay=0.1)
+            c.multi_write_configuration(chip_register_pairs, connection_delay=0.1)
 
     for io_group_ip_pair in pacman_configs["io_group"]:
         io_group = io_group_ip_pair[0]
         pacman_base.enable_all_pacman_uart_from_io_group(c.io, io_group)
+
+    return
+
+
+def reenable_frontend(
+    c, masked_chips, csa_disable, all_network_keys, config_downstream
+):
+    ichip = -1
+    while True:
+        chip_register_pairs = []
+        current_chips = []
+        ichip += 1
+        working = False
+        for net in all_network_keys:
+            if ichip >= len(net):
+                continue
+            working = True
+            current_chips.append(net[ichip])
+        if not working:
+            break
+
+        for chip_key in current_chips:
+            if chip_key not in masked_chips:
+                c[chip_key].config.channel_mask = [0] * 64
+                c[chip_key].config.csa_enable = [1] * 64
+                asic_id = chip_key_to_asic_id(chip_key)
+                if asic_id in csa_disable:
+                    for channel in csa_disable[asic_id]:
+                        c[chip_key].config.channel_mask[channel] = 1
+                        c[chip_key].config.csa_enable[channel] = 0
+                chip_register_pairs.append(
+                    (chip_key, list(range(66, 74)) + list(range(131, 139)))
+                )
+            if c[chip_key].asic_version == 2:
+                c[chip_key].config.enable_miso_downstream = config_downstream[chip_key]
+            else:
+                c[chip_key].config.enable_piso_downstream = config_downstream[chip_key]
+            chip_register_pairs.append((chip_key, [125]))
+
+        if len(chip_register_pairs) > 0:
+            for i in range(10):
+                c.multi_write_configuration(chip_register_pairs, connection_delay=0.1)
+                c.multi_write_configuration(chip_register_pairs, connection_delay=0.1)
 
     return
 
@@ -154,6 +220,53 @@ def silence_highest_rate(c, chip, channel_rate, toggle_global_csa_disable):
         toggle_global_csa_disable[asic_id].append(highest_channel)
 
 
+def combine_disabled_lists(original, updated):
+    result = {}
+    for key in original:
+        if key not in result:
+            result[key] = []
+        for chan in original[key]:
+            if chan not in result[key]:
+                result[key].append(chan)
+    for key in updated:
+        if key not in result:
+            result[key] = []
+        for chan in updated[key]:
+            if chan not in result[key]:
+                result[key].append(chan)
+    return result
+
+
+def bail(c, all_network_keys, bar_reenable, masked_chip_set):
+    print("===== BAIL =====")
+    config_downstream = {}
+    for chip in c.chips:
+        if c[chip].asic_version == 2:
+            config_downstream[chip] = c[chip].config.enable_miso_downstream
+        else:
+            config_downstream[chip] = c[chip].config.enable_piso_downstream
+
+    disabled_firing = True
+    while disabled_firing == True:
+        disable_frontend_downstream_uart(c, all_network_keys)
+        c.run(_runtime_global, "check rate")
+        all_packets = np.array(c.reads[-1])
+        print("packet count {}".format(all_packets.shape[0]))
+        if all_packets.shape[0] == 0:
+            packets = np.array([])
+            disabled_firing = False
+        else:
+            packets = all_packets[
+                np.vectorize(lambda x: x.packet_type)(all_packets) == 0
+            ]
+            disabled_firing = True
+
+    reenable_frontend(
+        c, masked_chip_set, bar_reenable, all_network_keys, config_downstream
+    )
+    return
+
+
 def toggle_global_dac(
     c,
     toggled_chips,
@@ -161,7 +274,7 @@ def toggle_global_dac(
     all_network_keys,
     pacman_configs,
     max_channel_fraction=0.8,
-):
+):  # 0.9):
     chip_reevaluate_queue = set()
 
     toggle_global_csa_disable = {}
@@ -184,15 +297,24 @@ def toggle_global_dac(
         print(
             "\n\niteration {}, packet count {}".format(iteration, all_packets.shape[0])
         )
-        if all_packets.shape[0] == 1025:
-            for p in all_packets:
-                print(p)
+
+        if all_packets.shape[0] > 1e6:
+            bar_reenable = combine_disabled_lists(
+                csa_disable, toggle_global_csa_disable
+            )
+            bail(c, all_network_keys, bar_reenable, masked_chip_set)
+            for chip in toggled_chips:
+                if chip not in masked_chip_set:
+                    chip_reevaluate_queue.add(chip)
+                high_rate = False
+            print("*****Breaking out of toggle dac function*****")
+            break
 
         if all_packets.shape[0] == 0:
             packets = np.array([])
         else:
             packets = all_packets[
-                np.vectorize(lambda x: x.packet_type)(all_packets) == 1
+                np.vectorize(lambda x: x.packet_type)(all_packets) == 0
             ]
 
         if packets.shape[0] > 0:
@@ -254,17 +376,13 @@ def toggle_global_dac(
                 set_channels = set(channels)
                 asic_id = chip_key_to_asic_id(chip)
                 if asic_id in toggle_global_csa_disable:
-                    channel_intersection = list(
+                    if bool(
                         set_channels & set(toggle_global_csa_disable[asic_id])
-                    )
-                    if len(channel_intersection) > 0:
+                    ):  #### may 6 15:37et
+                        #                        print('disabled channels still firing!!\t',chip,'\t',set_channels,'\t',set(toggle_global_csa_disable[asic_id]))
                         if chip not in offenders:
-                            offenders[chip] = {}
-                        for cid in channel_intersection:
-                            if cid not in offenders[chip]:
-                                offenders[chip][cid] = 1
-                            else:
-                                offenders[chip][cid] += 1
+                            offenders[chip] = 0
+                        offenders[chip] += 1
 
                 chip_rate = np.sum(mask) / _runtime_global
                 channel_rate = {}
@@ -282,6 +400,7 @@ def toggle_global_dac(
                     ):
                         kill_channel.append(channel)
                 for channel in kill_channel:
+                    #                    print('High rate channel disabled!\t{}-{}\trate: {} Hz  (chip rate {} Hz)'.format(chip,channel,channel_rate[channel],chip_rate))
                     if chip not in toggled_chips:
                         print("Noisy chip missing from controller!")
                         continue
@@ -296,15 +415,14 @@ def toggle_global_dac(
                         (chip, list(range(66, 74)) + list(range(131, 139)))
                     )
                 if len(kill_channel) != 0:
-                    continue  # re-assess chip if channel disabled; DO NOT toggle global DAC
-
+                    continue
                 if chip_rate > _maxrate_global:
                     increment_count += 1
                     if c[chip].config.threshold_global >= 253:
                         c[chip].config.threshold_global = 255
                         mask_chip(c, chip, chip_register_pairs)
                     else:
-                        c[chip].config.threshold_global += 1
+                        c[chip].config.threshold_global += 2
                     chip_register_pairs.append((chip, [64]))
                 if chip_rate > _minrate_global and chip_rate < _maxrate_global:
                     if c[chip].config.threshold_global > _maxdac_global:
@@ -316,6 +434,7 @@ def toggle_global_dac(
                         )
                         continue
                     else:
+                        #                        print(chip,'\trate: ',chip_rate,'\t global DAC: ',c[chip].config.threshold_global)
                         mask_chip(c, chip, chip_register_pairs)
                         masked_chip_set.add(chip)
                 if chip_rate < _minrate_global:
@@ -330,13 +449,13 @@ def toggle_global_dac(
                         c[chip].config.threshold_global -= 1
                     chip_register_pairs.append((chip, [64]))
             else:  # untriggered chips
-                untriggered_count += 1
                 if packets.shape[0] > _maxtriggers:
                     high_rate = True
                     continue
                 if chip in masked_chip_set:
                     mask_chip(c, chip, chip_register_pairs)
                     continue
+                untriggered_count += 1
                 decrement_count += 1
                 if c[chip].config.threshold_global == 0:
                     mask_chip(c, chip, chip_register_pairs)
@@ -357,23 +476,33 @@ def toggle_global_dac(
                     )
             c.multi_write_configuration(chip_register_pairs, connection_delay=0.01)
 
-        for ck in offenders:
-            for cid in offenders[ck]:
-                if offenders[ck][cid] > _bail_threshold:
-                    print(
-                        "BAIL ========= ", ck, " ", cid, " fired ", offenders[ck][cid]
-                    )
-                    high_rate = False
-                    break
-            if high_rate == False:
-                break
+        offender_qualified = False
+        offender_disable = {}
+        for offender_chipkey in offenders:
+            if offenders[offender_chipkey] >= 5:
+                chip_reevaluate_queue.add(offender_chipkey)
+                offender_qualified = True
+
+        if offender_qualified == True:
+            bar_reenable = combine_disabled_lists(
+                csa_disable, toggle_global_csa_disable
+            )
+            bar_reenable = combine_disabled_lists(bar_reenable, offender_disable)
+            bail(c, all_network_keys, bar_reenable, masked_chip_set)
+
+            for chip in toggled_chips:
+                if chip not in masked_chip_set:
+                    chip_reevaluate_queue.add(chip)
+                high_rate = False
+            print("*****Breaking out of toggle dac function*****")
+            break
 
         print(
             "==>\ttriggered: ",
             len(triggered_chips),
             "\tuntriggered: ",
             untriggered_count,
-            "\t resolved: ",
+            "\t masked: ",
             len(masked_chip_set),
             "\t total: ",
             len(toggled_chips),
@@ -397,10 +526,6 @@ def toggle_global_dac(
             "\n",
         )
 
-    for chip in toggled_chips:
-        if chip not in masked_chip_set:
-            chip_reevaluate_queue.add(chip)
-
     return (
         track_triggers,
         toggle_global_csa_disable,
@@ -423,12 +548,6 @@ def save_to_json(filename, d, recast=True):
         json.dump(d, outfile, indent=4)
 
 
-def save_chip_key_list(filename, chips_to_test):
-    a = [str(ck) for ck in chips_to_test]
-    with open(filename + ".json", "w") as json_out:
-        json.dump(a, json_out)
-
-
 def save_config_to_file(c, csa_disable):
     for chip in c.chips:
         c[chip].config.csa_enable = [1] * 64
@@ -444,15 +563,17 @@ def save_config_to_file(c, csa_disable):
     return
 
 
-def main(pacman_config, disabled_list, chip_list, diagnostic_dir):
+def main(
+    pacman_config="configs/io/pacman.json",
+    disabled_list=_default_disabled_list,
+    iteration=_default_iteration,
+):
 
     time_log = {}
     time_initial = time.time()
 
     c = larpix.Controller()
-    c.io = larpix.io.PACMAN_IO(
-        relaxed=True, config_filepath=pacman_config, asic_version=3
-    )
+    c.io = larpix.io.PACMAN_IO(relaxed=True, config_filepath=pacman_config)
 
     pacman_configs = {}
     with open(pacman_config, "r") as f:
@@ -473,112 +594,101 @@ def main(pacman_config, disabled_list, chip_list, diagnostic_dir):
 
     for io_group_ip_pair in pacman_configs["io_group"]:
         io_group = io_group_ip_pair[0]
-        pacman_base.enable_pacman_uart_from_io_channel(
-            c.io, io_group, list(set([chip.io_channel for chip in c.chips]))
-        )
-        # pacman_base.enable_all_pacman_uart_from_io_group(c.io, io_group)
+        pacman_base.enable_all_pacman_uart_from_io_group(c.io, io_group)
 
     timeStart = time.time()
     csa_disable = disable_dict_from_file(c, disabled_list)  # , csa_disable)
     timeEnd = time.time() - timeStart
     print("==> %.2f seconds --- disabled channels from input list\n" % timeEnd)
     save_to_json(
-        diagnostic_dir
-        + "/input_disabled_list_{}".format(datetime_now()),
-        csa_disable,
-        recast=False,
+        "input_disabled_list_iteration" + str(iteration), csa_disable, recast=False
     )
     time_log["disabled_input"] = timeEnd
 
-    print("CHIP LIST: ", chip_list)
-
-    chips_to_test = []
-    if chip_list == "None":
-        chips_to_test = c.chips
-    else:
-        chips_to_test = chips_to_test_from_file(chip_list)
-
+    chips_to_test = c.chips
+    initial_chip_count = len(chips_to_test)
+    last_chip_count = len(chips_to_test)
+    ctr = -1
     global_disable = csa_disable
+    while len(chips_to_test) > 0:
+        ctr += 1
 
-    timeStart = time.time()
-    initial_asic_config(c, chips_to_test)
-    timeEnd = time.time() - timeStart
-    print("\t==> %.2f seconds --- setup initial ASIC configuration\n" % timeEnd)
-    time_log["initial_config"] = timeEnd
-
-    timeStart = time.time()
-    enable_frontend(c, chips_to_test, global_disable, all_network_keys, pacman_configs)
-    timeEnd = time.time() - timeStart
-    print("\t==> %.2f seconds --- enable channel front-ends\n" % timeEnd)
-    time_log["enable_frontend"] = timeEnd
-
-    timeStart = time.time()
-    (
-        global_track_triggers,
-        toggle_global_csa_disable,
-        global_track_progress,
-        chip_reevaluate,
-    ) = toggle_global_dac(
-        c, chips_to_test, global_disable, all_network_keys, pacman_configs
-    )
-    timeEnd = time.time() - timeStart
-    print("\t==> %.2f seconds --- toggle global DACs\n" % timeEnd)
-    save_to_json(
-        diagnostic_dir
-        + "/global_disabled_list_{}".format(datetime_now()),
-        toggle_global_csa_disable,
-        recast=False,
-    )
-    time_log["toggle_global"] = timeEnd
-
-    after_global = {}
-    for key in global_disable:
-        if key not in after_global:
-            after_global[key] = []
-        for chan in global_disable[key]:
-            if chan not in after_global[key]:
-                after_global[key].append(chan)
-    for key in toggle_global_csa_disable:
-        if key not in after_global:
-            after_global[key] = []
-        for chan in toggle_global_csa_disable[key]:
-            if chan not in after_global[key]:
-                after_global[key].append(chan)
-
-    global_disable = after_global
-
-    save_to_json(
-        diagnostic_dir
-        + "/combined_global_disabled_list_{}".format(datetime_now()),
-        global_disable,
-        recast=False,
-    )
-    save_to_json(
-        diagnostic_dir
-        + "/global_configuration_{}".format(datetime_now()),
-        global_track_progress,
-        recast=True,
-    )
-    save_to_json(
-        diagnostic_dir
-        + "/global_triggers_{}".format(datetime_now()),
-        global_track_triggers,
-        recast=True,
-    )
-
-    chips_to_test = []
-    for chip in chip_reevaluate:
-        if chip in c.chips:
-            chips_to_test.append(chip)
-    this_chip_count = len(chips_to_test)
-    print("reevaluate ", this_chip_count, " global DACs\n")
-
-    if this_chip_count > 0:
-        save_chip_key_list(
-            diagnostic_dir
-            + "/chip_reevaluation_list_{}".format(datetime_now()),
-            chips_to_test,
+        timeStart = time.time()
+        initial_asic_config(c, chips_to_test)
+        timeEnd = time.time() - timeStart
+        print(
+            ctr, "\t==> %.2f seconds --- setup initial ASIC configuration\n" % timeEnd
         )
+        time_log["initial_config_" + str(ctr)] = timeEnd
+
+        timeStart = time.time()
+        enable_frontend(
+            c, chips_to_test, global_disable, all_network_keys, pacman_configs
+        )
+        timeEnd = time.time() - timeStart
+        print(ctr, "\t==> %.2f seconds --- enable channel front-ends\n" % timeEnd)
+        time_log["enable_frontend_" + str(ctr)] = timeEnd
+
+        timeStart = time.time()
+        (
+            global_track_triggers,
+            toggle_global_csa_disable,
+            global_track_progress,
+            chip_reevaluate,
+        ) = toggle_global_dac(
+            c, chips_to_test, global_disable, all_network_keys, pacman_configs
+        )
+        timeEnd = time.time() - timeStart
+        print(ctr, "\t==> %.2f seconds --- toggle global DACs\n" % timeEnd)
+        save_to_json(
+            "global_disabled_list_ctr" + str(ctr) + "_iteration" + str(iteration),
+            toggle_global_csa_disable,
+            recast=False,
+        )
+        time_log["toggle_global_" + str(ctr)] = timeEnd
+
+        after_global = {}
+        for key in global_disable:
+            if key not in after_global:
+                after_global[key] = []
+            for chan in global_disable[key]:
+                if chan not in after_global[key]:
+                    after_global[key].append(chan)
+        for key in toggle_global_csa_disable:
+            if key not in after_global:
+                after_global[key] = []
+            for chan in toggle_global_csa_disable[key]:
+                if chan not in after_global[key]:
+                    after_global[key].append(chan)
+
+        global_disable = after_global
+
+        save_to_json(
+            "combined_global_disabled_list_iteration" + str(iteration),
+            global_disable,
+            recast=False,
+        )
+        save_to_json(
+            "global_configuration_ctr" + str(ctr) + "_iteration" + str(iteration),
+            global_track_progress,
+            recast=True,
+        )
+        save_to_json(
+            "global_triggers_ctr" + str(ctr) + "_iteration" + str(iteration),
+            global_track_triggers,
+            recast=True,
+        )
+
+        chips_to_test = []
+        for chip in chip_reevaluate:
+            if chip in c.chips:
+                chips_to_test.append(chip)
+        this_chip_count = len(chips_to_test)
+        print("reevaluate ", this_chip_count, " global DACs\n")
+        if last_chip_count == this_chip_count and initial_chip_count != this_chip_count:
+            break
+
+        last_chip_count = this_chip_count
 
     timeStart = time.time()
     save_config_to_file(c, global_disable)
@@ -593,7 +703,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--pacman_config",
-        default="io/pacman.json",
+        default="configs/io/pacman.json",
         type=str,
         help="""PACMAN config file""",
     )
@@ -603,17 +713,6 @@ if __name__ == "__main__":
         type=str,
         help="""JSON-formatted dict of ASIC ID:[channels] to disable""",
     )
-    parser.add_argument(
-        "--chip_list",
-        default="None",
-        type=str,
-        help="""JSON-formatted list of ASIC ID""",
-    )
-    parser.add_argument(
-        "--diagnostic_dir",
-        default="None",
-        type=str,
-        help="""diagnostic files output directory""",
-    )
+    parser.add_argument("--iteration", type=int, help="""Iteration""")
     args = parser.parse_args()
     c = main(**vars(args))
