@@ -120,7 +120,7 @@ def main(
         c = None
 
         config = configs[str(io_group)]
-        dd = utility_base.update_json(network_config_paths_file_, io_group, config)
+        _ = utility_base.update_json(network_config_paths_file_, io_group, config)
         if io_group_asic_version_[io_group] in ["2b", "2d"]:
             c = network_base_FSD.network_v2b(config)
         elif io_group_asic_version_[io_group] in [3]:
@@ -148,7 +148,7 @@ def main(
 
         DCONFIG = None
         if _update_now:
-            dd = utility_base.update_json(
+            _ = utility_base.update_json(
                 default_asic_config_paths_file_, io_group, config_path
             )
             DCONFIG = config_path
@@ -156,7 +156,7 @@ def main(
             DCONFIG = utility_base.get_from_json(
                 default_asic_config_paths_file_, io_group
             )
-        dd = utility_base.update_json(asic_config_paths_file_, io_group, DCONFIG)
+        _ = utility_base.update_json(asic_config_paths_file_, io_group, DCONFIG)
         DCONFIGS[io_group] = DCONFIG
 
     nc = larpix.Controller()

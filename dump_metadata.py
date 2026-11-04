@@ -93,7 +93,7 @@ def get_metadata(f: h5py.File, args: argparse.Namespace):
     meta["checksums"] = {"adler32": f"{get_checksum(path):08x}"}
     meta["size"] = path.stat().st_size
 
-    md = meta["metadata"] = {
+    meta["metadata"] = {
         "core.application.family": "larpix",
         "core.application.name": "crs_daq",
         "core.application.version": "2x2",

@@ -7,10 +7,6 @@ from utils import datetime_now
 
 v2a_nonrouted_channels = [6, 7, 8, 9, 22, 23, 24, 25, 38, 39, 40, 54, 55, 56, 57]
 
-trim_scale_ = 1.45  # mV / DAC
-cryo_scale_ = 2.34  # mV / DAC
-glob_scale_ = 1800 / 256  # mV / DAC
-
 
 def parse_toggle_json(toggle_json):
 
@@ -25,12 +21,6 @@ def parse_toggle_json(toggle_json):
 
 
 def main(*files, toggle_json, toggle_global, cryo):
-
-    global trim_scale_
-    global glob_scale_
-    if cryo:
-        trim_scale_ = cryo_scale_
-
     toggle_list = parse_toggle_json(toggle_json)
     meta = "unknown-toggle"
     if "meta" in toggle_list:

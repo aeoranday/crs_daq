@@ -15,12 +15,6 @@ warnings.filterwarnings("ignore")
 _default_verbose = False
 skip_readback = False
 
-ORG = "TBD"
-TOKEN = "TBD"
-URL = "TBD"
-bucket = "pacmon"
-measurement = "pacman_power"
-
 
 def main(verbose, pacman_config):
     # sign into the lbl account

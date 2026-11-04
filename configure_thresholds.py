@@ -688,9 +688,7 @@ def main(
     time_log["reenable_frontend"] = timeEnd
 
     timeStart = time.time()
-    toggle_trim_csa_disable_0, trim_track_progress_0, trim_track_triggers_ = (
-        toggle_trim_dac(c, after_global)
-    )
+    toggle_trim_csa_disable_0, _, _ = toggle_trim_dac(c, after_global)
     timeEnd = time.time() - timeStart
     print("==> %.2f seconds --- toggle trim DACs\n" % timeEnd)
     save_to_json(
@@ -738,12 +736,6 @@ def main(
 
     global_dac = {}
     trim_dac = {}
-    global_chip_disabled = []
-    global_total_disabled = 0
-    global_all_channel_id = []
-    trim_chip_disabled = []
-    trim_total_disabled = 0
-    trim_all_channel_id = []
     for chip in c.chips:
         chip_string = (
             str(chip.io_group) + "-" + str(chip.io_channel) + "-" + str(chip.chip_id)

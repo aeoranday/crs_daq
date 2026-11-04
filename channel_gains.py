@@ -35,7 +35,7 @@ def multitile_write(
 
 def get_keys(c, io_group, tiles):
 
-    keys = [[] for ioch in range(41)]
+    keys = [[] for _ in range(41)]
 
     io_channels = utility_base.tile_to_io_channel(tiles)
     print(f"\nTesting io_channels {io_channels}")

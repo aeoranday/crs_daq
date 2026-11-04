@@ -95,7 +95,6 @@ def find_pedestal(pedestal_file, c, verbose):
     chip_id = good_data["chip_id"].astype(np.uint64)
     channel_id = good_data["channel_id"].astype(np.uint64)
     uniques = unique_channel_id_args(io_group, io_channel, chip_id, channel_id)
-    unique_channels = set(uniques)
 
     pedestal_channel, csa_disable = [{} for i in range(2)]
     for chip in c.chips:
@@ -671,7 +670,6 @@ def main(
                 larpix.Key(io_group, io_channel, chip_id)
                 for chip_id in extreme_edge_chip_ids
             ]
-    read_extreme_edge = [(key, 0) for key in extreme_edge_chip_keys]
 
     timeStart = time.time()
     pedestal_channel, pedestal_chip, csa_disable = find_pedestal(

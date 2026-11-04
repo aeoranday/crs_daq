@@ -19,7 +19,7 @@ def main(*files, inc=0):
         if glob > 20:
             print(file, glob)
 
-    vals, bins = np.histogram(globs, range=(-0.5, 31.5), bins=32)
+    vals, _ = np.histogram(globs, range=(-0.5, 31.5), bins=32)
     globs = np.array(globs)
     for val in set(globs):
         print("{}: {}".format(val, np.sum(globs == val)))

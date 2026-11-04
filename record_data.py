@@ -26,8 +26,7 @@ _default_message = "collecting data..."
 _default_packet = False
 
 
-def ctrlc_handler(signal_received, frame):
-
+def ctrlc_handler():
     utility_base._dump_and_exit_ = True
     print("CTRL-C detected. Starting Dump.")
 
@@ -56,7 +55,6 @@ def main(
     # Launch archiving process in the background to copy ASIC configs / detector parameters
     if monitor:
         # check if destination_dir_ ends with "/"
-        copy_configs_here_ = None
         if destination_dir_.endswith("/"):
             copy_configs_here = "{}.configs".format(destination_dir_[:-1])
         else:

@@ -156,8 +156,6 @@ def main():
     VDDD_DAC = 28500  # ~1.1 V
     # VDDD_DAC = 30000 # ~1.1 V
     RESET_CYCLES = 300000  # 5000000
-
-    REF_CURRENT_TRIM = 0
     ###########################################
 
     # create a larpix controller

@@ -21,7 +21,6 @@ v2a_nonrouted_channels = [6, 7, 8, 9, 22, 23, 24, 25, 38, 39, 40, 54, 55, 56, 57
 def main(verbose, threshold, runtime, disabled_list):
 
     db = pickledb.load(env_db, True)
-    rundb = pickledb.load(run_db, True)
     # check DB file to ensure run conditions satisfy requirements
     for io_group in io_group_pacman_tile_:
 

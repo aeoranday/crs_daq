@@ -26,7 +26,7 @@ def main(*files, inc=0):
         if any(ptd == 0):
             print(file, ptd)
 
-    vals, bins = np.histogram(trims, range=(-0.5, 31.5), bins=32)
+    vals, _ = np.histogram(trims, range=(-0.5, 31.5), bins=32)
 
     for ival, val in enumerate(vals):
         print("{}: {}".format(ival, val))

@@ -214,7 +214,6 @@ def data(c, runtime, packet, LRS=False, fname=None):
         data_rate_refresh = 5.0
         data_rate_start = time.time()
         last_counter = 0
-        oldfilename = c.io.raw_filename
         while True:
 
             c.read()
@@ -231,7 +230,6 @@ def data(c, runtime, packet, LRS=False, fname=None):
                     )
                     last_counter = counter
                 data_rate_start = now
-                data_rate_counter = 0
             if now > (run_start + runtime) or _dump_and_exit_:
                 break
         c.stop_listening()

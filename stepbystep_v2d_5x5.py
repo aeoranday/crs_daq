@@ -162,8 +162,6 @@ def main():
     VDDA_DAC = 46500  # std supply 38000 #41000# boosted supply
     VDDD_DAC = 28500  # 32000# 28500 # ~1.1 V
     RESET_CYCLES = 300000  # 5000000
-
-    REF_CURRENT_TRIM = 0
     ###########################################
 
     # create a larpix controller
