@@ -485,7 +485,7 @@ def iterate_waitlist(
     while flag == True:
         waitlist, network = find_waitlist(c, io_group, io_channels)
         n_waitlist = len(waitlist)
-        oustanding = []
+        outstanding = []
 
         for chip_id in waitlist:
             potential_parents = find_potential_parents(chip_id, network, verbose)
