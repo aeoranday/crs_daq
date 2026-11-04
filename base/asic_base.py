@@ -1,12 +1,3 @@
-import json
-import time
-from copy import deepcopy
-
-import larpix
-import numpy as np
-
-from base import pacman_base, utility_base
-
 v2a_nonrouted_channels = [6, 7, 8, 9, 22, 23, 24, 25, 38, 39, 40, 54, 55, 56, 57]
 
 

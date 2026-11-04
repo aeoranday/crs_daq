@@ -1,6 +1,3 @@
-import glob
-import json
-
 import h5py
 import numpy as np
 

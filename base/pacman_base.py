@@ -3,7 +3,6 @@
 ### (2) substitute inversion table for hex(0x0201c+0x01000*ioc)
 ### (3) debug enable_pacman_uart bit declaration
 import sys
-import time
 
 from base import utility_base
 from runenv import runenv as RUN
