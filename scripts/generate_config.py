@@ -1,7 +1,7 @@
 import argparse
 import json
 
-from base import graphs
+from crs_daq.base import graphs
 
 _name = "tile-6"
 _excluded_chips = []
