@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tqdm
 
-import utils
+from crs_daq import utils
 
 _default_filename = None
 

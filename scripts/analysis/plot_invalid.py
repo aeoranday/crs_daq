@@ -9,7 +9,7 @@ from matplotlib import cm
 from matplotlib.colors import Normalize
 from matplotlib.patches import Rectangle
 
-import utils
+from crs_daq import utils
 
 _default_filename = None
 
