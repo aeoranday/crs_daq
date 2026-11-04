@@ -64,17 +64,9 @@ class NumberedArrangement:
             self.m23,
             self.m24,
         ]
-        self.n_maps = len(self.all_dir_maps)
         # use grid points to create path
         self.grid = [[None for row in range(self.nrows)] for col in range(self.ncols)]
         return
-
-    def all_chips(self):
-        return [
-            i
-            for i in range(self.start_index, self.start_index + self.ncols * self.nrows)
-            if i not in self.excluded_chips
-        ]
 
     # number of steps between two chips
     def distance(self, ind1, ind2):
@@ -83,14 +75,6 @@ class NumberedArrangement:
         row1, col1 = self.row_col(ind1)
         row2, col2 = self.row_col(ind2)
         return np.abs(row1 - row2) + np.abs(col1 - col2)
-
-    def add_good_connection(self, link):
-        self.good_connections.add(link)
-        self.good_connections.add((link[1], link[0]))
-
-    def add_excluded_link(self, link):
-        self.excluded_links.add(link)
-        self.excluded_links.add((link[1], link[0]))
 
     def add_onesided_excluded_link(self, link):
         self.excluded_links.add(link)
@@ -135,10 +119,6 @@ class NumberedArrangement:
         row, col = self.row_col(_index)
         return self.index(row - 1, col) if row - 1 >= 0 else -1
 
-    def no_move(self, _index):
-        print("tried to move from", _index, ", no move")
-        return _index
-
     def get_map(self, ind1, ind2):
         if self.up(ind1) == ind2:
             return [ind2, None, None, None]
@@ -149,17 +129,6 @@ class NumberedArrangement:
         if self.right(ind1) == ind2:
             return [None, None, None, ind2]
         return [None, None, None, None]
-
-    def get_map_index(self, ind1, ind2):
-        if self.up(ind1) == ind2:
-            return 0
-        if self.left(ind1) == ind2:
-            return 1
-        if self.down(ind1) == ind2:
-            return 2
-        if self.right(ind1) == ind2:
-            return 3
-        return -1
 
     def get_uart_enable_list(self, ind1, ind2=-1):
         if ind2 == -1:
