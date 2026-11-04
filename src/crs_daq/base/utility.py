@@ -9,7 +9,7 @@ import larpix.format.pacman_msg_format as pacman_msg_fmt
 import larpix.format.rawhdf5format as rhdf5
 import numpy as np
 
-import utils
+from crs_daq import utils
 
 # metadata dumping and generation for ctrl+c
 _dump_and_exit_ = False
