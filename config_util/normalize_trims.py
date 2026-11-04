@@ -20,7 +20,7 @@ def parse_toggle_json(toggle_json):
     return toggle_list
 
 
-def main(*files, **kwargs):
+def main(*files):
     for file in files:
         config = {}
         with open(file, "r") as f:

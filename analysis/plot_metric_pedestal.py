@@ -296,7 +296,6 @@ def main(
     filename=_default_filename,
     geometry_yaml=_default_geometry_yaml,
     metric=_default_metric,
-    **kwargs,
 ):
 
     d = parse_file(filename)

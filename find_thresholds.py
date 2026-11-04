@@ -619,7 +619,6 @@ def main(
     vdda=_default_vdda,
     normalization=_default_normalization,
     verbose=_default_verbose,
-    **kwargs
 ):
 
     time_initial = time.time()

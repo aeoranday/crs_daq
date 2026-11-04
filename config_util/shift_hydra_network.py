@@ -25,7 +25,7 @@ def get_asic_id(chip):
     )
 
 
-def main(input_files, controller_config, **kwargs):
+def main(input_files, controller_config):
 
     configs = {}
     with open(controller_config, "r") as f:

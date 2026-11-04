@@ -5,7 +5,7 @@ import os
 from utils import datetime_now
 
 
-def main(asic_config, **kwargs):
+def main(asic_config):
 
     disabled_list = {}
 

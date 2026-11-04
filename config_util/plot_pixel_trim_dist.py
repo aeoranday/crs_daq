@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-def main(*files, inc=0, **kwargs):
+def main(*files, inc=0):
     trims = []
     for file in files:
         config = {}

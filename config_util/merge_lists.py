@@ -4,7 +4,7 @@ import json
 from utils import datetime_now
 
 
-def main(*files, **kwargs):
+def main(*files):
     full_list = {}
     for file in files:
         flist = {}

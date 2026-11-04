@@ -6,7 +6,7 @@ import larpix.io
 from base import config_loader
 
 
-def main(io_group, pacman_config, asic_config, **kwargs):
+def main(io_group, pacman_config, asic_config):
 
     # create a larpix controller
     c = larpix.Controller()

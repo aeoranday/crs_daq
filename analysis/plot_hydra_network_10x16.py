@@ -208,7 +208,6 @@ def main(
     controller_config=_default_controller_config,
     geometry_yaml=_default_geometry_yaml,
     io_group=_default_io_group,
-    **kwargs
 ):
     if controller_config is None:
         raise RuntimeError(

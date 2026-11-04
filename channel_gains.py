@@ -68,7 +68,7 @@ def get_disabled(disabled):
     return disabled_list
 
 
-def main(io_group, pacman_config, high_dac, disabled, **kwargs):
+def main(io_group, pacman_config, high_dac, disabled):
 
     c = larpix.Controller()
     c.io = larpix.io.PACMAN_IO(

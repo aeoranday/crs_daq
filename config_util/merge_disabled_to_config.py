@@ -32,7 +32,7 @@ def parse_disabled_json(disabled_json):
     return channel_masks, meta
 
 
-def main(*files, disabled_json, **kwargs):
+def main(*files, disabled_json):
 
     channel_masks, meta = parse_disabled_json(disabled_json)
 

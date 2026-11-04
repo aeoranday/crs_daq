@@ -267,7 +267,7 @@ def plot_hydra_network(geometry_yaml, iog):
     print("Saved to: ", "hydra-network-iog-" + str(iog) + ".png")
 
 
-def main(io_group=_default_io_group, geometry_yaml=_default_geometry_yaml, **kwargs):
+def main(io_group=_default_io_group, geometry_yaml=_default_geometry_yaml):
     plot_hydra_network(geometry_yaml, io_group)
     # with open(controller_config, 'r') as f:
     #     configs = json.load(f)

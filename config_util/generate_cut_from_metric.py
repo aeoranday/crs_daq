@@ -120,7 +120,6 @@ def main(
     metric=_default_metric,
     cut=None,
     polarity=False,
-    **kwargs,
 ):
 
     if not polarity:

@@ -450,7 +450,7 @@ def save_config_to_file(c, csa_disable):
     return
 
 
-def main(pacman_config, disabled_list, chip_list, diagnostic_dir, **kwargs):
+def main(pacman_config, disabled_list, chip_list, diagnostic_dir):
 
     time_log = {}
     time_initial = time.time()

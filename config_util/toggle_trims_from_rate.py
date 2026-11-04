@@ -139,7 +139,6 @@ def main(
     min_rate=_default_min_rate,
     max_rate=_default_max_rate,
     toggle_filename=None,
-    **kwargs
 ):
     print("MIN RATE: ", min_rate)
     print("MAX RATE: ", max_rate)

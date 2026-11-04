@@ -32,7 +32,6 @@ def main(
     tx_slice=_default_tx_slice,
     r_term=_default_r_term,
     i_rx=_default_i_rx,
-    **kwargs
 ):
 
     for file in input_files:

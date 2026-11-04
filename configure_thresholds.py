@@ -594,7 +594,6 @@ def main(
     pacman_config="io/pacman.json",
     disabled_list=_default_disabled_list,
     iteration=_default_iteration,
-    **kwargs
 ):
 
     time_log = {}

@@ -44,7 +44,6 @@ def main(
     r_term=_default_r_term,
     i_rx=_default_i_rx,
     pacman_tile=None,
-    **kwargs,
 ):
 
     start = time.time()

@@ -542,7 +542,6 @@ def main(
     geometry_yaml_mod2=_default_geometry_yaml_mod2,
     metric=_default_metric,
     max=_default_max_entries,
-    **kwargs
 ):
 
     d = parse_file(filename, max)

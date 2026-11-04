@@ -24,7 +24,7 @@ def parse_toggle_json(toggle_json):
     return toggle_list
 
 
-def main(*files, toggle_json, toggle_global, cryo, **kwargs):
+def main(*files, toggle_json, toggle_global, cryo):
 
     global trim_scale_
     global glob_scale_

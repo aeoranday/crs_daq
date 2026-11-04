@@ -2,7 +2,7 @@ import argparse
 import json
 
 
-def main(input_files, register, value, **kwargs):
+def main(input_files, register, value):
     if register is None or value is None:
         print("No register and/or value specified")
     for file in input_files:

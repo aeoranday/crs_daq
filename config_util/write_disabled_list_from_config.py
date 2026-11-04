@@ -4,7 +4,7 @@ import json
 import numpy as np
 
 
-def main(*files, disabled_json, **kwargs):
+def main(*files, disabled_json):
     disabled = {}
     for file in files:
         config = {}

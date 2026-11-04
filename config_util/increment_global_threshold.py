@@ -2,7 +2,7 @@ import argparse
 import json
 
 
-def main(*files, inc=0, **kwargs):
+def main(*files, inc=0):
     for file in files:
         config = {}
         with open(file, "r") as f:

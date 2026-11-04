@@ -4,7 +4,7 @@ import json
 from utils import datetime_now
 
 
-def main(*files, disabled_list=None, **kwargs):
+def main(*files, disabled_list=None):
     disabled = {}
     if disabled_list is not None:
         with open(disabled_list, "r") as f:
