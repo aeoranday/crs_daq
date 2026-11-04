@@ -64,20 +64,6 @@ def main(
         now: str = datetime_now()
         config_name = "controller-config-" + now + ".json"
 
-    # for iog in [io_group]:
-    #     iog_ioc_cid = utility_base.iog_tile_to_iog_ioc_cid(
-    #         io_group_pacman_tile_, io_group_asic_version_[iog], isFSDtile=True)
-
-    # fixed in FSD tile PCB
-    # VERSION_SPECIFIC
-    # if io_group_asic_version_[iog]=='2b':
-    #    print('inverting io group {} tiles {}'.format(iog, io_group_pacman_tile_[iog]))
-    #    pacman_base.invert_pacman_uart(c.io, iog, io_group_asic_version_[iog], \
-    #                               io_group_pacman_tile_[iog])
-
-    # for g_c_id in iog_ioc_cid:
-    #     network_base_FSD.network_ext_node_from_tuple(c, g_c_id)
-
     for iog in [io_group]:
         print("Working on io_group={}".format(iog))
         if io_group_asic_version_[iog] in ["2b", "2d"]:

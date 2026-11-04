@@ -60,10 +60,6 @@ def main(
         now: str = datetime_now()
         config_name = "controller-config-" + now + ".json"
 
-    # for iog in [io_group]:
-    #     iog_ioc_cid = utility_base.iog_tile_to_iog_ioc_cid(
-    #         io_group_pacman_tile_, io_group_asic_version_[iog], isFSDtile=True)
-
     # fixed in FSD tile PCB
     # VERSION_SPECIFIC
     # if io_group_asic_version_[iog]=='2b':

@@ -21,19 +21,6 @@ for var in RUN.config:
 arr = graphs.NumberedArrangement()
 
 
-def string_to_chips_list(string):
-    chiplist = string.split(",")
-    return [int(chip) for chip in chiplist]
-
-
-def convert_voltage_for_pacman(voltage):
-    max_voltage, max_scale = 1.8, 46020
-    v = voltage
-    if v > max_voltage:
-        v = max_voltage
-    return int((v / max_voltage) * max_scale)
-
-
 def get_temp_key(io_group, io_channel):
     return larpix.key.Key(io_group, io_channel, 1)
 

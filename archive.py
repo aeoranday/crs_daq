@@ -36,7 +36,7 @@ def copy_directory_files(src, dest):
     return 0
 
 
-def main(monitor_dir, ignore_busy):
+def main(monitor_dir):
 
     # monitor_dir is dir to write files for influx or other db, if available
 
@@ -89,12 +89,6 @@ if __name__ == "__main__":
         type=str,
         default=monitor_dir_,
         help="""Directory to write archive to""",
-    )
-    parser.add_argument(
-        "--ignore_busy",
-        action="store_true",
-        default=False,
-        help="""Write anyway even if another process is archiving""",
     )
     args = parser.parse_args()
     main(**vars(args))

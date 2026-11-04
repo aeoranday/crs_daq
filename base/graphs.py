@@ -69,24 +69,6 @@ class NumberedArrangement:
         self.grid = [[None for row in range(self.nrows)] for col in range(self.ncols)]
         return
 
-    def get_mover(self, ind1, ind2):
-        for mover in self.base_dir_map:
-            if mover(ind1) == ind2:
-                return mover
-        return self.no_move
-
-    def get_adjacent_mover(self, ind1, ind2):
-        for im, mover in enumerate(self.base_dir_map):
-            if mover(ind1) == ind2:
-                return self.adjecent_dir_map[im]
-        return self.no_move
-
-    def get_opposite_mover(self, ind1, ind2):
-        for im, mover in enumerate(self.base_dir_map):
-            if mover(ind1) == ind2:
-                return self.opposite_dir_map[im]
-        return self.no_move
-
     def all_chips(self):
         return [
             i
@@ -120,17 +102,17 @@ class NumberedArrangement:
         return self.start_index + self.ncols * row + col
 
     def row(self, chip):
-        r, c = self.row_col(chip)
+        r, _ = self.row_col(chip)
         return r
 
     def col(self, chip):
-        r, c = self.row_col(chip)
+        _, c = self.row_col(chip)
         return c
 
     def clear(self):
-        self.excluded_chips = set()
-        self.excluded_links = set()
-        self.good_connections = set()
+        self.excluded_chips.clear()
+        self.excluded_links.clear()
+        self.good_connections.clear()
 
     def row_col(self, index):
         row_index = (index - self.start_index) // self.ncols
@@ -160,26 +142,24 @@ class NumberedArrangement:
     def get_map(self, ind1, ind2):
         if self.up(ind1) == ind2:
             return [ind2, None, None, None]
-        elif self.left(ind1) == ind2:
+        if self.left(ind1) == ind2:
             return [None, ind2, None, None]
-        elif self.down(ind1) == ind2:
+        if self.down(ind1) == ind2:
             return [None, None, ind2, None]
-        elif self.right(ind1) == ind2:
+        if self.right(ind1) == ind2:
             return [None, None, None, ind2]
-        else:
-            return [None, None, None, None]
+        return [None, None, None, None]
 
     def get_map_index(self, ind1, ind2):
         if self.up(ind1) == ind2:
             return 0
-        elif self.left(ind1) == ind2:
+        if self.left(ind1) == ind2:
             return 1
-        elif self.down(ind1) == ind2:
+        if self.down(ind1) == ind2:
             return 2
-        elif self.right(ind1) == ind2:
+        if self.right(ind1) == ind2:
             return 3
-        else:
-            return -1
+        return -1
 
     def get_uart_enable_list(self, ind1, ind2=-1):
         if ind2 == -1:
@@ -193,13 +173,14 @@ class NumberedArrangement:
             return [0, 0, 1, 0]
         if self.up(ind1) == ind2:
             return [0, 0, 0, 1]
+        raise RuntimeError(f"Index {ind1} is not adjacent to index {ind2}.")
 
     def connect_chips(self, start, end, extra_excluded_chips=[]):
         # gives a path connecting start to end
         # excludes forbidden chips and uart connections
         base_direction_map = [self.left, self.right, self.down, self.up]
         path = [start]
-        while not (path[-1] == end):
+        while path[-1] != end:
             curr = path[-1]
             possible_steps = []
             for direction in base_direction_map:

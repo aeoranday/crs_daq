@@ -213,15 +213,6 @@ def plot_hydra_network(geometry_yaml, iog):
                     avgY=avgY,
                 )
 
-                txt = plt.annotate(
-                    str(chip),
-                    [avgX, avgY],
-                    size=10,
-                    ha="center",
-                    va="center",
-                    alpha=0.7,
-                )
-
     for vl in tile_vertical_lines:
         ax.vlines(x=vl, ymin=ymin, ymax=ymax, colors=["k"], linestyle="solid")
     for hl in tile_horizontal_lines:

@@ -3,73 +3,82 @@
 import argparse
 import json
 import logging
+from collections import defaultdict
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 import yaml
 from matplotlib.patches import Rectangle
 
-logger = logging.getLogger("plotting_logger")
+logger: logging.Logger = logging.getLogger("plotting_logger")
 
-_default_controller_config = None
-_default_io_group = 1
-_default_geometry_yaml = "analysis/layout-3.0.0.yaml"
-
-
-colors = ["c", "m", "y", "g"]
+_default_controller_config: str | None = None
+_default_io_group: int = 1
+_default_geometry_yaml: str = "analysis/layout-3.0.0.yaml"
 
 
-def parse_hydra_network(network_json, iog):
-    chipID_uart, missingIO = [{} for i in range(2)]
-    ioc_chip = dict()
-    root_chips = []
+colors: list[str] = ["c", "m", "y", "g"]
+
+
+def parse_hydra_network(network_json: str, iog: int) -> tuple[dict[str, list[int]],
+                                                              list[int],
+                                                              dict[str, list[str]]
+                                                              ]:
+    chip_id_uart: defaultdict[str, list[int]] = defaultdict(list)
+    root_chips: list[int] = []
+    ioc_to_chip_ids: dict[str, list[str]] = {}
+
     with open(network_json, "r") as f:
-        data = json.load(f)
-        if "bad_uart_links" in missingIO:
-            missingIO = data["bad_uart_links"]
-        mapping = data["network"]["miso_us_uart_map"]
-        hydra = data["network"][str(iog)]
-        for ioc in hydra:
-            ioc_chip[ioc] = []
-            for node in hydra[ioc]["nodes"]:
-                if node["chip_id"] != "ext" and (
-                    int(node["chip_id"]) < 11 or int(node["chip_id"]) > 170
-                ):
-                    continue
-                ioc_chip[ioc].append(node["chip_id"])
-                if node["chip_id"] not in chipID_uart:
-                    chipID_uart[node["chip_id"]] = []
-                if "root" in node:
-                    if node["root"]:
-                        l = node["miso_us"]
-                        for e in l:
-                            if e != None:
-                                root_chips.append(e)
-                                break
+        data: dict[str, Any] = json.load(f)
 
-                for i in range(len(node["miso_us"])):
-                    if node["miso_us"][i] != None:
-                        chipID_uart[node["chip_id"]].append(mapping[i])
+    mapping: list[int] = data["network"]["miso_us_uart_map"]
+    hydra: dict[str, Any] = data["network"][str(iog)]
 
-    return chipID_uart, missingIO, root_chips, ioc_chip
+    for ioc in hydra:
+        ioc_to_chip_ids[ioc]: list = []
+        for node in hydra[ioc]["nodes"]:
+            if node["chip_id"] != "ext" and (
+                int(node["chip_id"]) < 11 or int(node["chip_id"]) > 170
+            ):
+                continue
+
+            ioc_to_chip_ids[ioc].append(node["chip_id"])
+
+            if node.get("root", False):
+                l: list[int | None] = node["miso_us"]
+                for e in l:  # Iterates through all of node["miso_us"]
+                    if e is not None:
+                        root_chips.append(e)
+                        break
+
+            for i in range(len(node["miso_us"])):
+                if node["miso_us"][i] is not None:
+                    chip_id_uart[node["chip_id"]].append(mapping[i])
+
+    return chip_id_uart, root_chips, ioc_to_chip_ids
 
 
-def start_end(chipID, uart, chipid_pos):
+def start_end(chipID, uart: int, chipid_pos):
     dX = chipid_pos[chipID]["maxX"] - chipid_pos[chipID]["avgX"]
     dY = chipid_pos[chipID]["maxY"] - chipid_pos[chipID]["avgY"]
 
     if uart == 1:
         start = (chipid_pos[chipID]["avgX"] + (dX / 2), chipid_pos[chipID]["avgY"])
         end = (dX, 0)
+        return start, end
     if uart == 3:
         start = (chipid_pos[chipID]["avgX"] - (dX / 2), chipid_pos[chipID]["avgY"])
         end = (dX * -1, 0)
+        return start, end
     if uart == 2:
         start = (chipid_pos[chipID]["avgX"], chipid_pos[chipID]["avgY"] + (dY / 2))
         end = (0, dY)
+        return start, end
     if uart == 0:
         start = (chipid_pos[chipID]["avgX"], chipid_pos[chipID]["avgY"] - (dY / 2))
         end = (0, dY * -1)
+        return start, end
     return start, end
 
 
@@ -201,21 +210,18 @@ def main(
     io_group=_default_io_group,
     **kwargs
 ):
-    if controller_config == None:
-        print(
+    if controller_config is None:
+        raise RuntimeError(
             "Hydra network JSON configuration file missing.\n",
             "==> Specify with --controller_config <filename> commandline argument",
         )
-        return
+
     filename = controller_config.split(".")[0]
 
-    chipID_uart, missingIO, root_chips, ioc_chip = parse_hydra_network(
+    chipID_uart, root_chips, ioc_chip = parse_hydra_network(
         controller_config, io_group
     )
     print(ioc_chip)
-    if len(missingIO) > 0:
-        if missingIO[0] == "no test performed":
-            missingIO = {}
 
     plot_hydra_network(
         geometry_yaml, chipID_uart, missingIO, root_chips, filename, io_group, ioc_chip

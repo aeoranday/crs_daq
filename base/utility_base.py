@@ -16,26 +16,6 @@ _dump_and_exit_ = False
 _broadcast_disable_nwrite = 3
 
 
-def update_process_log(logfile=".envrc", status=0):
-    # update file logging background processes
-    # 0 means the process is completed
-    # 1 means process is running
-
-    locked_name = None
-    iretry = 0
-    while locked_name is None:
-        locked_name = lock_file(logfile)
-        if locked_name is None:
-            time.sleep(0.1)
-            if iretry > 10:
-                print("failing to lock file... try={}".format(iretry))
-            iretry += 1
-
-    pid = os.getpid()
-
-    return pid
-
-
 def get_from_process_log(pid, logfile=".envrc"):
     with open(logfile, "r") as f:
         data = f.read()
@@ -182,53 +162,6 @@ def read(c, key, param):
     return r, v
 
 
-def broadcast_disable(c, target_chips=None):
-    broadcast_form = "{}-{}-255"
-
-    target_channels = set()
-
-    if target_chips is not None:
-        for chip in target_chips:
-            target_channels.add((chip.io_group, chip.io_channel))
-
-    target_channels = list(target_channels)
-
-    for io_group, io_channels in c.network.items():
-        for io_channel in io_channels:
-            broadcast = broadcast_form.format(io_group, io_channel)
-
-            if target_chips is not None:
-                if (io_group, io_channel) not in target_channels:
-                    continue
-
-            if broadcast not in c.chips:
-                c.add_chip(broadcast)
-
-            # print('Broadcast disable on (io_group, io_channel)=(', io_group, ',', io_channel, ')' )
-
-            c[broadcast].config.channel_mask = [0] * 64
-            c[broadcast].config.test_mode_uart0 = 0
-            c[broadcast].config.test_mode_uart1 = 0
-            c[broadcast].config.test_mode_uart2 = 0
-            c[broadcast].config.test_mode_uart3 = 0
-
-            for __ in range(_broadcast_disable_nwrite):
-                c.write_configuration(broadcast, "test_mode_uart0")
-                c.write_configuration(broadcast, "test_mode_uart1")
-                c.write_configuration(broadcast, "test_mode_uart2")
-                c.write_configuration(broadcast, "test_mode_uart3")
-                c.write_configuration(broadcast, "channel_mask")
-
-            c.remove_chip(broadcast)
-
-
-def flush_data(c, runtime=0.1, rate_limit=0.0, max_iterations=10):
-    for _ in range(max_iterations):
-        c.run(runtime, "flush data")
-        if len(c.reads[-1]) / runtime <= rate_limit:
-            break
-
-
 def data_filename(c, packet, tag=None):
     now: str = utils.datetime_now()
     type_str = "binary"
@@ -311,21 +244,6 @@ def data(c, runtime, packet, LRS=False, fname=None):
     return fname
 
 
-async def async_reconcile_configuration(
-    c, chip_keys, verbose, timeout=0.01, connection_delay=0.01, n=3, n_verify=3
-):
-    return await asyncio.to_thread(
-        reconcile_configuration,
-        c,
-        chip_keys,
-        verbose,
-        timeout=0.01,
-        connection_delay=0.01,
-        n=3,
-        n_verify=3,
-    )
-
-
 def get_from_json(file, key, meta_field="configs"):
     d = {}
     iretry = 0
@@ -369,25 +287,6 @@ def reconcile_configuration(
     ]
 
     return reconcile_registers(
-        c,
-        chip_key_register_pairs,
-        verbose,
-        timeout=timeout,
-        connection_delay=connection_delay,
-        n=n,
-        n_verify=n_verify,
-    )
-
-
-def reconcile_configuration_bool(
-    c, chip_keys, verbose, timeout=0.01, connection_delay=0.01, n=2, n_verify=2
-):
-    if isinstance(chip_keys, (str, larpix.key.Key)):
-        chip_keys = [chip_keys]
-    chip_key_register_pairs = [
-        (chip_key, range(c[chip_key].config.num_registers)) for chip_key in chip_keys
-    ]
-    return reconcile_registers_bool(
         c,
         chip_key_register_pairs,
         verbose,
@@ -449,78 +348,6 @@ def reconcile_registers(
     return ok, diff
 
 
-def reconcile_registers_bool(
-    c,
-    chip_key_register_pairs,
-    verbose,
-    timeout=1,
-    connection_delay=0.02,
-    n=1,
-    n_verify=1,
-):
-    ok, diff = c.verify_registers(
-        chip_key_register_pairs,
-        timeout=timeout,
-        connection_delay=connection_delay,
-        n=n_verify,
-    )
-    #    await asyncio.sleep(1.)
-    if diff != {}:
-        flag = True
-        for a in diff:
-            if flag == False:
-                break
-            for b in diff[a]:
-                pair = diff[a][b]
-                if verbose:
-                    print(a, "\t", n, ":\t", b, "\t", pair)
-                if pair[1] == None:
-                    flag = False
-                    break
-    if not ok:
-        chip_key_register_pairs = [
-            (chip_key, register) for chip_key in diff for register in diff[chip_key]
-        ]
-        c.multi_write_configuration(
-            chip_key_register_pairs, write_read=0, connection_delay=connection_delay
-        )
-        if n != 1:
-            ok, diff = reconcile_registers(
-                c,
-                chip_key_register_pairs,
-                verbose,
-                timeout=timeout,
-                connection_delay=connection_delay,
-                n=n - 1,
-                n_verify=n_verify,
-            )
-        else:
-            ok, diff = c.verify_registers(
-                chip_key_register_pairs,
-                timeout=timeout,
-                connection_delay=connection_delay,
-                n=n_verify,
-            )
-    result = 0
-    if ok == True:
-        result = 1
-    return result
-
-
-def lsb(vdda, vref_dac, vcm_dac, bits=2**8):
-    return ((vdda * (vref_dac / bits)) - (vdda * (vcm_dac / bits))) / bits
-
-
-def global_dac_step(vdda, global_dac, bits=2**8):
-    return vdda * (global_dac / bits)
-
-
-def ADC_to_mV(adc, vdda, vref_dac, vcm_dac, bits=2**8):
-    vref = vdda * (vref_dac / bits)
-    vcm = vdda * (vcm_dac / bits)
-    return (adc * ((vref - vcm) / bits)) + vcm
-
-
 def partition_chip_keys_by_io_group_tile(chip_keys):
     io_group_list = []
     for chip in chip_keys:
@@ -537,24 +364,6 @@ def partition_chip_keys_by_io_group_tile(chip_keys):
     return d
 
 
-def partition_chip_keys_by_tile(chip_keys):
-    d = {}
-    for i in range(1, 11):
-        d[i] = []
-    for ck in chip_keys:
-        d[io_channel_to_tile(ck.io_channel)].append(ck)
-    return d
-
-
-def all_io_channels(c, io_group):
-    io_channel = set()
-    for ck in c.chips:
-        if ck.io_group == io_group:
-            ioc = ck.io_channel
-            io_channel.add(ioc)
-    return list(io_channel)
-
-
 def all_chip_key_to_tile(c, io_group):
     io_channel = set()
     for ck in c.chips:
@@ -565,29 +374,6 @@ def all_chip_key_to_tile(c, io_group):
         pacman_tile.add(io_channel_to_tile(ioc))
     pacman_tile = list(pacman_tile)
     return pacman_tile
-
-
-def chip_key_to_io_group(ck):
-    return int(ck.split("-")[0])
-
-
-def chip_key_to_io_channel(ck):
-    return int(ck.split("-")[1])
-
-
-def chip_key_to_chip_id(ck):
-    return int(ck.split("-")[-1])
-
-
-def iog_tile_to_iog_ioc_cid(io_group_pacman_tile, asic_version, isFSDtile=False):
-    result = []
-    for iog in io_group_pacman_tile:
-        for tile in io_group_pacman_tile[iog]:
-            io_channel = tile_to_io_channel([tile])
-            ioc_root_map = io_channel_to_root_chip(io_channel, asic_version, isFSDtile)
-            for ioc in ioc_root_map:
-                result.append((iog, ioc, ioc_root_map[ioc]))
-    return result
 
 
 def tile_to_io_channel(tile):
@@ -616,37 +402,6 @@ def io_channel_to_tile(io_channel):
 def io_channel_list_to_tile(io_channel):
     io_channel = np.array(io_channel)
     return list(np.array(np.floor((io_channel - 1 - ((io_channel - 1) % 4)) / 4 + 1)))
-
-
-def io_channel_to_root_chip(io_channel, asic_version, isFSDtile=False):
-    root_chips = [11, 41, 71, 101]
-    if asic_version in ["2b", "2d"]:
-        root_chips = [21, 41, 71, 91]
-    if isFSDtile:
-        root_chips = [21, 61, 101, 151]
-    mapping = {}
-    for i in range(4, len(io_channel) + 1, 4):
-        ioc = io_channel[i - 4 : i]
-        for j in range(len(ioc)):
-            mapping[ioc[j]] = root_chips[j]
-    return mapping
-
-
-def save_json(d, prefix):
-    now: str = utils.datetime_now()
-    fname = prefix + "-" + now + ".json"
-    with open(fname, "w") as outfile:
-        json.dump(d, outfile, indent=4)
-    print("disabled filename: ", fname)
-    return
-
-
-def save_asic_config(c):
-    now: str = utils.datetime_now()
-    for ck in c.chips:
-        fname = "config-" + str(ck) + "-" + now + ".json"
-        c[ck].config.write(fname, force=True)
-    return
 
 
 def unique(io_group, io_channel, chip_id, channel_id):

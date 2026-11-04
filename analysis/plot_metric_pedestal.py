@@ -151,7 +151,6 @@ def plot_1d(d, metric):
                 plt.close()
 
                 min_rate = min(num for num in a if num != 0)
-                rate_range = max(a) - min_rate
 
                 channel_count = 0
                 for i in range(len(a)):
