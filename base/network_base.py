@@ -131,7 +131,6 @@ def setup_root(
 
 # @timebudget
 def append_upstream_chip_ids(io_channel, chip_id, waitlist):
-    initial = len(waitlist)
     addendum = waitlist
     if io_channel in list(range(1, 33, 4)):
         for i in range(chip_id, 31):
@@ -155,7 +154,7 @@ def append_upstream_chip_ids(io_channel, chip_id, waitlist):
 
 
 # @timebudget
-def find_daughter_id(parent_piso, parent_chip_id, parent_io_channel):
+def find_daughter_id(parent_piso, parent_chip_id):
     if parent_piso == 3:
         daughter_id = parent_chip_id - 10
     if parent_piso == 1:
@@ -218,9 +217,7 @@ def initial_network(
             for parent_piso_us in [3, 1, 2]:
                 if bail == True:
                     break
-                daughter_id = find_daughter_id(
-                    parent_piso_us, last_chip_id, root.io_channel
-                )
+                daughter_id = find_daughter_id(parent_piso_us, last_chip_id)
                 # UGLY HACK
                 if (last_chip_id, daughter_id) not in last_daughter:
                     last_daughter.append((last_chip_id, daughter_id))
@@ -371,7 +368,6 @@ def iterate_waitlist(
 ):
     print("\n\n----- Iterating waitlist ----\n")
     flag = True
-    outstanding = []
     while flag == True:
         waitlist, network = find_waitlist(c, io_group, io_channels)
         n_waitlist = len(waitlist)
@@ -572,7 +568,7 @@ def write_network_to_file(
     return fname
 
 
-def network_v2b(controller_config, verbose=False, **kwargs):
+def network_v2b(controller_config, verbose=False):
 
     c = larpix.Controller()
     c.io = larpix.io.PACMAN_IO(relaxed=True)
@@ -623,7 +619,7 @@ def network_v2b(controller_config, verbose=False, **kwargs):
     return c
 
 
-def network_v2a(controller_config, verbose=False, **kwargs):
+def network_v2a(controller_config, verbose=False):
 
     c = larpix.Controller()
     c.io = larpix.io.PACMAN_IO(relaxed=True)

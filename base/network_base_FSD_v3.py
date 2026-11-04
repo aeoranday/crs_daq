@@ -149,7 +149,6 @@ def setup_root(
 
 # @timebudget
 def append_upstream_chip_ids(io_channel, chip_id, waitlist):
-    initial = len(waitlist)
     addendum = waitlist
     if io_channel in list(range(1, 33, 4)):
         for i in range(chip_id, 51):
@@ -180,7 +179,7 @@ def append_upstream_chip_ids(io_channel, chip_id, waitlist):
 
 
 # @timebudget
-def find_daughter_id(parent_piso, parent_chip_id, parent_io_channel):
+def find_daughter_id(parent_piso, parent_chip_id):
     if parent_piso == 3:
         daughter_id = parent_chip_id - 10
     if parent_piso == 1:
@@ -267,9 +266,7 @@ def initial_network(
                 if bail == True:
                     break
                 excluded = False
-                daughter_id = find_daughter_id(
-                    parent_piso_us, last_chip_id, root.io_channel
-                )
+                daughter_id = find_daughter_id(parent_piso_us, last_chip_id)
                 if verbose:
                     print("LOOKING AT DAUGHTER: ", daughter_id)
                 # UGLY HACK
@@ -709,7 +706,7 @@ def write_network_to_file(
     return fname
 
 
-def network_v3(controller_config, tiles=None, verbose=False, **kwargs):
+def network_v3(controller_config, tiles=None, verbose=False):
 
     c = larpix.Controller()
     c.io = larpix.io.PACMAN_IO(relaxed=True, asic_version=3)
@@ -810,7 +807,7 @@ def network_v3(controller_config, tiles=None, verbose=False, **kwargs):
     return c
 
 
-def network_v2a(controller_config, verbose=False, **kwargs):
+def network_v2a(controller_config, verbose=False):
 
     c = larpix.Controller()
     c.io = larpix.io.PACMAN_IO(relaxed=True)

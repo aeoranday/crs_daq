@@ -62,15 +62,13 @@ def enforce_iterative(
             tiles = io_group_tiles[io_group]
             config = configs[str(io_group)]
             if io_group_asic_version_[io_group] == "2b":
-                c = network_base.network_v2b(config, tiles=tiles, io_group=io_group)
+                c = network_base.network_v2b(config)
 
             elif io_group_asic_version_[io_group] in [2, "lightpix-1"]:
-                c = network_base.network_v2a(config, tiles=tiles, io_group=io_group)
+                c = network_base.network_v2a(config)
 
             elif io_group_asic_version_[io_group] in [3]:
-                c = network_base_FSD_v3.network_v3(
-                    config, tiles=tiles, io_group=io_group
-                )
+                c = network_base_FSD_v3.network_v3(config, tiles=tiles)
 
             all_network_keys += enforce_parallel.get_chips_by_io_group_io_channel(
                 config, use_keys=all_keys
@@ -124,15 +122,13 @@ def main(
         config = configs[str(io_group)]
         dd = utility_base.update_json(network_config_paths_file_, io_group, config)
         if io_group_asic_version_[io_group] in ["2b", "2d"]:
-            c = network_base_FSD.network_v2b(config, tiles=tiles, io_group=io_group)
+            c = network_base_FSD.network_v2b(config)
         elif io_group_asic_version_[io_group] in [3]:
-            c = network_base_FSD_v3.network_v3(config, tiles=tiles, io_group=io_group)
+            c = network_base_FSD_v3.network_v3(config, tiles=tiles)
         elif io_group_asic_version_[io_group] in [2, "lightpix-1"]:
             if verbose:
                 print("loading network_v2a")
-            c = network_base.network_v2a(
-                config, tiles=tiles, io_group=io_group, pacman_config=pacman_config
-            )
+            c = network_base.network_v2a(config)
             if verbose:
                 print("done")
 
