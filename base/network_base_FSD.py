@@ -769,13 +769,12 @@ def network_v2a(controller_config, verbose=False):
         tiles = utility_base.io_channel_list_to_tile(io_channels)
 
     for io_group, io_channels in c.network.items():
-        if True:
-            if verbose:
-                print("resetting io group:", io_group)
-            c.io.reset_larpix(length=2048, io_group=io_group)
-            time.sleep(2048 * (1 / (10e6)))
-            c.io.reset_larpix(length=2048, io_group=io_group)
-            time.sleep(2048 * (1 / (10e6)))
+        if verbose:
+            print("resetting io group:", io_group)
+        c.io.reset_larpix(length=2048, io_group=io_group)
+        time.sleep(2048 * (1 / (10e6)))
+        c.io.reset_larpix(length=2048, io_group=io_group)
+        time.sleep(2048 * (1 / (10e6)))
 
         for io_channel in io_channels:
             c.io.set_uart_clock_ratio(

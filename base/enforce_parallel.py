@@ -84,9 +84,6 @@ def enforce_parallel(c, network_keys, unmask_last=True, pbar_desc="p", pbar_posi
             current_chips, timeout=0.1, connection_delay=0.05, n=5, n_verify=3
         )
 
-        # ok, diff = c.verify_configuration(
-        #     current_chips, timeout=0.02, connection_delay=0.01, n=5)#, msg_length=len(current_chips))
-
         if not ok:
             print("Re-configuring: ", diff)
             ok, diff = c.enforce_configuration(
@@ -103,33 +100,12 @@ def enforce_parallel(c, network_keys, unmask_last=True, pbar_desc="p", pbar_posi
                 if not ok:
                     break
 
-                # ok, diff = c.enforce_configuration(
-                #     diff, timeout=0.02, connection_delay=0.01, n=15, n_verify=5, msg_length=1)
-        # ok, diff = c.enforce_configuration(
-        #     current_chips, timeout=0.01, connection_delay=0.001, n=12, n_verify=4)
-
-        # ok, diff = utility_base.simple_reconcile_configuration(
-        #     c, current_chips)
-
-        # for cc in current_chips:
-        #     print(cc)
-        #     for reg in range(c[current_chips[0]].config.num_registers):
-        #         print(reg)
-
-        #         ok, diff = c.enforce_registers(
-        #             [(cc, reg)], timeout=0.01, connection_delay=0.001, n=15, n_verify=15)
-        #         if not ok:
-        #             break
-        # if not ok:
-        # raise RuntimeError('Enforcing failed', diff)
-        # print(diff)
-        # return ok, diff, unconfigured
         p_bar.update(len(current_chips))
         p_bar.refresh()
 
     p_bar.close()
 
-    N_WRITE_UNMASK = 10
+    n_write_unmask = 10
 
     send = False
     if unmask_last:
@@ -141,21 +117,17 @@ def enforce_parallel(c, network_keys, unmask_last=True, pbar_desc="p", pbar_posi
                 if np.any(csas[chip]):
                     send = True
         if send:
-            if True:
-                for __ in range(N_WRITE_UNMASK):
-                    for chip in c.chips:
-                        if chip.io_group in c.io._io_group_table:
-                            c.multi_write_configuration(
-                                [
-                                    (
-                                        chip,
-                                        list(range(131, 139))
-                                        + list(range(66, 74))
-                                        + list(range(155, 163)),
-                                    )
-                                ]
-                            )
-
-            else:
-                pass
+            for _ in range(n_write_unmask):
+                for chip in c.chips:
+                    if chip.io_group in c.io._io_group_table:
+                        c.multi_write_configuration(
+                            [
+                                (
+                                    chip,
+                                    list(range(131, 139))
+                                    + list(range(66, 74))
+                                    + list(range(155, 163)),
+                                )
+                            ]
+                        )
     return ok, diff, unconfigured

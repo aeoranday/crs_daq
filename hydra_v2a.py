@@ -456,23 +456,22 @@ def hydra_chain(
         + "-hydra-network.json"
     )
 
-    if True:
-        print(
-            "writing configuration",
-            _name + ", including",
-            sum([len(path) for path in paths]),
-            "chips",
-        )
-        generate_config.write_existing_path(
-            _name,
-            io_group,
-            root_chips,
-            io_channels,
-            paths,
-            ["no test performed"],
-            arr.excluded_chips,
-            asic_version=2,
-        )
+    print(
+        "writing configuration",
+        _name + ", including",
+        sum([len(path) for path in paths]),
+        "chips",
+    )
+    generate_config.write_existing_path(
+        _name,
+        io_group,
+        root_chips,
+        io_channels,
+        paths,
+        ["no test performed"],
+        arr.excluded_chips,
+        asic_version=2,
+    )
     print(arr.excluded_links)
     return _name
 

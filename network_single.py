@@ -131,16 +131,15 @@ def main(
     for _, io_channels in c.network.items():
         _tiles += utility_base.io_channel_list_to_tile(list(io_channels))
     pacman_base.enable_pacman_uart_from_tile(c.io, io_group, [pacman_tile])
-    if True:
-        ok, diff, unconfigured = enforce_iterative(
-            c,
-            all_network_keys,
-            configs=configs,
-            pbar_desc="io_group {}, tile {}".format(io_group, pacman_tile),
-            pbar_position=0,
-        )
-        if not ok:
-            raise RuntimeError("Unconfigured chips!", diff)
+    ok, diff, unconfigured = enforce_iterative(
+        c,
+        all_network_keys,
+        configs=configs,
+        pbar_desc="io_group {}, tile {}".format(io_group, pacman_tile),
+        pbar_position=0,
+    )
+    if not ok:
+        raise RuntimeError("Unconfigured chips!", diff)
     return c
 
 

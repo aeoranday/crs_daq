@@ -13,11 +13,10 @@ def main(*files, disabled_json):
 
         chip_key = config["meta"]["ASIC_ID"]
 
-        if True:
-            mask = np.array(config["channel_mask"])
-            vals = list(np.where(mask > 0)[0].astype(int))
-            print(vals)
-            disabled[str(chip_key)] = list([int(val) for val in vals])
+        mask = np.array(config["channel_mask"])
+        vals = list(np.where(mask > 0)[0].astype(int))
+        print(vals)
+        disabled[str(chip_key)] = list([int(val) for val in vals])
     with open("disable.json", "w") as f:
         json.dump(disabled, f, indent=4)
 

@@ -178,58 +178,52 @@ def main():
     rx_en = c.io.get_reg(0x18, io_group)
     #    c.io.set_reg(0x18, rx_en & 0xf, io_group)
     c.io.set_reg(0x18, int("".join(bitstring), 2), io_group)
-    if False:  # inversion register for V2B tile error
-        c.io.set_reg(0x1C01C, 0x3, io_group)
-        c.io.set_reg(0x1D01C, 0x3, io_group)
-        c.io.set_reg(0x1E01C, 0x3, io_group)
-        c.io.set_reg(0x1F01C, 0x3, io_group)
-    if True:
-        print("enable pacman power")
-        # disable tile power, LARPIX clock
-        c.io.set_reg(0x00000010, 0, io_group)
-        c.io.set_reg(0x00000014, 0, io_group)
-        # set up mclk in pacman
-        c.io.set_reg(0x101C, 0x4, io_group)
-        time.sleep(1)
 
-        # enable pacman power
-        c.io.set_reg(0x00000014, 1, io_group)
-        # set voltage dacs to 0V
-        # c.io.set_reg(0x24010+(PACMAN_TILE-1), 0, io_group)
-        # c.io.set_reg(0x24020+(PACMAN_TILE-1), 0, io_group)
-        # time.sleep(0.1)
-        # set voltage dacs  VDDD first
-        c.io.set_reg(0x24020 + (PACMAN_TILE - 1), VDDD_DAC, io_group)
-        c.io.set_reg(0x24010 + (PACMAN_TILE - 1), VDDA_DAC, io_group)
-        # c.io.set_reg(0x24020+(PACMAN_TILE), VDDD_DAC, io_group)
-        # c.io.set_reg(0x24010+(PACMAN_TILE), VDDA_DAC, io_group)
+    print("enable pacman power")
+    # disable tile power, LARPIX clock
+    c.io.set_reg(0x00000010, 0, io_group)
+    c.io.set_reg(0x00000014, 0, io_group)
+    # set up mclk in pacman
+    c.io.set_reg(0x101C, 0x4, io_group)
+    time.sleep(1)
 
-        print("reset the larpix for n cycles", RESET_CYCLES)
-        #   - set reset cycles
-        c.io.set_reg(0x1014, RESET_CYCLES, io_group=IO_GROUP)
-        #   - toggle reset bit
-        clk_ctrl = c.io.get_reg(0x1010, io_group=IO_GROUP)
-        c.io.set_reg(0x1010, clk_ctrl | 4, io_group=IO_GROUP)
-        c.io.set_reg(0x1010, clk_ctrl, io_group=IO_GROUP)
+    # enable pacman power
+    c.io.set_reg(0x00000014, 1, io_group)
+    # set voltage dacs to 0V
+    # c.io.set_reg(0x24010+(PACMAN_TILE-1), 0, io_group)
+    # c.io.set_reg(0x24020+(PACMAN_TILE-1), 0, io_group)
+    # time.sleep(0.1)
+    # set voltage dacs  VDDD first
+    c.io.set_reg(0x24020 + (PACMAN_TILE - 1), VDDD_DAC, io_group)
+    c.io.set_reg(0x24010 + (PACMAN_TILE - 1), VDDA_DAC, io_group)
+    # c.io.set_reg(0x24020+(PACMAN_TILE), VDDD_DAC, io_group)
+    # c.io.set_reg(0x24010+(PACMAN_TILE), VDDA_DAC, io_group)
 
-        # enable tile power
-        tile_enable_val = pow(2, PACMAN_TILE - 1) + 0x0200  # enable one tile at a time
-        #      tile_enable_val=pow(2,PACMAN_TILE-1)+pow(2,PACMAN_TILE)+0x0200  #enable one tile at a time
-        c.io.set_reg(0x00000010, tile_enable_val, io_group)
-        time.sleep(0.03)
-        print("enable tilereg 0x10 , ", tile_enable_val)
-        readback = pacman_base.power_readback(
-            c.io, io_group, pacman_version, pacman_tile
-        )
+    print("reset the larpix for n cycles", RESET_CYCLES)
+    #   - set reset cycles
+    c.io.set_reg(0x1014, RESET_CYCLES, io_group=IO_GROUP)
+    #   - toggle reset bit
+    clk_ctrl = c.io.get_reg(0x1010, io_group=IO_GROUP)
+    c.io.set_reg(0x1010, clk_ctrl | 4, io_group=IO_GROUP)
+    c.io.set_reg(0x1010, clk_ctrl, io_group=IO_GROUP)
 
-    if True:
-        #   - toggle reset bit
-        RESET_CYCLES = 50000
-        c.io.set_reg(0x1014, RESET_CYCLES, io_group=IO_GROUP)
-        clk_ctrl = c.io.get_reg(0x1010, io_group=IO_GROUP)
-        c.io.set_reg(0x1010, clk_ctrl | 4, io_group=IO_GROUP)
-        c.io.set_reg(0x1010, clk_ctrl, io_group=IO_GROUP)
-        time.sleep(0.5)
+    # enable tile power
+    tile_enable_val = pow(2, PACMAN_TILE - 1) + 0x0200  # enable one tile at a time
+    #      tile_enable_val=pow(2,PACMAN_TILE-1)+pow(2,PACMAN_TILE)+0x0200  #enable one tile at a time
+    c.io.set_reg(0x00000010, tile_enable_val, io_group)
+    time.sleep(0.03)
+    print("enable tilereg 0x10 , ", tile_enable_val)
+    readback = pacman_base.power_readback(
+        c.io, io_group, pacman_version, pacman_tile
+    )
+
+    #   - toggle reset bit
+    RESET_CYCLES = 50000
+    c.io.set_reg(0x1014, RESET_CYCLES, io_group=IO_GROUP)
+    clk_ctrl = c.io.get_reg(0x1010, io_group=IO_GROUP)
+    c.io.set_reg(0x1010, clk_ctrl | 4, io_group=IO_GROUP)
+    c.io.set_reg(0x1010, clk_ctrl, io_group=IO_GROUP)
+    time.sleep(0.5)
 
     # c.io.set_reg(0x24010+(PACMAN_TILE-1), 44500, io_group)
     readback = pacman_base.power_readback(c.io, io_group, pacman_version, [PACMAN_TILE])

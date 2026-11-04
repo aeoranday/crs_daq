@@ -55,9 +55,8 @@ def main(
     c.io.reset_tiles([pacman_tile], length=4096 * 4, io_group=io_group)  # 2048
     time.sleep(4096 * 4 * 1e-6)
 
-    if True:
-        now: str = datetime_now()
-        config_name = "controller-config-" + now + ".json"
+    now: str = datetime_now()
+    config_name = "controller-config-" + now + ".json"
 
     # fixed in FSD tile PCB
     # VERSION_SPECIFIC
@@ -132,23 +131,22 @@ def main(
                     )
 
                 unconfigured = []
-                if True:
-                    out_of_network = network_base_FSD_v3.iterate_waitlist(
-                        c,
-                        c.io,
-                        iog,
-                        utility_base.tile_to_io_channel([tile]),
-                        verbose,
-                        io_group_asic_version_[iog],
-                        v_cm_lvds_tx,
-                        tx_diff,
-                        tx_slice,
-                        r_term,
-                        i_rx,
-                        exclude=iog_exclude[iog],
-                        exclude_links=iog_exclude_links[iog],
-                    )
-                    unconfigured.extend(out_of_network)
+                out_of_network = network_base_FSD_v3.iterate_waitlist(
+                    c,
+                    c.io,
+                    iog,
+                    utility_base.tile_to_io_channel([tile]),
+                    verbose,
+                    io_group_asic_version_[iog],
+                    v_cm_lvds_tx,
+                    tx_diff,
+                    tx_slice,
+                    r_term,
+                    i_rx,
+                    exclude=iog_exclude[iog],
+                    exclude_links=iog_exclude_links[iog],
+                )
+                unconfigured.extend(out_of_network)
 
                 network_file = network_base_FSD_v3.write_network_to_file(
                     c,
@@ -158,19 +156,8 @@ def main(
                     asic_version=io_group_asic_version_[iog],
                 )
 
-                if True:
-                    plot_hydra_network_10x16.main(network_file, io_group=io_group)
+                plot_hydra_network_10x16.main(network_file, io_group=io_group)
             end = time.time()
-
-            # write directly to controller_config.json
-            # works with one iog for now
-            if False:
-                with open("controller_config.json", "w") as controller_config:
-                    d = dict()
-                    d[str(iog)] = network_file
-                    json.dump(d, controller_config, indent=4)
-
-                    print("Writing to controller_config.json")
             if verbose:
                 print("Time elapsed: ", end - start, " s.")
             return c, c.io

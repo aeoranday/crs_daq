@@ -188,13 +188,12 @@ def disable_from_file(c, disabled_list, csa_disable):
         )
         if asic_id in disable_input:
             key = asic_id
-            if True:
-                for channel in disable_input[key]:
-                    c[chip_key].config.csa_enable[channel] = 0
-                    c[chip_key].config.channel_mask[channel] = 1
-                    if asic_id not in csa_disable:
-                        csa_disable[asic_id] = []
-                    csa_disable[asic_id].append(channel)
+            for channel in disable_input[key]:
+                c[chip_key].config.csa_enable[channel] = 0
+                c[chip_key].config.channel_mask[channel] = 1
+                if asic_id not in csa_disable:
+                    csa_disable[asic_id] = []
+                csa_disable[asic_id].append(channel)
     c.multi_write_configuration(chip_register_pairs, connection_delay=0.01)
     c.multi_write_configuration(chip_register_pairs, connection_delay=0.01)
     return csa_disable

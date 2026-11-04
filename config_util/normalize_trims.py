@@ -29,12 +29,11 @@ def main(*files):
         chip_key = config["meta"]["ASIC_ID"]
         version = config["meta"]["ASIC_VERSION"]
 
-        if True:
-            for chan in range(64):
-                if config["pixel_trim_dac"][chan] > 31:
-                    config["pixel_trim_dac"][chan] = 31
-                if config["pixel_trim_dac"][chan] < 0:
-                    config["pixel_trim_dac"][chan] = 0
+        for chan in range(64):
+            if config["pixel_trim_dac"][chan] > 31:
+                config["pixel_trim_dac"][chan] = 31
+            if config["pixel_trim_dac"][chan] < 0:
+                config["pixel_trim_dac"][chan] = 0
 
         with open(file, "w") as f:
             json.dump(config, f, indent=4)

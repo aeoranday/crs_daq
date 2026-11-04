@@ -45,9 +45,8 @@ def main(*files, toggle_json, toggle_global, cryo):
             if "pixel_trim_dac" not in config:
                 config["pixel_trim_dac"] = [16] * 64
 
-            if True:
-                for pair in toggle_list[chip_key]:
-                    config["pixel_trim_dac"][pair[0]] += pair[1]
+            for pair in toggle_list[chip_key]:
+                config["pixel_trim_dac"][pair[0]] += pair[1]
 
             # check all values in range
             for chan in range(64):
