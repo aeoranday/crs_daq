@@ -364,18 +364,6 @@ def partition_chip_keys_by_io_group_tile(chip_keys):
     return d
 
 
-def all_chip_key_to_tile(c, io_group):
-    io_channel = set()
-    for ck in c.chips:
-        if ck.io_group == io_group:
-            io_channel.add(ck.io_channel)
-    pacman_tile = set()
-    for ioc in io_channel:
-        pacman_tile.add(io_channel_to_tile(ioc))
-    pacman_tile = list(pacman_tile)
-    return pacman_tile
-
-
 def tile_to_io_channel(tile):
     io_channel = []
     for t in tile:
