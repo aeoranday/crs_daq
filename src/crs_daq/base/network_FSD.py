@@ -4,8 +4,8 @@ import time
 import larpix
 import numpy as np
 
-from base import asic, pacman, uart, utility
-from utils import datetime_now
+from crs_daq.base import asic, pacman, uart, utility
+from crs_daq.utils import datetime_now
 
 # from timebudget import timebudget
 # import asyncio

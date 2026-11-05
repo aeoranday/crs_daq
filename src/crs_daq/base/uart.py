@@ -1,4 +1,4 @@
-from base import (asic, network_FSD, pacman, uart,
+from crs_daq.base import (asic, network_FSD, pacman, uart,
                   utility)
 
 

@@ -4,7 +4,7 @@
 ### (3) debug enable_pacman_uart bit declaration
 import sys
 
-from base import utility
+from crs_daq.base import utility
 from runenv import runenv as RUN
 
 module = sys.modules[__name__]

@@ -4,9 +4,9 @@ import os
 import larpix
 import larpix.io
 
-from base import utility
+from crs_daq.base import utility
 from runenv import runenv as RUN
-from utils import datetime_now
+from crs_daq.utils import datetime_now
 
 asic_config_dir = RUN.asic_config_dir
 
