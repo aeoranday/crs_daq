@@ -1,13 +1,16 @@
+import argparse
+import os
+import sys
 import warnings
+from signal import SIGINT, signal
 
 warnings.filterwarnings("ignore")
 
-import argparse
-import sys
-
 import larpix
+import larpix.io
 
-from runenv import runenv as RUN
+from crs_daq.base import utility
+from crs_daq.runenv import runenv as RUN
 from crs_daq.utils import datetime_now
 
 module = sys.modules[__name__]
@@ -15,37 +18,65 @@ for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
 
-import os
-from signal import SIGINT, signal
-
-from base import utility_base
-
-_default_file_count = -1
-_default_runtime = 300
-_default_message = "collecting data..."
-_default_packet = False
+_default_file_count: int = -1
+_default_runtime: int = 300
+_default_message: str = "collecting data..."
+_default_packet: bool = False
 
 
-def ctrlc_handler():
-    utility_base._dump_and_exit_ = True
+# FIXME AEO: `ctrlc_handler` should have 2 positional arguments. Ref. signal.signal documentation.
+def ctrlc_handler() -> None:
+    utility._dump_and_exit_: bool = True
     print("CTRL-C detected. Starting Dump.")
 
 
 def main(
-    file_count,
-    runtime,
-    message,
-    packet,
-    filename,
-    file_tag,
-    pacman_config,
-    return_filename,
-    record_metadata,
-    run,
-    data_stream,
-    **args
-):
+    file_count: int,
+    runtime: int,
+    message: str,  # FIXME AEO: Unused argument.
+    packet: bool,
+    filename: str,
+    file_tag: str,
+    pacman_config: str,
+    return_filename: bool,
+    record_metadata: bool,
+    run: int,
+    data_stream: str,
+    **args,  # FIXME AEO: Unused argument.
+) -> str | None:
+    """
+    Record data until reaching a specified file count or early exit.
 
+    Arguments
+    ---------
+    file_count : int
+        The upper bound for the number of files to generate. Data recording can be stopped early with Ctrl-C.
+    runtime : int
+        The amount of time in seconds to run for.
+    message : str
+        Unused argument.
+    packet : bool
+        To generate a packet file or binary file (default).
+    filename : str
+        The file name to save as.
+    file_tag : str
+        An additional tag to add to the file name.
+    pacman_config : str
+        The path to the PACMAN configuration JSON.
+    return_filename : bool
+        Returns the saved data's filename if True.
+    record_metadata : bool
+        Record meta data to a JSON file.
+    run : int
+        This data recording's run number.
+    data_stream : str
+        Uses the given data stream name as meta data. Used with `record_metadata`.
+
+    Returns
+    -------
+    str | None
+        Returns the recorded data's file name if `return_filename`. Otherwise None.
+    """
     if filename is not None and file_count > 1:
         raise RuntimeError("All files will have same filename and will be overwritten")
 
@@ -56,7 +87,7 @@ def main(
     if monitor:
         # check if destination_dir_ ends with "/"
         if destination_dir_.endswith("/"):
-            copy_configs_here = "{}.configs".format(destination_dir_[:-1])
+            copy_configs_here: str = "{}.configs".format(destination_dir_[:-1])
         else:
             copy_configs_here = "{}.configs".format(destination_dir_)
 
@@ -69,18 +100,16 @@ def main(
             )
         )
 
-    c = larpix.Controller()
-    c.io = larpix.io.PACMAN_IO(
+    controller: larpix.Controller = larpix.Controller()
+    controller.io = larpix.io.PACMAN_IO(
         relaxed=True, config_filepath=pacman_config, asic_version=3
     )
 
     # data taking loop
-    ctr = 0
-    while (
-        ctr < file_count or file_count < 0
-    ) and not utility_base._dump_and_exit_:
+    ctr: int = 0
+    while (ctr < file_count or file_count < 0) and not utility._dump_and_exit_:
 
-        run_start = datetime_now()
+        run_start: str = datetime_now()  # FIXME AEO: Unused variable.
 
         # dump ASIC configs to temporary directory to embed in data files
         # note that this archiviving command is called inside the loop, so it will be updated for each file
@@ -89,19 +118,21 @@ def main(
 
         if filename is None or ctr > 0:
             filename = (
-                destination_dir_ + "/" + utility_base.data_filename(c, packet, file_tag)
+                destination_dir_
+                + "/"
+                + utility.data_filename(controller, packet, file_tag)
             )
         elif ctr == 0:
             filename = destination_dir_ + "/" + filename
 
         # set command to archive in case of ctrl+c
 
-        embed_command = "./embed_configs.sh {} &".format(filename.split("/")[-1])
-        dump_command = "./dump_metadata.sh {} {} {} &".format(
+        embed_command: str = "./embed_configs.sh {} &".format(filename.split("/")[-1])
+        dump_command: str = "./dump_metadata.sh {} {} {} &".format(
             filename.split("/")[-1], run, data_stream
         )
 
-        utility_base.data(c, runtime, packet, False, filename)
+        utility.data(controller, runtime, packet, False, filename)
         # metadata handling here
 
         # embed configs in data file
@@ -184,4 +215,4 @@ if __name__ == "__main__":
         "--return_filename", action="store_true", help="""Return last filename"""
     )
     args = parser.parse_args()
-    c = main(**vars(args))
+    main(**vars(args))
