@@ -30,7 +30,7 @@ def main():
 
     hdf5_file = args.hdf5_file
     if args.use_destination_dir:
-        conf = json.load(open("RUN_CONFIG.json"))
+        conf = json.load(open("configs/RUN_CONFIG.json"))
         dest = conf["destination_dir_"]
         hdf5_file = f"{dest}/{args.hdf5_file}"
 

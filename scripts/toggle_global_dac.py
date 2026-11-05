@@ -593,7 +593,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--pacman_config",
-        default="io/pacman.json",
+        default="configs/io/pacman.json",
         type=str,
         help="""PACMAN config file""",
     )

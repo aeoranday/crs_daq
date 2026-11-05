@@ -609,7 +609,7 @@ def main(
     pedestal_file=_default_pedestal_file,
     trim_sigma_file=_default_trim_sigma_file,  # FIXME AEO: This argument is set but never used.
     disabled_list=_default_disabled_list,
-    pacman_config="io/pacman.json",
+    pacman_config="configs/io/pacman.json",
     null_sample_time=_default_null_sample_time,
     disable_rate=_default_disable_rate,
     set_rate=_default_set_rate,
@@ -764,7 +764,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--pacman_config",
-        default="io/pacman.json",
+        default="configs/io/pacman.json",
         type=str,
         help="""PACMAN config file to use""",
     )

@@ -17,7 +17,7 @@
 config_file=".asic_configs_.json"
 now=`date +%Y_%m_%d_%H_%M_%S_%Z`
 
-destination_dir_=$(jq -r '.destination_dir_' <<< cat RUN_CONFIG.json)
+destination_dir_=$(jq -r '.destination_dir_' <<< cat configs/RUN_CONFIG.json)
 current_config_m0=$(jq '."1"' <<< cat $config_file)
 current_config_m1=$(jq '."3"' <<< cat $config_file)
 current_config_m2=$(jq '."5"' <<< cat $config_file)
