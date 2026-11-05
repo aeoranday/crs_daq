@@ -8,6 +8,7 @@ import larpix
 import larpix.format.pacman_msg_format as pacman_msg_fmt
 import larpix.format.rawhdf5format as rhdf5
 import numpy as np
+import numpy.typing as npt
 
 from crs_daq import utils
 
@@ -346,12 +347,12 @@ def reconcile_registers(
     return ok, diff
 
 
-def partition_chip_keys_by_io_group_tile(chip_keys):
+def partition_chip_keys_by_io_group_tile(chip_keys: list[larpix.key.Key]):
     io_group_list = []
     for chip in chip_keys:
         if chip.io_group not in io_group_list:
             io_group_list.append(chip.io_group)
-    d = {}
+    d: dict[tuple[int, int], list[larpix.Key]] = {}
     for iog in io_group_list:
         for i in range(1, 11):
             d[(iog, i)] = []
@@ -362,38 +363,39 @@ def partition_chip_keys_by_io_group_tile(chip_keys):
     return d
 
 
-def tile_to_io_channel(tile):
-    io_channel = []
-    for t in tile:
+def tile_to_io_channel(tiles: list[int]) -> list[int]:
+    io_channel: list[int] = []
+    for tile in tiles:
         for i in range(1, 5, 1):
-            io_channel.append(((t - 1) * 4) + i)
+            io_channel.append(((tile - 1) * 4) + i)
     return io_channel
 
 
-def unique_to_chip_key(i):
-    chip_key = (
-        str(unique_to_io_group(i))
+def unique_to_chip_key(uid: int) -> str:
+    chip_key: str = (
+        str(utils.uid_to_io_group(uid))
         + "-"
-        + str(unique_to_io_channel(i))
+        + str(utils.uid_to_io_channel(uid))
         + "-"
-        + str(unique_to_chip_id(i))
+        + str(utils.uid_to_chip_id(uid))
     )
     return chip_key
 
 
-def io_channel_to_tile(io_channel):
+def io_channel_to_tile(io_channel: int) -> int:
     return int(np.floor((io_channel - 1 - ((io_channel - 1) % 4)) / 4 + 1))
 
 
-def io_channel_list_to_tile(io_channel):
-    io_channel = np.array(io_channel)
+def io_channel_list_to_tile(io_channel: list[int]) -> list[int]:
+    io_channel: npt.NDArray = np.array(io_channel)
     return list(np.array(np.floor((io_channel - 1 - ((io_channel - 1) % 4)) / 4 + 1)))
 
 
-def unique(io_group, io_channel, chip_id, channel_id):
+def unique(io_group: int, io_channel: int, chip_id: int, channel_id: int) -> int:
     return ((io_group * 256 + io_channel) * 256 + chip_id) * 64 + channel_id
 
 
-def chip_key_to_asic_id(chip_key):
+def chip_key_to_asic_id(chip_key: str) -> str:
     args = str(chip_key).split("-")
-    return "{}-{}-{}".format(args[0], io_channel_to_tile(int(args[1])), args[2])
+    tile: int = io_channel_to_tile(int(args[1]))
+    return f"{args[0]}-{tile}-{args[2]}"
