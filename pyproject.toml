@@ -14,3 +14,9 @@ dependencies = [
 	"pyyaml",
 	"tqdm",
 ]
+
+[tool.setuptools.package-data]
+"crs_daq" = ["py.typed"]
+
+[tool.pylint.format]
+max-line-length = "100"
