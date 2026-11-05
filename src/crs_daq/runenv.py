@@ -115,7 +115,3 @@ class runenv:
             d = {}
             with open(self.disabled_list_log_file_, "w") as f:
                 json.dump(d, f)
-
-
-if __name__ == "__main__":
-    runenv()
