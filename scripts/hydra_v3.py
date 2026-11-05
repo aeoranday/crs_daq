@@ -12,67 +12,67 @@ import larpix.io
 
 from analysis import plot_hydra_network_10x16
 from crs_daq.base import (network_FSD_v3, utility)
-from runenv import runenv as RUN
+from crs_daq.runenv import runenv as RUN
 from crs_daq.utils import datetime_now
 
 module = sys.modules[__name__]
 for var in RUN.config:
     setattr(module, var, getattr(RUN, var))
 
-_default_file_prefix = None
-_default_disable_logger = True
-_default_verbose = False
-_default_v_cm_lvds_tx = 5
-_default_tx_diff = 7
-_default_tx_slice = 15
-_default_r_term = 7
-_default_i_rx = 0
-_default_recheck = False
+_default_file_prefix: None = None
+_default_disable_logger: bool = True
+_default_verbose: bool = False
+_default_v_cm_lvds_tx: int = 5
+_default_tx_diff: int = 7
+_default_tx_slice: int = 15
+_default_r_term: int = 7
+_default_i_rx: int = 0
+_default_recheck: bool = False
 
-v2d_10x16_root_ids = [21, 61, 101, 151]
-v3_10x16_root_ids = [151, 111, 61, 21]
+v2d_10x16_root_ids: list[int] = [21, 61, 101, 151]
+v3_10x16_root_ids: list[int] = [151, 111, 61, 21]
 
 
 def main(
-    io_group,
-    file_prefix=_default_file_prefix,
-    disable_logger=_default_disable_logger,  # FIXME AEO: Remove unused argument.
-    verbose=_default_verbose,
-    v_cm_lvds_tx=_default_v_cm_lvds_tx,
-    tx_diff=_default_tx_diff,
-    tx_slice=_default_tx_slice,
-    r_term=_default_r_term,
-    i_rx=_default_i_rx,
-    pacman_tile=None,
+    io_group: int,
+    file_prefix: str | None = _default_file_prefix,  # FIXME AEO: Remove unused argument.
+    disable_logger: bool = _default_disable_logger,  # FIXME AEO: Remove unused argument.
+    verbose: bool = _default_verbose,
+    v_cm_lvds_tx: int = _default_v_cm_lvds_tx,
+    tx_diff: int = _default_tx_diff,
+    tx_slice: int = _default_tx_slice,
+    r_term: int = _default_r_term,
+    i_rx: int = _default_i_rx,
+    pacman_tile: int | None = None,
 ):
 
     start = time.time()
 
-    c = larpix.Controller()
-    c.io = larpix.io.PACMAN_IO(relaxed=True, asic_version=3)
-    c.io.reset_tiles([pacman_tile], length=4096 * 4, io_group=io_group)  # 2048
+    controller: larpix.Controller = larpix.Controller()
+    controller.io = larpix.io.PACMAN_IO(relaxed=True, asic_version=3)
+    controller.io.reset_tiles([pacman_tile], length=4096 * 4, io_group=io_group)  # 2048
     time.sleep(4096 * 4 * 1e-6)
-    c.io.reset_tiles([pacman_tile], length=4096 * 4, io_group=io_group)  # 2048
+    controller.io.reset_tiles([pacman_tile], length=4096 * 4, io_group=io_group)  # 2048
     time.sleep(4096 * 4 * 1e-6)
 
-    now: str = datetime_now()
-    config_name = "controller-config-" + now + ".json"
+    now: str = datetime_now()  # FIXME AEO: Remove unused variable (stage 2).
+    config_name = "controller-config-" + now + ".json"  # FIXME AEO: Remove unused variable.
 
     # fixed in FSD tile PCB
     # VERSION_SPECIFIC
     # if io_group_asic_version_[iog]=='2b':
     #    print('inverting io group {} tiles {}'.format(iog, io_group_pacman_tile_[iog]))
-    #    pacman.invert_pacman_uart(c.io, iog, io_group_asic_version_[iog], \
+    #    pacman.invert_pacman_uart(controller.io, iog, io_group_asic_version_[iog], \
     #                               io_group_pacman_tile_[iog])
 
     # for g_c_id in iog_ioc_cid:
-    #     network_FSD.network_ext_node_from_tuple(c, g_c_id)
+    #     network_FSD.network_ext_node_from_tuple(controller, g_c_id)
 
     for iog in [io_group]:
         print("Working on io_group={}".format(iog))
         if io_group_asic_version_[iog] in [3]:
 
-            tiles = pacman_tile
+            tiles: list[int]
             # print('Working on tiles: ', pacman_tile)
 
             if pacman_tile is None:
@@ -86,13 +86,13 @@ def main(
                 for io_channel in io_channels:
                     cid = v3_10x16_root_ids[(io_channel - 1) % 4]
                     network_FSD_v3.network_ext_node_from_tuple(
-                        c, iog, io_channel, cid
+                        controller, iog, io_channel, cid
                     )
                     if cid in iog_exclude[iog][str(tile)]:
                         continue
-                    candidate_root = network_FSD_v3.setup_root(
-                        c,
-                        c.io,
+                    candidate_root: larpix.Key | None = network_FSD_v3.setup_root(
+                        controller,
+                        controller.io,
                         iog,
                         io_channel,
                         cid,
@@ -115,8 +115,8 @@ def main(
 
                 for iog_tile in iog_tile_to_root_keys:
                     network_FSD_v3.initial_network(
-                        c,
-                        c.io,
+                        controller,
+                        controller.io,
                         iog_tile[0],
                         iog_tile_to_root_keys[iog_tile],
                         verbose,
@@ -130,10 +130,10 @@ def main(
                         exclude_links=iog_exclude_links[iog],
                     )
 
-                unconfigured = []
-                out_of_network = network_FSD_v3.iterate_waitlist(
-                    c,
-                    c.io,
+                unconfigured: list[tuple[larpix.Key, int]] = []
+                out_of_network: list[tuple[larpix.Key, int]] = network_FSD_v3.iterate_waitlist(
+                    controller,
+                    controller.io,
                     iog,
                     utility.tile_to_io_channel([tile]),
                     verbose,
@@ -148,8 +148,8 @@ def main(
                 )
                 unconfigured.extend(out_of_network)
 
-                network_file = network_FSD_v3.write_network_to_file(
-                    c,
+                network_file: str = network_FSD_v3.write_network_to_file(
+                    controller,
                     f"iog_{io_group}-tile_{tile}",
                     {io_group: [tile]},
                     unconfigured,
@@ -160,7 +160,7 @@ def main(
             end = time.time()
             if verbose:
                 print("Time elapsed: ", end - start, " s.")
-            return c, c.io
+            return controller, controller.io  # FIXME AEO: Inconsistent returns.
 
 
 if __name__ == "__main__":
