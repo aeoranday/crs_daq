@@ -6,7 +6,7 @@
 import argparse
 import json
 
-from utils import datetime_now
+from crs_daq.utils import datetime_now
 
 _default_verbose = False
 _default_periodic_trigger_cycles = 150000

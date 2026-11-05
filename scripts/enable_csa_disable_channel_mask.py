@@ -1,7 +1,7 @@
 import argparse
 import json
 
-from utils import datetime_now
+from crs_daq.utils import datetime_now
 
 v2a_nonrouted_channels = [6, 7, 8, 9, 22, 23, 24, 25, 38, 39, 40, 54, 55, 56, 57]
 
@@ -46,4 +46,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    main(*args.input_files, inc=args.inc)
+    main(*args.input_files)
