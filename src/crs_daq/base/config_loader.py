@@ -60,24 +60,6 @@ def write_config_to_file(c, path=None, chip_key=None, description="default"):
     return path
 
 
-def parse_disabled_json(disabled_json):
-
-    if not os.path.isfile(disabled_json):
-        raise RuntimeError("Disabled list does not exist")
-
-    disabled_list = {}
-    with open(disabled_json, "r") as f:
-        disabled_list = json.load(f)
-
-    channel_masks = {}
-    for key in disabled_list:
-        channel_masks[key] = [
-            1 if channel in disabled_list[key] else 0 for channel in range(64)
-        ]
-
-    return channel_masks
-
-
 def load_config_from_directory(c, directory, verbose=False):
     """Load into controller memory all ASIC configuration JSON Files from directory"""
     for file in os.listdir(directory):
