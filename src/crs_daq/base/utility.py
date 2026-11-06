@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import time
+from typing import Any
 
 import larpix
 import larpix.format.pacman_msg_format as pacman_msg_fmt
@@ -17,14 +18,30 @@ _dump_and_exit_ = False
 _broadcast_disable_nwrite = 3
 
 
-def get_from_process_log(pid, logfile=".envrc"):
+def get_from_process_log(pid: int, logfile: str =".envrc") -> str | None:
+    """
+    Get log info based on PID.
+
+    Parameters
+    ----------
+    pid : int
+        The process ID to search with.
+    logfile : str
+        The file path to open and search in.
+
+    Returns
+    -------
+    str | None
+        The log information or None if the PID is not found.
+    """
     with open(logfile, "r") as f:
-        data = f.read()
-    pid = str(pid)
-    if pid in data:
-        lines = data.split("\n")
+        data: str = f.read()
+
+    pid_str: str = str(pid)
+    if pid_str in data:
+        lines: list[str] = data.split("\n")
         for line in lines:
-            if pid in line:
+            if pid_str in line:
                 print(line.split("_PID={}".format(pid))[0])
                 return line.split("_PID={}".format(pid))[0]
     else:
@@ -33,10 +50,27 @@ def get_from_process_log(pid, logfile=".envrc"):
     return None
 
 
-def get_from_json(file, key, meta_field="configs"):
-    d = {}
-    iretry = 0
-    loaded = False
+def get_from_json(file: str, key: Any, meta_field: str = "configs") -> dict[str, Any] | Any | None:
+    """
+    Read from a JSON file and get a key's contents.
+
+    Parameters
+    ----------
+    file : str
+        The file path to read. Assumed to be JSON.
+    key : Any
+        The key to try to access in the JSON. When `key == "all"`, the `meta_field` subsection of the JSON is returned. If there is no `meta_field` in the JSON, then the entire JSON is returned.
+    meta_field : str
+        A meta field to search under. If `meta_field` is in the JSON, it is used at the primary key and `key` is used as the secondary key.
+
+    Returns
+    -------
+    dict[str, Any] | Any | None
+        None if the `meta_field` and `key` pair are both not in the JSON. Otherwise, the contents of the JSON with the primary access using `meta_field` and secondary access with `key`.
+    """
+    d: dict[str, Any] = {}
+    iretry: int = 0
+    loaded: bool = False
     while not loaded:
         iretry += 1
         try:
@@ -66,10 +100,23 @@ def get_from_json(file, key, meta_field="configs"):
     return d[meta_field][str(key)]
 
 
-def lock_file(fname):
-    split = fname.split("/")
+def lock_file(fname: str) -> str | None:
+    """
+    Rename the given file by prepending '.temp_lock_'.
+
+    Parameters
+    ----------
+    fname : str
+        The file name and path to rename.
+
+    Returns
+    -------
+    str | None
+        String of the newly named file or None if not successful.
+    """
+    split: list[str] = fname.split("/")
     split[-1] = ".temp_lock_" + split[-1]
-    new_name = "/".join(split)
+    new_name: str = "/".join(split)
     try:
         os.rename(fname, new_name)
         return new_name
@@ -77,10 +124,25 @@ def lock_file(fname):
         return None
 
 
-def unlock_file(locked_name, fname):
-    split = fname.split("/")
+def unlock_file(locked_name: str, fname: str) -> bool:
+    """
+    Rename the locked file name to `fname`.
+
+    Parameters
+    ----------
+    locked_name : str
+        The file name and path to be renamed.
+    fname : str
+        The new file name.
+
+    Returns
+    -------
+    bool
+        True if rename was successful. False otherwise.
+    """
+    split: list[str] = fname.split("/")
     split[-1] = fname
-    new_name = "/".join(split)
+    new_name: str = "/".join(split)
     try:
         os.rename(locked_name, new_name)
         return True
@@ -89,10 +151,20 @@ def unlock_file(locked_name, fname):
         return False
 
 
-def update_json(file, key, data, meta_field="configs"):
-    loaded = False
-    locked_name = None
-    iretry = 0
+def update_json(file: str, key: str, data: Any, meta_field: str ="configs") -> dict[str, Any]:
+    """
+    Update the given JSON file at [`meta_field`][`key`] with `data`.
+
+    Parameters
+    ----------
+    file : str
+        The path and file name of the JSON to update.
+    key : str
+    The key to update in the JSON.
+    """
+    loaded: bool = False
+    locked_name: str | None = None
+    iretry: int = 0
     while locked_name is None:
         locked_name = lock_file(file)
         if locked_name is None:
@@ -101,7 +173,7 @@ def update_json(file, key, data, meta_field="configs"):
                 print("failing to lock file... try={}".format(iretry))
             iretry += 1
 
-    d = {}
+    d: dict[str, Any] = {}
     iretry = 0
     while not loaded:
         iretry += 1
