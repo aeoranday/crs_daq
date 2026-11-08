@@ -1,4 +1,8 @@
+"""
+Utility functions that may be used anywhere.
+"""
 import json
+
 # import asyncio
 import os
 import subprocess
@@ -18,7 +22,7 @@ _dump_and_exit_: bool = False
 _broadcast_disable_nwrite: int = 3
 
 
-def get_from_process_log(pid: int, logfile: str =".envrc") -> str | None:
+def get_from_process_log(pid: int, logfile: str = ".envrc") -> str | None:
     """
     Get log info based on PID.
 
@@ -50,7 +54,9 @@ def get_from_process_log(pid: int, logfile: str =".envrc") -> str | None:
     return None
 
 
-def get_from_json(file: str, key: Any, meta_field: str = "configs") -> dict[str, Any] | Any | None:
+def get_from_json(
+    file: str, key: Any, meta_field: str = "configs"
+) -> dict[str, Any] | Any | None:
     """
     Read from a JSON file and get a key's contents.
 
@@ -59,14 +65,18 @@ def get_from_json(file: str, key: Any, meta_field: str = "configs") -> dict[str,
     file : str
         The file path to read. Assumed to be JSON.
     key : Any
-        The key to try to access in the JSON. When `key == "all"`, the `meta_field` subsection of the JSON is returned. If there is no `meta_field` in the JSON, then the entire JSON is returned.
+        The key to try to access in the JSON. When `key == "all"`, the `meta_field` subsection of
+        the JSON is returned. If there is no `meta_field` in the JSON, then the entire JSON is
+        returned.
     meta_field : str
-        A meta field to search under. If `meta_field` is in the JSON, it is used at the primary key and `key` is used as the secondary key.
+        A meta field to search under. If `meta_field` is in the JSON, it is used at the primary key
+        and `key` is used as the secondary key.
 
     Returns
     -------
     dict[str, Any] | Any | None
-        None if the `meta_field` and `key` pair are both not in the JSON. Otherwise, the contents of the JSON with the primary access using `meta_field` and secondary access with `key`.
+        None if the `meta_field` and `key` pair are both not in the JSON. Otherwise, the contents
+        of the JSON with the primary access using `meta_field` and secondary access with `key`.
     """
     d: dict[str, Any] = {}
     iretry: int = 0
@@ -151,7 +161,9 @@ def unlock_file(locked_name: str, fname: str) -> bool:
         return False
 
 
-def update_json(file: str, key: str, data: Any, meta_field: str ="configs") -> dict[str, Any]:
+def update_json(
+    file: str, key: str, data: Any, meta_field: str = "configs"
+) -> dict[str, Any]:
     """
     Update the given JSON file at [`meta_field`][`key`] with `data`.
 
@@ -183,7 +195,7 @@ def update_json(file: str, key: str, data: Any, meta_field: str ="configs") -> d
             loaded = True
         except:
             time.sleep(0.1)
-            if itretry > 10:
+            if iretry > 10:
                 print("Warning: unable to open file {}".format(file))
 
     if meta_field in d:
@@ -201,7 +213,7 @@ def update_json(file: str, key: str, data: Any, meta_field: str ="configs") -> d
             written = True
         except:
             time.sleep(0.1)
-            if itretry > 10:
+            if iretry > 10:
                 print("Warning: unable to update file {}".format(file))
 
     unlocked: bool = False
@@ -216,7 +228,11 @@ def update_json(file: str, key: str, data: Any, meta_field: str ="configs") -> d
     return d
 
 
-def read(controller: larpix.Controller, key: larpix.Key | str | tuple[int, int, int] | list[int, int, int], param: int | str) -> tuple[int, int]:
+def read(
+    controller: larpix.Controller,
+    key: larpix.Key,
+    param: int | str,
+) -> tuple[int, int]:
     """
     Clear existing reads from the LArPix controller's and read from the given chip key and register.
 
@@ -226,7 +242,7 @@ def read(controller: larpix.Controller, key: larpix.Key | str | tuple[int, int, 
     ----------
     controller : larpix.Controller
         The top level controller to read using.
-    key : larpix.Key | str | tuple[int, int, int] | list[int, int, int]
+    key : larpix.Key
         The chip Key to access.
     param : int | str
         The register in the chip to read.
@@ -249,7 +265,10 @@ def read(controller: larpix.Controller, key: larpix.Key | str | tuple[int, int, 
             continue
         print(msg)
         r, v = msg.register_address, msg.register_data
-        if msg.chip_id == key.chip_id and r == controller[key].config.register_map[param]:
+        if (
+            msg.chip_id == key.chip_id
+            and r == controller[key].config.register_map[param]
+        ):
             break
     return r, v
 
@@ -286,7 +305,13 @@ def data_filename(c: Any, packet: bool, tag: str | None = None) -> str:
     return "{}-{}-{}.h5".format(type_str, tag, now)
 
 
-def data(controller: larpix.Controller, runtime, packet: bool, LRS: bool = False, fname: str | None = None) -> str:
+def data(
+    controller: larpix.Controller,
+    runtime,
+    packet: bool,
+    LRS: bool = False,
+    fname: str | None = None,
+) -> str:
     """
     Run data collection on the LArPix controller.
 
@@ -308,9 +333,10 @@ def data(controller: larpix.Controller, runtime, packet: bool, LRS: bool = False
     str
         The file name the data was saved to.
     """
+    dt_now: str = utils.datetime_now()
     if packet == True:
         if fname is None:
-            fname = "packets-" + now + ".h5"
+            fname = "packets-" + dt_now + ".h5"
         controller.logger = larpix.logger.HDF5Logger(
             filename=fname, version="3.0"
         )  # LArPix-v3 packet format
@@ -331,11 +357,12 @@ def data(controller: larpix.Controller, runtime, packet: bool, LRS: bool = False
         controller.io.disable_packet_parsing = True
         controller.io.enable_raw_file_writing = True
         if fname is None:
-            fname = "binary-" + now + ".h5"
+            fname = "binary-" + dt_now + ".h5"
         controller.io.raw_filename = fname
         controller.io.join()
         rhdf5.to_rawfile(
-            filename=controller.io.raw_filename, io_version=pacman_msg_fmt.latest_version
+            filename=controller.io.raw_filename,
+            io_version=pacman_msg_fmt.latest_version,
         )
 
         print("filename: ", controller.io.raw_filename)
@@ -352,8 +379,12 @@ def data(controller: larpix.Controller, runtime, packet: bool, LRS: bool = False
             controller.read()
             time.sleep(0.1)
             now: float = time.time()
-            if now - data_rate_start > data_rate_refresh and False:  # FIXME AEO: Find out why this has an `and False`.
-                if controller.io.raw_filename and os.path.isfile(controller.io.raw_filename):
+            if (
+                now - data_rate_start > data_rate_refresh and False
+            ):  # FIXME AEO: Find out why this has an `and False`.
+                if controller.io.raw_filename and os.path.isfile(
+                    controller.io.raw_filename
+                ):
                     counter = rhdf5.len_rawfile(controller.io.raw_filename, attempts=0)
                     print(
                         "average message rate: {:0.2f} Hz\r".format(
@@ -376,12 +407,51 @@ def data(controller: larpix.Controller, runtime, packet: bool, LRS: bool = False
 
 
 def reconcile_configuration(
-        controller: larpix.Controller, chip_keys: str | larpix.Key, verbose: bool, timeout: float = 0.02, connection_delay: float = 0.02, n: int = 2, n_verify: int = 2
-):
+    controller: larpix.Controller,
+    chip_keys: list[str | larpix.Key] | str | larpix.Key,
+    verbose: bool,
+    timeout: float = 0.02,
+    connection_delay: float = 0.02,
+    n: int = 2,
+    n_verify: int = 2,
+) -> tuple[bool, dict[larpix.Key, dict[int, tuple[int, int]]]]:
+    """
+    Enforce register changes in the LArPix Controller for the given chip keys.
+
+    Parameters
+    ----------
+    controller : larpix.Controller
+        The controller to propagate the register enforcement.
+    chip_keys : list[str | larpix.Key] | str | larpix.Key
+        The chip key(s) to complete the enforcement on.
+    verbose : bool
+        If True, prints a dict of the register differences, if any.
+    timeout : float, default: 0.02
+        A timeout period in seconds.
+    connection_delay : float, default: 0.02
+        A time in seconds to delay proceeding after attempting a listening connection.
+    n : int, default: 2
+        Maximum recursion depth of larpix.Controller.enforce_registers.
+    n_verify : int, default : 2
+        Maximum recursion depth of larpix.Controller.verify_registers.
+
+    Returns
+    -------
+    tuple[bool, dict[larpix.Key, dict[int, tuple[int, int]]]]
+        A 2-tuple with the first being a pass/fail bool and the second being a dict of register
+        differences. The register differences are specified as
+        ``{<chip_key>: {<register>: (<expected>, <read>)}}``.
+
+    See Also
+    --------
+    crs_daq.base.utillity.reconcile_registers
+    larpix.Controller.enforce_registers
+    larpix.Controller.verify_registers
+    """
     if isinstance(chip_keys, (str, larpix.key.Key)):
         chip_keys = [chip_keys]
     chip_key_register_pairs: list[tuple[str | larpix.Key, range]] = [
-        (chip_key, range(c[chip_key].config.num_registers)) for chip_key in chip_keys
+        (chip_key, range(controller[chip_key].config.num_registers)) for chip_key in chip_keys
     ]
 
     return reconcile_registers(
@@ -422,12 +492,14 @@ def reconcile_registers(
     n : int, default: 2
         Maximum recursion depth of larpix.Controller.enforce_registers.
     n_verify : int, default : 2
-        Maximum recursion detph of larpix.Controller.verify_registers.
+        Maximum recursion depth of larpix.Controller.verify_registers.
 
     Returns
     -------
     tuple[bool, dict[larpix.Key, dict[int, tuple[int, int]]]]
-        A 2-tuple with the first being a pass/fail bool and the second being a dict of register differences. The register differences are specified as ``{<chip_key>: {<register>: (<expected>, <read>)}}``.
+        A 2-tuple with the first being a pass/fail bool and the second being a dict of register
+        differences. The register differences are specified as
+        ``{<chip_key>: {<register>: (<expected>, <read>)}}``.
 
     See Also
     --------
@@ -476,7 +548,9 @@ def reconcile_registers(
     return ok, diff
 
 
-def partition_chip_keys_by_io_group_tile(chip_keys: list[larpix.Key]) -> dict[tuple[int, int], list[larpix.Key]]:
+def partition_chip_keys_by_io_group_tile(
+    chip_keys: list[larpix.Key],
+) -> dict[tuple[int, int], list[larpix.Key]]:
     """
     Partition the given chip keys by IO group and tile ID.
 
@@ -488,9 +562,10 @@ def partition_chip_keys_by_io_group_tile(chip_keys: list[larpix.Key]) -> dict[tu
     Returns
     -------
     dict[tuple[int, int], list[larpix.Key]]
-        A dict with 2-tuple keys that are `(<IO group>, <tile ID>)` and a list of larpix.Keys that are in this partition.
+        A dict with 2-tuple keys that are `(<IO group>, <tile ID>)` and a list of larpix.Keys that
+        are in this partition.
     """
-    io_group_list: list[] = []
+    io_group_list: list[int] = []
     for chip in chip_keys:
         if chip.io_group not in io_group_list:
             io_group_list.append(chip.io_group)
@@ -555,8 +630,8 @@ def io_channel_list_to_tile(io_channel: list[int]) -> list[int]:
     """
     IO channel numbers to tile IDs.
     """
-    io_channel: npt.NDArray = np.array(io_channel)
-    return list(np.array(np.floor((io_channel - 1 - ((io_channel - 1) % 4)) / 4 + 1)))
+    io_channel_array: npt.NDArray = np.array(io_channel)
+    return list(np.array(np.floor((io_channel_array - 1 - ((io_channel_array - 1) % 4)) / 4 + 1)))
 
 
 def unique(io_group: int, io_channel: int, chip_id: int, channel_id: int) -> int:
@@ -564,7 +639,8 @@ def unique(io_group: int, io_channel: int, chip_id: int, channel_id: int) -> int
     Unique ID from IO group number, IO channel number, chip ID, and channel ID.
 
     Each parameter is expected to actually be uint8 values, with `channel_id < 64`.
-    The unique ID has the following structure in binary format, where the individual, grouped bit-indexing is used as a visual aid:
+    The unique ID has the following structure in binary format, where the individual, grouped
+    bit-indexing is used as a visual aid:
         0b[12345678][12345678][12345678][123456]
            |         |         |         |
            |         |         |         channel_id
@@ -593,6 +669,6 @@ def unique(io_group: int, io_channel: int, chip_id: int, channel_id: int) -> int
 
 
 def chip_key_to_asic_id(chip_key: str) -> str:
-    args = str(chip_key).split("-")
+    args: list[str] = str(chip_key).split("-")
     tile: int = io_channel_to_tile(int(args[1]))
     return f"{args[0]}-{tile}-{args[2]}"
