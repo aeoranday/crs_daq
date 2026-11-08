@@ -14,8 +14,8 @@ import numpy.typing as npt
 from crs_daq import utils
 
 # metadata dumping and generation for ctrl+c
-_dump_and_exit_ = False
-_broadcast_disable_nwrite = 3
+_dump_and_exit_: bool = False
+_broadcast_disable_nwrite: int = 3
 
 
 def get_from_process_log(pid: int, logfile: str =".envrc") -> str | None:
@@ -191,7 +191,7 @@ def update_json(file: str, key: str, data: Any, meta_field: str ="configs") -> d
     else:
         d[str(key)] = data
 
-    written = False
+    written: bool = False
     iretry = 0
     while not written:
         iretry += 1
@@ -204,7 +204,7 @@ def update_json(file: str, key: str, data: Any, meta_field: str ="configs") -> d
             if itretry > 10:
                 print("Warning: unable to update file {}".format(file))
 
-    unlocked = False
+    unlocked: bool = False
     iretry = 0
     while not unlocked:
         unlocked = unlock_file(locked_name, file)
@@ -216,10 +216,29 @@ def update_json(file: str, key: str, data: Any, meta_field: str ="configs") -> d
     return d
 
 
-def read(c, key, param):
-    c.reads = []
-    c.read_configuration(key, param, timeout=0.1)
-    message = c.reads[-1]
+def read(controller: larpix.Controller, key: larpix.Key | str | tuple[int, int, int] | list[int, int, int], param: int | str) -> tuple[int, int]:
+    """
+    Clear existing reads from the LArPix controller's and read from the given chip key and register.
+
+    Only the data from the last packet in the read is accessed.
+
+    Parameters
+    ----------
+    controller : larpix.Controller
+        The top level controller to read using.
+    key : larpix.Key | str | tuple[int, int, int] | list[int, int, int]
+        The chip Key to access.
+    param : int | str
+        The register in the chip to read.
+
+    Returns
+    -------
+    tuple[int, int]
+        A pair as the (register address, register data) from the last packet message.
+    """
+    controller.reads = []
+    controller.read_configuration(key, param, timeout=0.1)
+    message: larpix.PacketCollection = controller.reads[-1]
     r, v = -1, -1
     for msg in message:
         if not isinstance(msg, larpix.packet.packet_v2.Packet_v2):
@@ -230,14 +249,34 @@ def read(c, key, param):
             continue
         print(msg)
         r, v = msg.register_address, msg.register_data
-        if msg.chip_id == key.chip_id and r == c[key].config.register_map[param]:
+        if msg.chip_id == key.chip_id and r == controller[key].config.register_map[param]:
             break
     return r, v
 
 
-def data_filename(c, packet, tag=None):
+def data_filename(c: Any, packet: bool, tag: str | None = None) -> str:
+    """
+    Generate the data file name.
+
+    File naming has the convention:
+        (binary|packet)(-`tag`|)-(<time>).h5
+
+    Parameters
+    ----------
+    c : Any
+        Not used.
+    packet : bool
+        If the data file will contain packets or binary data, prefix with 'packet' or 'binary'.
+    tag : str | None
+        An additional tag to add to the file name. Appears in the middle of the naming.
+
+    Returns
+    -------
+    str
+        The file name with an .h5 extension.
+    """
     now: str = utils.datetime_now()
-    type_str = "binary"
+    type_str: str = "binary"
     if packet:
         type_str = "packet"
 
@@ -247,54 +286,75 @@ def data_filename(c, packet, tag=None):
     return "{}-{}-{}.h5".format(type_str, tag, now)
 
 
-def data(c, runtime, packet, LRS=False, fname=None):
+def data(controller: larpix.Controller, runtime, packet: bool, LRS: bool = False, fname: str | None = None) -> str:
+    """
+    Run data collection on the LArPix controller.
+
+    Parameters
+    ----------
+    controller : larpix.Controller
+        The controller to collect data through.
+    runtime : float
+        The amount of time to run for.
+    packet : bool
+        To save the data as raw binary or packets.
+    LRS : bool
+        To set the contents of ${HOME}/.adc_watchdog_file to 0.
+    fname : str | None
+        The file name to save the data into. If None, generate a default file name.
+
+    Returns
+    -------
+    str
+        The file name the data was saved to.
+    """
     if packet == True:
         if fname is None:
             fname = "packets-" + now + ".h5"
-        c.logger = larpix.logger.HDF5Logger(
+        controller.logger = larpix.logger.HDF5Logger(
             filename=fname, version="3.0"
         )  # LArPix-v3 packet format
 
-        print("filename: ", c.logger.filename)
-        c.logger.enable()
-        c.run(runtime, " collecting data")
-        c.logger.flush()
-        c.logger.disable()
+        print("filename: ", controller.logger.filename)
+        controller.logger.enable()
+        controller.run(runtime, " collecting data")
+        controller.logger.flush()
+        controller.logger.disable()
 
-        c.reads.clear()
+        controller.reads.clear()
 
         if LRS:
             subprocess.call(["echo 0 > ~/.adc_watchdog_file"], shell=True)  # stop LRS
             time.sleep(1)
 
     else:
-        c.io.disable_packet_parsing = True
-        c.io.enable_raw_file_writing = True
+        controller.io.disable_packet_parsing = True
+        controller.io.enable_raw_file_writing = True
         if fname is None:
             fname = "binary-" + now + ".h5"
-        c.io.raw_filename = fname
-        c.io.join()
+        controller.io.raw_filename = fname
+        controller.io.join()
         rhdf5.to_rawfile(
-            filename=c.io.raw_filename, io_version=pacman_msg_fmt.latest_version
+            filename=controller.io.raw_filename, io_version=pacman_msg_fmt.latest_version
         )
 
-        print("filename: ", c.io.raw_filename)
+        print("filename: ", controller.io.raw_filename)
         run_start = time.time()
-        c.start_listening()
+        controller.start_listening()
         if LRS:
             subprocess.call(["echo 1 > ~/.adc_watchdog_file"], shell=True)  # start LRS
             print("starting LRS ...")
-        data_rate_refresh = 5.0
-        data_rate_start = time.time()
-        last_counter = 0
+        data_rate_refresh: float = 5.0
+        data_rate_start: float = time.time()
+        last_counter: int = 0
         while True:
 
-            c.read()
+            controller.read()
             time.sleep(0.1)
-            now = time.time()
-            if now - data_rate_start > data_rate_refresh and False:  # FIXME AEO: Find out why this is has an `and False`.
-                if c.io.raw_filename and os.path.isfile(c.io.raw_filename):
-                    counter = rhdf5.len_rawfile(c.io.raw_filename, attempts=0)
+            now: float = time.time()
+            if now - data_rate_start > data_rate_refresh and False:  # FIXME AEO: Find out why this has an `and False`.
+                if controller.io.raw_filename and os.path.isfile(controller.io.raw_filename):
+                    counter = rhdf5.len_rawfile(controller.io.raw_filename, attempts=0)
                     print(
                         "average message rate: {:0.2f} Hz\r".format(
                             (counter - last_counter) / data_rate_refresh
@@ -305,60 +365,27 @@ def data(c, runtime, packet, LRS=False, fname=None):
                 data_rate_start = now
             if now > (run_start + runtime) or _dump_and_exit_:
                 break
-        c.stop_listening()
+        controller.stop_listening()
         if LRS:
             subprocess.call(["echo 0 > ~/.adc_watchdog_file"], shell=True)  # stop LRS
             time.sleep(0.3)
-        c.read()
-        c.io.join()
+        controller.read()
+        controller.io.join()
 
     return fname
 
 
-def get_from_json(file, key, meta_field="configs"):
-    d = {}
-    iretry = 0
-    loaded = False
-    while not loaded:
-        iretry += 1
-        try:
-            with open(file, "r") as f:
-                d = json.load(f)
-            loaded = True
-        except:
-            if iretry > 10:
-                print("Issue opening file {}".format(file))
-                time.sleep(0.1)
-
-    if meta_field not in d:
-        if key == "all":
-            return d
-
-        if str(key) not in d:
-            return None
-
-        return d[str(key)]
-
-    if key == "all":
-        return d[meta_field]
-
-    if str(key) not in d[meta_field]:
-        return None
-
-    return d[meta_field][str(key)]
-
-
 def reconcile_configuration(
-    c, chip_keys, verbose, timeout=0.02, connection_delay=0.02, n=2, n_verify=2
+        controller: larpix.Controller, chip_keys: str | larpix.Key, verbose: bool, timeout: float = 0.02, connection_delay: float = 0.02, n: int = 2, n_verify: int = 2
 ):
     if isinstance(chip_keys, (str, larpix.key.Key)):
         chip_keys = [chip_keys]
-    chip_key_register_pairs = [
+    chip_key_register_pairs: list[tuple[str | larpix.Key, range]] = [
         (chip_key, range(c[chip_key].config.num_registers)) for chip_key in chip_keys
     ]
 
     return reconcile_registers(
-        c,
+        controller,
         chip_key_register_pairs,
         verbose,
         timeout=timeout,
@@ -369,15 +396,45 @@ def reconcile_configuration(
 
 
 def reconcile_registers(
-    c,
-    chip_key_register_pairs,
-    verbose,
-    timeout=0.1,
-    connection_delay=0.01,
-    n=2,
-    n_verify=2,
-):
-    ok, diff = c.enforce_registers(
+    controller: larpix.Controller,
+    chip_key_register_pairs: list[tuple[str | larpix.Key, range]],
+    verbose: bool,
+    timeout: float = 0.1,
+    connection_delay: float = 0.01,
+    n: int = 2,
+    n_verify: int = 2,
+) -> tuple[bool, dict[larpix.Key, dict[int, tuple[int, int]]]]:
+    """
+    Enforce register changes in the LArPix Controller.
+
+    Parameters
+    ----------
+    controller : larpix.Controller
+        The controller to propagate register enforcement.
+    chip_key_register_pairs : list[tuple[str | larpix.Key, range]]
+        Pairs of the chip key (str or larpix.Key form) and the registers it has control of.
+    verbose : bool
+        If True, prints a dict of the register differences, if any.
+    timeout : float, default: 0.1
+        A timeout period in seconds.
+    connection_delay : float, default: 0.01
+        A time in seconds to delay proceeding after attempting a listening connection.
+    n : int, default: 2
+        Maximum recursion depth of larpix.Controller.enforce_registers.
+    n_verify : int, default : 2
+        Maximum recursion detph of larpix.Controller.verify_registers.
+
+    Returns
+    -------
+    tuple[bool, dict[larpix.Key, dict[int, tuple[int, int]]]]
+        A 2-tuple with the first being a pass/fail bool and the second being a dict of register differences. The register differences are specified as ``{<chip_key>: {<register>: (<expected>, <read>)}}``.
+
+    See Also
+    --------
+    larpix.Controller.enforce_registers
+    larpix.Controller.verify_registers
+    """
+    ok, diff = controller.enforce_registers(
         chip_key_register_pairs,
         timeout=timeout,
         connection_delay=connection_delay,
@@ -419,8 +476,21 @@ def reconcile_registers(
     return ok, diff
 
 
-def partition_chip_keys_by_io_group_tile(chip_keys: list[larpix.key.Key]):
-    io_group_list = []
+def partition_chip_keys_by_io_group_tile(chip_keys: list[larpix.Key]) -> dict[tuple[int, int], list[larpix.Key]]:
+    """
+    Partition the given chip keys by IO group and tile ID.
+
+    Parameters
+    ----------
+    chip_keys : list[larpix.Key]
+        The chip keys to partition over.
+
+    Returns
+    -------
+    dict[tuple[int, int], list[larpix.Key]]
+        A dict with 2-tuple keys that are `(<IO group>, <tile ID>)` and a list of larpix.Keys that are in this partition.
+    """
+    io_group_list: list[] = []
     for chip in chip_keys:
         if chip.io_group not in io_group_list:
             io_group_list.append(chip.io_group)
@@ -436,6 +506,9 @@ def partition_chip_keys_by_io_group_tile(chip_keys: list[larpix.key.Key]):
 
 
 def tile_to_io_channel(tiles: list[int]) -> list[int]:
+    """
+    Tile IDs to IO channel numbers.
+    """
     io_channel: list[int] = []
     for tile in tiles:
         for i in range(1, 5, 1):
@@ -444,6 +517,23 @@ def tile_to_io_channel(tiles: list[int]) -> list[int]:
 
 
 def unique_to_chip_key(uid: int) -> str:
+    """
+    Unique ID to chip key string representation.
+
+    Parameters
+    ----------
+    uid : int
+        The unique ID to extract chip information from.
+
+    Returns
+    -------
+    str
+        The string representation of a larpix.Key.
+
+    See Also
+    --------
+    crs_daq.utils.generate_uid : Generates a UID.
+    """
     chip_key: str = (
         str(utils.uid_to_io_group(uid))
         + "-"
@@ -455,15 +545,50 @@ def unique_to_chip_key(uid: int) -> str:
 
 
 def io_channel_to_tile(io_channel: int) -> int:
+    """
+    IO channel number to tile ID.
+    """
     return int(np.floor((io_channel - 1 - ((io_channel - 1) % 4)) / 4 + 1))
 
 
 def io_channel_list_to_tile(io_channel: list[int]) -> list[int]:
+    """
+    IO channel numbers to tile IDs.
+    """
     io_channel: npt.NDArray = np.array(io_channel)
     return list(np.array(np.floor((io_channel - 1 - ((io_channel - 1) % 4)) / 4 + 1)))
 
 
 def unique(io_group: int, io_channel: int, chip_id: int, channel_id: int) -> int:
+    """
+    Unique ID from IO group number, IO channel number, chip ID, and channel ID.
+
+    Each parameter is expected to actually be uint8 values, with `channel_id < 64`.
+    The unique ID has the following structure in binary format, where the individual, grouped bit-indexing is used as a visual aid:
+        0b[12345678][12345678][12345678][123456]
+           |         |         |         |
+           |         |         |         channel_id
+           |         |         |
+           |         |         chip_id
+           |         |
+    io_group         io_channel
+
+    Parameters
+    ----------
+    io_group : int
+        The IO group number.
+    io_channel : int
+        The IO channel number.
+    chip_id : int
+        The chip ID.
+    channel_id : int
+        The channel ID. Always < 64.
+
+    Returns
+    -------
+    int
+        The unique ID for this combination.
+    """
     return ((io_group * 256 + io_channel) * 256 + chip_id) * 64 + channel_id
 
 
