@@ -23,69 +23,127 @@ clk_ctrl_2_clk_ratio_map = {0: 10, 1: 20, 2: 40, 3: 80}
 
 
 # @timebudget
-def network_ext_node_from_tuple(c, iog_ioc_cid):
-    c.add_network_node(
-        iog_ioc_cid[0], iog_ioc_cid[1], c.network_names, "ext", root=True
+def network_ext_node_from_tuple(controller: larpix.Controller, iog_ioc_cid: tuple[int, int, int]) -> None:
+    """
+    Add an 'ext' node to the larpix Controller network using a 3-tuple.
+
+    Parameters
+    ----------
+    controller : larpix.Controller
+        Host controller that manages the system.
+    iog_ioc_cid : tuple[int, int, int]
+        A 3-tuple of (<IO group>, <IO channel>, <chip ID>).
+    """
+    controller.add_network_node(
+        iog_ioc_cid[0], iog_ioc_cid[1], controller.network_names, "ext", root=True
     )
-    c.add_network_link(
+    controller.add_network_link(
         iog_ioc_cid[0], iog_ioc_cid[1], "miso_us", ("ext", iog_ioc_cid[2]), 0
     )
-    c.add_network_link(
+    controller.add_network_link(
         iog_ioc_cid[0], iog_ioc_cid[1], "miso_ds", (iog_ioc_cid[2], "ext"), 0
     )
-    c.add_network_link(
+    controller.add_network_link(
         iog_ioc_cid[0], iog_ioc_cid[1], "mosi", ("ext", iog_ioc_cid[2]), 0
     )
     return
 
 
 # @timebudget
-def configure_chip_id(c, io_group, ioc, chip_id, asic_version):
-    setup_key = larpix.key.Key(io_group, ioc, 1)
+def configure_chip_id(controller: larpix.Controller, io_group: int, ioc: int, chip_id: int, asic_version: int | str) -> larpix.Key:
+    """
+    Add the corresponding chip key to the larpix Controller and write the configuration.
+
+    Parameters
+    ----------
+    controller : larpix.Controller
+        Host controller that manages the system.
+    io_group : int
+        The chip's IO group.
+    ioc : int
+        The chip's IO channel.
+    chip_id : int
+        The chip's ID.
+    asic_version : int | str
+        The asic version number (and revision letter if a string). See larpix.Chip.
+
+    Returns
+    -------
+    larpix.Key
+        The chip key of the configured chip.
+    """
+    setup_key: larpix.Key = larpix.key.Key(io_group, ioc, 1)
     if setup_key not in c.chips:
-        c.add_chip(setup_key, version=asic_version)
-    c[setup_key].config.chip_id = chip_id
-    c.write_configuration(setup_key, "chip_id")
-    c.write_configuration(setup_key, "chip_id")
-    c.remove_chip(setup_key)
-    chip_key = larpix.key.Key(io_group, ioc, chip_id)
-    if chip_key not in c.chips:
-        c.add_chip(chip_key, version=asic_version)
-    c[chip_key].config.chip_id = chip_id
+        controller.add_chip(setup_key, version=asic_version)
+    controller[setup_key].config.chip_id = chip_id
+    controller.write_configuration(setup_key, "chip_id")
+    controller.write_configuration(setup_key, "chip_id")
+    controller.remove_chip(setup_key)
+    chip_key: larpix.Key = larpix.key.Key(io_group, ioc, chip_id)
+    if chip_key not in controller.chips:
+        controller.add_chip(chip_key, version=asic_version)
+    controller[chip_key].config.chip_id = chip_id
     return chip_key
 
 
 # @timebudget
 def configure_root_chip(
-    c, chip_key, asic_version, ref_current_trim, tx_diff, tx_slice, r_term, i_rx
-):
+    controller: larpix.Controller,
+    chip_key: larpix.Key,
+    asic_version: int | str,
+    ref_current_trim: int,
+    tx_diff: int,
+    tx_slice: int,
+    r_term: int,
+    i_rx: int,
+) -> None:
+    """
+    Configure the root chip.
+
+    Parameters
+    ----------
+    controller : larpix.Controller
+        Host controller that manages the system.
+    chip_key : larpix.Key
+        The chip key used to configure.
+    asic_version : int | str
+        The ASIC version number of the chip. This function only supports version "2b".
+    ref_current_trim : int
+        Reference current trim value.
+    tx_diff : int
+        Transmission difference.
+    tx_slice : int
+        Transmission slice.
+    r_term : int
+    i_rx : int
+    """
     if asic_version == "2b":
-        c[chip_key].config.ref_current_trim = ref_current_trim
-        c.write_configuration(chip_key, "ref_current_trim")
-        registers = []
+        controller[chip_key].config.ref_current_trim = ref_current_trim
+        controller.write_configuration(chip_key, "ref_current_trim")
+        registers: list[int] = []
         for uart in range(4):
-            setattr(c[chip_key].config, f"i_rx{uart}", i_rx)
-            registers.append(c[chip_key].config.register_map[f"i_rx{uart}"])
-            setattr(c[chip_key].config, f"r_term{uart}", i_rx)
-            registers.append(c[chip_key].config.register_map[f"r_term{uart}"])
+            setattr(controller[chip_key].config, f"i_rx{uart}", i_rx)
+            registers.append(controller[chip_key].config.register_map[f"i_rx{uart}"])
+            setattr(controller[chip_key].config, f"r_term{uart}", i_rx)
+            registers.append(controller[chip_key].config.register_map[f"r_term{uart}"])
         for reg in registers:
-            c.write_configuration(chip_key, reg)
+            controller.write_configuration(chip_key, reg)
         for reg in registers:
-            c.write_configuration(chip_key, reg)
-        c[chip_key].config.enable_posi = [0] * 4
-        c[chip_key].config.enable_posi[1] = 1
-        c.write_configuration(chip_key, "enable_posi")
-        c.write_configuration(chip_key, "enable_posi")
-        c[chip_key].config.i_tx_diff0 = tx_diff
-        c.write_configuration(chip_key, "i_tx_diff0")
-        c.write_configuration(chip_key, "i_tx_diff0")
-        c[chip_key].config.tx_slices0 = tx_slice
-        c.write_configuration(chip_key, "tx_slices0")
-        c[chip_key].config.enable_piso_downstream = [0] * 4
-        c[chip_key].config.enable_piso_downstream[0] = 1
-        c.write_configuration(chip_key, "enable_piso_downstream")
-        c[chip_key].config.enable_piso_upstream = [0] * 4
-        c.write_configuration(chip_key, "enable_piso_upstream")
+            controller.write_configuration(chip_key, reg)
+        controller[chip_key].config.enable_posi = [0] * 4
+        controller[chip_key].config.enable_posi[1] = 1
+        controller.write_configuration(chip_key, "enable_posi")
+        controller.write_configuration(chip_key, "enable_posi")
+        controller[chip_key].config.i_tx_diff0 = tx_diff
+        controller.write_configuration(chip_key, "i_tx_diff0")
+        controller.write_configuration(chip_key, "i_tx_diff0")
+        controller[chip_key].config.tx_slices0 = tx_slice
+        controller.write_configuration(chip_key, "tx_slices0")
+        controller[chip_key].config.enable_piso_downstream = [0] * 4
+        controller[chip_key].config.enable_piso_downstream[0] = 1
+        controller.write_configuration(chip_key, "enable_piso_downstream")
+        controller[chip_key].config.enable_piso_upstream = [0] * 4
+        controller.write_configuration(chip_key, "enable_piso_upstream")
 
     return
 
@@ -94,44 +152,96 @@ def configure_root_chip(
 
 
 def setup_root(
-    c,
-    io,
-    io_group,
-    io_channel,
-    chip_id,
-    verbose,
-    asic_version,
-    ref_current_trim,
-    tx_diff,
-    tx_slice,
-    r_term,
-    i_rx,
-):
+    controller: larpix.Controller,
+    io: larpix.PACMAN_IO,
+    io_group: int,
+    io_channel: int,
+    chip_id: int,
+    verbose: bool,
+    asic_version: int | str,
+    ref_current_trim: int,
+    tx_diff: int,
+    tx_slice: int,
+    r_term: int,
+    i_rx: int,
+) -> larpix.Key | None:
+    """
+    Try to configure the root chip.
 
-    chip_key = configure_chip_id(c, io_group, io_channel, chip_id, asic_version)
-    asic.disable_chip_csa_trigger(c, chip_key)
+    If configuration fails, the chip Key is removed from the larpix Controller.
+
+    Parameters
+    ----------
+    controller : larpix.Controller
+        Host controller that manages the system.
+    io : larpix.PACMAN_IO
+        The PACMAN network IO interface.
+    io_group : int
+        The chip's IO group number.
+    io_channel : int
+        The chip's IO channel number.
+    chip_id : int
+        The chip's ID.
+    verbose: bool
+        Prints configuration state if True.
+    asic_version : int | str
+        The ASIC version number of the chip. This function only supports version "2b".
+    ref_current_trim : int
+        Reference current trim value.
+    tx_diff : int
+        Transmission difference.
+    tx_slice : int
+        Transmission slice.
+    r_term : int
+    i_rx : int
+
+    Returns
+    -------
+    larpix.Key | None
+        If successfully configured, the configured chip's Key. Otherwise, None.
+    """
+
+    chip_key: larpix.Key = configure_chip_id(controller, io_group, io_channel, chip_id, asic_version)
+    asic.disable_chip_csa_trigger(controller, chip_key)
     configure_root_chip(
-        c, chip_key, asic_version, ref_current_trim, tx_diff, tx_slice, r_term, i_rx
+        controller, chip_key, asic_version, ref_current_trim, tx_diff, tx_slice, r_term, i_rx
     )
 
     io.set_reg(0x18, 2 ** (io_channel - 1), io_group=io_group)
     print("reconcile config")
-    print(chip_key, "downstream enabled:", c[chip_key].config.enable_piso_downstream)
-    ok, diff = utility.reconcile_configuration(c, chip_key, verbose)
+    print(chip_key, "downstream enabled:", controller[chip_key].config.enable_piso_downstream)
+    ok, diff = utility.reconcile_configuration(controller, chip_key, verbose)
     if ok:
         if verbose:
             print(chip_key, " configured")
         return chip_key
     if verbose:
         print(chip_key, " NOT configured")
-    uart.reset_uarts(c, chip_key, verbose)
-    c.remove_chip(chip_key)
+    uart.reset_uarts(controller, chip_key, verbose)
+    controller.remove_chip(chip_key)
     return None
 
 
 # @timebudget
-def append_upstream_chip_ids(io_channel, chip_id, waitlist):
-    addendum = waitlist
+def append_upstream_chip_ids(io_channel: int, chip_id: int, waitlist: set[int]) -> set[int]:
+    """
+    Create an updated set of chip IDs to add to upstream.
+
+    Parameters
+    ----------
+    io_channel : int
+        The chip's IO channel number.
+    chip_id : int
+        The chip's ID.
+    waitlist : set[int]
+        The set of chip IDs still to be added to upstream.
+
+    Returns
+    -------
+    set[int]
+        An updated set of chip IDs.
+    """
+    addendum: set[int] = waitlist
     if io_channel in list(range(1, 33, 4)):
         for i in range(chip_id, 31):
             addendum.add(i)
@@ -154,7 +264,22 @@ def append_upstream_chip_ids(io_channel, chip_id, waitlist):
 
 
 # @timebudget
-def find_daughter_id(parent_piso, parent_chip_id):
+def find_daughter_id(parent_piso: int, parent_chip_id: int) -> int:
+    """
+    Calculate the daughter ID based on parent info.
+
+    Parameters
+    ----------
+    parent_piso : int
+    parent_chip_id : int
+        The parent's chip ID.
+
+    Returns
+    -------
+    int
+        The daughter chip's ID.
+    """
+    daughter_id: int
     if parent_piso == 3:
         daughter_id = parent_chip_id - 10
     if parent_piso == 1:
@@ -168,17 +293,17 @@ def find_daughter_id(parent_piso, parent_chip_id):
 
 # @timebudget
 def initial_network(
-    c,
-    io,
-    io_group,
-    root_keys,
-    verbose,
-    asic_version,
-    ref_current_trim,
-    tx_diff,
-    tx_slice,
-    r_term,
-    i_rx,
+    controller: larpix.Controller,
+    io: larpix.PACMAN_IO,
+    io_group: int,
+    root_keys: list[larpix.Key],
+    verbose: bool,
+    asic_version: int | str,
+    ref_current_trim: int,
+    tx_diff: int,
+    tx_slice: int,
+    r_term: int,
+    i_rx: int,
 ):
     root_ioc = [rk.io_channel for rk in root_keys]
     waitlist = set()
