@@ -1,4 +1,5 @@
 from larpix.controller import Controller
+from larpix.key import Key
 
 from typing import Any
 
@@ -36,7 +37,7 @@ def update_chip(controller: Controller, status: dict[str, Any]):
     return
 
 
-def disable_chip_csa_trigger(controller: Controller, chip_key: str):
+def disable_chip_csa_trigger(controller: Controller, chip_key: Key | str):
     """
     Disable chip CSA and mask channels.
 
@@ -44,7 +45,7 @@ def disable_chip_csa_trigger(controller: Controller, chip_key: str):
     ----------
     controller : larpix.controller.Controller
         The larpix Controller that is managing the system.
-    chip_key : str
+    chip_key : larpix.key.Key | str
         The chip key to disable and mask.
     """
     controller[chip_key].config.csa_enable = [0] * 64
