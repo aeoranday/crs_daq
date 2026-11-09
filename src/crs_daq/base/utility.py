@@ -668,7 +668,8 @@ def unique(io_group: int, io_channel: int, chip_id: int, channel_id: int) -> int
     return ((io_group * 256 + io_channel) * 256 + chip_id) * 64 + channel_id
 
 
-def chip_key_to_asic_id(chip_key: str) -> str:
-    args: list[str] = str(chip_key).split("-")
+def chip_key_to_asic_id(chip_key: str | larpix.Key) -> str:
+    """ Chip Key to ASIC ID number. """
+    args = str(chip_key).split("-")
     tile: int = io_channel_to_tile(int(args[1]))
     return f"{args[0]}-{tile}-{args[2]}"
