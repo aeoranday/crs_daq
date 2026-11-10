@@ -4,6 +4,8 @@
 ### (3) debug enable_pacman_uart bit declaration
 import sys
 
+import larpix.io
+
 from crs_daq.base import utility
 from runenv import runenv as RUN
 
@@ -21,10 +23,12 @@ for var in RUN.config:
 # 0: enable (default)
 
 
-def invert_pacman_uart(io, io_group, asic_version, tile):
+def invert_pacman_uart(
+    io: larpix.io.PACMAN_IO, io_group: int, asic_version: int | str, tile: list[int]
+) -> None:
     if asic_version != "2b":
         return
-    inversion_registers = {
+    inversion_registers: dict[int, int] = {
         1: 0x0301C,
         2: 0x0401C,
         3: 0x0501C,
@@ -58,14 +62,14 @@ def invert_pacman_uart(io, io_group, asic_version, tile):
         31: 0x2101C,
         32: 0x2201C,
     }
-    io_channel = utility.tile_to_io_channel(tile)
+    io_channel: list[int] = utility.tile_to_io_channel(tile)
     for ioc in io_channel:
         io.set_reg(inversion_registers[ioc], 0b11, io_group=io_group)
     return
 
 
-def convert_io_channel_to_uart(io_channel):
-    io_channel_to_uart = {
+def convert_io_channel_to_uart(io_channel: int) -> int | None:
+    io_channel_to_uart: dict[int, int | None] = {
         1: 1,
         2: 2,
         3: 3,
@@ -110,10 +114,12 @@ def convert_io_channel_to_uart(io_channel):
     return io_channel_to_uart[io_channel]
 
 
-def enable_pacman_uart_from_io_channel(io, io_group, io_channel):
-    bits = list("11111111111111111111111111111111")
+def enable_pacman_uart_from_io_channel(
+    io: larpix.io.PACMAN_IO, io_group: int, io_channel: int | list[int]
+) -> None:
+    bits: list[str] = list("11111111111111111111111111111111")
 
-    uart = None
+    uart: None | list[int | None] = None
     if type(io_channel) is int:
         uart = [convert_io_channel_to_uart(io_channel)]
 
@@ -131,8 +137,10 @@ def enable_pacman_uart_from_io_channel(io, io_group, io_channel):
     return
 
 
-def enable_all_pacman_uart_from_io_group(io, io_group, true_all=False):
-    bits = list("00000000000000000000000000000000")
+def enable_all_pacman_uart_from_io_group(
+    io: larpix.io.PACMAN_IO, io_group: int, true_all: bool = False
+) -> None:
+    bits: list[str] = list("00000000000000000000000000000000")
     if not true_all:
         enable_pacman_uart_from_tile(io, io_group, io_group_pacman_tile_[io_group])
     else:
@@ -140,11 +148,13 @@ def enable_all_pacman_uart_from_io_group(io, io_group, true_all=False):
     return
 
 
-def enable_pacman_uart_from_tile(io, io_group, tile):
-    bits = list("11111111111111111111111111111111")
-    io_channel = utility.tile_to_io_channel(tile)
+def enable_pacman_uart_from_tile(
+    io: larpix.io.PACMAN_IO, io_group: int, tile: list[int]
+) -> None:
+    bits: list[str] = list("11111111111111111111111111111111")
+    io_channel: list[int] = utility.tile_to_io_channel(tile)
     for ioc in io_channel:
-        uart = convert_io_channel_to_uart(ioc)
+        uart: int | None = convert_io_channel_to_uart(ioc)
         if uart is None:
             continue
         bits[-1 * uart] = "0"
@@ -152,15 +162,15 @@ def enable_pacman_uart_from_tile(io, io_group, tile):
     return
 
 
-def disable_all_pacman_uart(io, io_group):
+def disable_all_pacman_uart(io: larpix.io.PACMAN_IO, io_group: int) -> None:
     io.set_reg(0x201C, 0xFFFFFFFF, io_group=io_group)
     return
 
 
-def set_packet_delay(io, io_group, delay=0xFF):
+def set_packet_delay(io: larpix.io.PACMAN_IO, io_group: int, delay: int = 0xFF) -> None:
     for uart in range(32):
-        reg = 0x03014 + uart * 0x1000
-        v = (io.get_reg(reg, io_group=io_group) & 0xFF) + (delay << 8)
+        reg: int = 0x03014 + uart * 0x1000
+        v: int = (io.get_reg(reg, io_group=io_group) & 0xFF) + (delay << 8)
         io.set_reg(reg, v, io_group=io_group)
     return
 
@@ -170,15 +180,17 @@ def set_packet_delay(io, io_group, delay=0xFF):
 ##########################################################################
 
 
-def power_readback(io, io_group, pacman_version, tile):
-    readback = {}
+def power_readback(
+    io: larpix.io.PACMAN_IO, io_group: int, pacman_version: str, tile: list[int]
+) -> dict[int, list[float]]:
+    readback: dict[int, list[float]] = {}
     for i in tile:
         readback[i] = []
         if pacman_version == "v1rev5":
-            vdda = io.get_reg(0x24030 + (i - 1), io_group=io_group)
-            vddd = io.get_reg(0x24040 + (i - 1), io_group=io_group)
-            idda = io.get_reg(0x24050 + (i - 1), io_group=io_group)
-            iddd = io.get_reg(0x24060 + (i - 1), io_group=io_group)
+            vdda: int = io.get_reg(0x24030 + (i - 1), io_group=io_group)
+            vddd: int = io.get_reg(0x24040 + (i - 1), io_group=io_group)
+            idda: int = io.get_reg(0x24050 + (i - 1), io_group=io_group)
+            iddd: int = io.get_reg(0x24060 + (i - 1), io_group=io_group)
             print(
                 "Tile ",
                 i,
@@ -216,6 +228,7 @@ def power_readback(io, io_group, pacman_version, tile):
             )
             readback[i] = [vdda, idda * 0.1, vddd, iddd >> 12]
 
+        # FIXME AEO: This is always true. Python does not do string comparisons like this.
         elif pacman_version == "v1rev3" or "v1revS1":
             vdda = io.get_reg(0x00024001 + (i - 1) * 32 + 1, io_group=io_group)
             idda = io.get_reg(0x00024001 + (i - 1) * 32, io_group=io_group)
