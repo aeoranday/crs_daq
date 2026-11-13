@@ -1,5 +1,6 @@
 import json
 import time
+from typing import Any
 
 import larpix
 import numpy as np
@@ -23,80 +24,97 @@ clk_ctrl_2_clk_ratio_map = {0: 10, 1: 20, 2: 40, 3: 80}
 
 
 # @timebudget
-def network_ext_node_from_tuple(c, iog_ioc_cid):
-    c.add_network_node(
+def network_ext_node_from_tuple(
+    controller: larpix.Controller, iog_ioc_cid: tuple[int, int, int]
+) -> None:
+    controller.add_network_node(
         iog_ioc_cid[0], iog_ioc_cid[1], c.network_names, "ext", root=True
     )
-    c.add_network_link(
+    controller.add_network_link(
         iog_ioc_cid[0], iog_ioc_cid[1], "miso_us", ("ext", iog_ioc_cid[2]), 0
     )
-    c.add_network_link(
+    controller.add_network_link(
         iog_ioc_cid[0], iog_ioc_cid[1], "miso_ds", (iog_ioc_cid[2], "ext"), 0
     )
-    c.add_network_link(
+    controller.add_network_link(
         iog_ioc_cid[0], iog_ioc_cid[1], "mosi", ("ext", iog_ioc_cid[2]), 0
     )
     return
 
 
-def network_ext_node_from_tuple(c, io_group, io_channel, chip_id):
-    c.add_network_node(io_group, io_channel, c.network_names, "ext", root=True)
-    c.add_network_link(io_group, io_channel, "miso_us", ("ext", chip_id), 0)
-    c.add_network_link(io_group, io_channel, "miso_ds", (chip_id, "ext"), 0)
-    c.add_network_link(io_group, io_channel, "mosi", ("ext", chip_id), 0)
+def network_ext_node_from_tuple(
+    controller: larpix.Controller, io_group: int, io_channel: int, chip_id: int
+) -> None:
+    controller.add_network_node(io_group, io_channel, c.network_names, "ext", root=True)
+    controller.add_network_link(io_group, io_channel, "miso_us", ("ext", chip_id), 0)
+    controller.add_network_link(io_group, io_channel, "miso_ds", (chip_id, "ext"), 0)
+    controller.add_network_link(io_group, io_channel, "mosi", ("ext", chip_id), 0)
     return
 
 
 # @timebudget
 
 
-def configure_chip_id(c, io_group, ioc, chip_id, asic_version):
-    setup_key = larpix.key.Key(io_group, ioc, 1)
-    if setup_key not in c.chips:
-        c.add_chip(setup_key, version=asic_version)
-    c[setup_key].config.chip_id = chip_id
-    c.write_configuration(setup_key, "chip_id")
-    c.write_configuration(setup_key, "chip_id")
-    c.remove_chip(setup_key)
-    chip_key = larpix.key.Key(io_group, ioc, chip_id)
-    if chip_key not in c.chips:
-        c.add_chip(chip_key, version=asic_version)
-    c[chip_key].config.chip_id = chip_id
+def configure_chip_id(
+    controller: larpix.Controller,
+    io_group: int,
+    ioc: int,
+    chip_id: int,
+    asic_version: int | str,
+):
+    setup_key: larpix.Key = larpix.key.Key(io_group, ioc, 1)
+    if setup_key not in controller.chips:
+        controller.add_chip(setup_key, version=asic_version)
+    controller[setup_key].config.chip_id = chip_id
+    controller.write_configuration(setup_key, "chip_id")
+    controller.write_configuration(setup_key, "chip_id")
+    controller.remove_chip(setup_key)
+    chip_key: larpix.Key = larpix.key.Key(io_group, ioc, chip_id)
+    if chip_key not in controller.chips:
+        controller.add_chip(chip_key, version=asic_version)
+    controller[chip_key].config.chip_id = chip_id
     return chip_key
 
 
 # @timebudget
 def configure_root_chip(
-    c, chip_key, asic_version, ref_current_trim, tx_diff, tx_slice, r_term, i_rx
-):
+    controller: larpix.Controller,
+    chip_key: larpix.Key,
+    asic_version: int | str,
+    ref_current_trim: int,
+    tx_diff: int,
+    tx_slice: int,
+    r_term: int,
+    i_rx: int,
+) -> None:
     if asic_version in ["2b", "2d"]:
-        c[chip_key].config.ref_current_trim = ref_current_trim
-        c.write_configuration(chip_key, "ref_current_trim")
+        controller[chip_key].config.ref_current_trim = ref_current_trim
+        controller.write_configuration(chip_key, "ref_current_trim")
         registers = []
         for uart in range(4):
-            setattr(c[chip_key].config, f"i_rx{uart}", i_rx)
-            registers.append(c[chip_key].config.register_map[f"i_rx{uart}"])
-            setattr(c[chip_key].config, f"r_term{uart}", r_term)
-            registers.append(c[chip_key].config.register_map[f"r_term{uart}"])
+            setattr(controller[chip_key].config, f"i_rx{uart}", i_rx)
+            registers.append(controller[chip_key].config.register_map[f"i_rx{uart}"])
+            setattr(controller[chip_key].config, f"r_term{uart}", r_term)
+            registers.append(controller[chip_key].config.register_map[f"r_term{uart}"])
         for reg in registers:
-            c.write_configuration(chip_key, reg)
+            controller.write_configuration(chip_key, reg)
         for reg in registers:
-            c.write_configuration(chip_key, reg)
-        c[chip_key].config.enable_posi = [0] * 4
-        c[chip_key].config.enable_posi[3] = 1
-        c.write_configuration(chip_key, "enable_posi")
-        c.write_configuration(chip_key, "enable_posi")
-        c[chip_key].config.i_tx_diff2 = tx_diff
-        c.write_configuration(chip_key, "i_tx_diff2")
-        c.write_configuration(chip_key, "i_tx_diff2")
-        c[chip_key].config.tx_slices2 = tx_slice
-        c.write_configuration(chip_key, "tx_slices2")
-        c.write_configuration(chip_key, "tx_slices2")
-        c[chip_key].config.enable_piso_downstream = [0] * 4
-        c[chip_key].config.enable_piso_downstream[2] = 1
-        c.write_configuration(chip_key, "enable_piso_downstream")
-        c[chip_key].config.enable_piso_upstream = [0] * 4
-        c.write_configuration(chip_key, "enable_piso_upstream")
+            controller.write_configuration(chip_key, reg)
+        controller[chip_key].config.enable_posi = [0] * 4
+        controller[chip_key].config.enable_posi[3] = 1
+        controller.write_configuration(chip_key, "enable_posi")
+        controller.write_configuration(chip_key, "enable_posi")
+        controller[chip_key].config.i_tx_diff2 = tx_diff
+        controller.write_configuration(chip_key, "i_tx_diff2")
+        controller.write_configuration(chip_key, "i_tx_diff2")
+        controller[chip_key].config.tx_slices2 = tx_slice
+        controller.write_configuration(chip_key, "tx_slices2")
+        controller.write_configuration(chip_key, "tx_slices2")
+        controller[chip_key].config.enable_piso_downstream = [0] * 4
+        controller[chip_key].config.enable_piso_downstream[2] = 1
+        controller.write_configuration(chip_key, "enable_piso_downstream")
+        controller[chip_key].config.enable_piso_upstream = [0] * 4
+        controller.write_configuration(chip_key, "enable_piso_upstream")
 
     return
 
@@ -105,45 +123,60 @@ def configure_root_chip(
 
 
 def setup_root(
-    c,
-    io,
-    io_group,
-    io_channel,
-    chip_id,
-    verbose,
-    asic_version,
-    ref_current_trim,
-    tx_diff,
-    tx_slice,
-    r_term,
-    i_rx,
-):
+    controller: larpix.Controller,
+    io: larpix.io.PACMAN_IO,
+    io_group: int,
+    io_channel: int,
+    chip_id: int,
+    verbose: bool,
+    asic_version: int | str,
+    ref_current_trim: int,
+    tx_diff: int,
+    tx_slice: int,
+    r_term: int,
+    i_rx: int,
+) -> None:
 
-    chip_key = configure_chip_id(c, io_group, io_channel, chip_id, asic_version)
-    asic.disable_chip_csa_trigger(c, chip_key)
+    chip_key: larpix.Key = configure_chip_id(
+        controller, io_group, io_channel, chip_id, asic_version
+    )
+    asic.disable_chip_csa_trigger(controller, chip_key)
     configure_root_chip(
-        c, chip_key, asic_version, ref_current_trim, tx_diff, tx_slice, r_term, i_rx
+        controller,
+        chip_key,
+        asic_version,
+        ref_current_trim,
+        tx_diff,
+        tx_slice,
+        r_term,
+        i_rx,
     )
 
     pacman.enable_pacman_uart_from_io_channel(io, io_group, io_channel)
 
     print("reconcile config")
-    print(chip_key, "downstream enabled:", c[chip_key].config.enable_piso_downstream)
-    ok, diff = utility.reconcile_configuration(c, chip_key, verbose)
+    print(
+        chip_key,
+        "downstream enabled:",
+        controller[chip_key].config.enable_piso_downstream,
+    )
+    ok, diff = utility.reconcile_configuration(controller, chip_key, verbose)
     if ok:
         if verbose:
             print(chip_key, " configured")
         return chip_key
     if verbose:
         print(chip_key, " NOT configured")
-    uart.reset_uarts(c, chip_key, verbose)
-    c.remove_chip(chip_key)
+    uart.reset_uarts(controller, chip_key, verbose)
+    controller.remove_chip(chip_key)
     return None
 
 
 # @timebudget
-def append_upstream_chip_ids(io_channel, chip_id, waitlist):
-    addendum = waitlist
+def append_upstream_chip_ids(
+    io_channel: int, chip_id: int, waitlist: set[int]
+) -> set[int]:
+    addendum: set[int] = waitlist
     if io_channel in list(range(1, 33, 4)):
         for i in range(chip_id, 51):
             addendum.add(i)
@@ -173,7 +206,7 @@ def append_upstream_chip_ids(io_channel, chip_id, waitlist):
 
 
 # @timebudget
-def find_daughter_id(parent_piso, parent_chip_id):
+def find_daughter_id(parent_piso: int, parent_chip_id: int) -> int:
     if parent_piso == 3:
         daughter_id = parent_chip_id - 10
     if parent_piso == 1:
@@ -187,24 +220,24 @@ def find_daughter_id(parent_piso, parent_chip_id):
 
 # @timebudget
 def initial_network(
-    c,
-    io,
-    io_group,
-    root_keys,
-    verbose,
-    asic_version,
-    ref_current_trim,
-    tx_diff,
-    tx_slice,
-    r_term,
-    i_rx,
-    exclude=None,
-    exclude_links=None,
+    controller: larpix.Controller,
+    io: larpix.io.PACMAN_IO,
+    io_group: int,
+    root_keys: list[larpix.Key],
+    verbose: bool,
+    asic_version: int | str,
+    ref_current_trim: int,
+    tx_diff: int,
+    tx_slice: int,
+    r_term: int,
+    i_rx: int,
+    exclude: None = None,
+    exclude_links: None = None,
 ):
-    root_ioc = [rk.io_channel for rk in root_keys]
-    waitlist = set()
+    root_ioc: list[int] = [rk.io_channel for rk in root_keys]
+    waitlist: set[int] = set()
     cnt_configured, cnt_unconfigured = 0, 0
-    firstIteration = True
+    firstIteration: bool = True
 
     for root in root_keys:
         if firstIteration == False:
@@ -213,7 +246,7 @@ def initial_network(
             )
 
         pacman.enable_pacman_uart_from_io_channel(io, io_group, root.io_channel)
-        ok, diff = utility.reconcile_configuration(c, root, verbose)
+        ok, diff = utility.reconcile_configuration(controller, root, verbose)
         if ok:
             cnt_configured += 1
         if not ok:
@@ -230,19 +263,19 @@ def initial_network(
         )
         pacman.disable_all_pacman_uart(io, io_group)
 
-        bail = False
-        last_chip_id = root.chip_id
-        last_daughter = []
+        bail: bool = False
+        last_chip_id: int = root.chip_id
+        last_daughter: list[larpix.Key] = []
         while last_chip_id <= root.chip_id + 29:
             if bail == True:
                 break
             excluded = False
-            ok_daughters = []
+            ok_daughters: list[int] = []
             for parent_piso_us in [0, 1, 3]:
                 if bail == True:
                     break
                 excluded = False
-                daughter_id = find_daughter_id(parent_piso_us, last_chip_id)
+                daughter_id: larpix.Key = find_daughter_id(parent_piso_us, last_chip_id)
                 print("LOOKING AT DAUGHTER: ", daughter_id)
                 # UGLY HACK
                 if (last_chip_id, daughter_id) not in last_daughter:
@@ -271,7 +304,7 @@ def initial_network(
                 if last_chip_id % 10 == 0 and daughter_id == last_chip_id + 1:
                     continue
 
-                skip_link = False
+                skip_link: bool = False
                 for link in exclude_links[
                     str(utility.io_channel_to_tile(root.io_channel))
                 ]:
@@ -292,24 +325,24 @@ def initial_network(
                     continue
                 if daughter_id == 158 and last_chip_id == 157:
                     continue
-                cks = []
-                for ck in c.chips:
+                cks: list[int] = []
+                for ck in controller.chips:
                     if ck.io_channel in root_ioc:
                         cks.append(ck.chip_id)
                 if daughter_id in cks:
                     continue
                 parent = larpix.key.Key(root.io_group, root.io_channel, last_chip_id)
-                if parent not in c.chips:
+                if parent not in controller.chips:
                     continue
                 daughter = larpix.key.Key(root.io_group, root.io_channel, daughter_id)
 
                 ok, diff = uart.setup_parent_piso(
-                    c, io, parent, daughter, verbose, tx_diff, tx_slice
+                    controller, io, parent, daughter, verbose, tx_diff, tx_slice
                 )
                 if not ok or excluded:
                     print("\t\t==> PARENT PISO US ", parent, "failed to configure")
                     uart.disable_parent_piso_us(
-                        c, parent, daughter, verbose, tx_diff, tx_slice
+                        controller, parent, daughter, verbose, tx_diff, tx_slice
                     )
                     waitlist = append_upstream_chip_ids(
                         root.io_channel, daughter.chip_id, waitlist
@@ -326,7 +359,7 @@ def initial_network(
                     continue
 
                 ok, diff, piso = uart.setup_daughter(
-                    c,
+                    controller,
                     io,
                     parent,
                     daughter,
@@ -352,12 +385,12 @@ def initial_network(
                     # last_chip_id = daughter.chip_id
                 if not ok:
                     print("\t\t==> DAUGHTER ", daughter, "failed to configure")
-                    uart.reset_uarts(c, daughter, verbose)
+                    uart.reset_uarts(controller, daughter, verbose)
                     uart.disable_parent_piso_us(
-                        c, parent, daughter, verbose, tx_diff, tx_slice
+                        controller, parent, daughter, verbose, tx_diff, tx_slice
                     )
-                    uart.disable_parent_posi(c, parent, daughter, verbose)
-                    c.remove_chip(daughter)
+                    uart.disable_parent_posi(controller, parent, daughter, verbose)
+                    controller.remove_chip(daughter)
 
                     if parent_piso_us == 0:
                         waitlist = append_upstream_chip_ids(
@@ -386,10 +419,12 @@ def initial_network(
 
 
 # @timebudget
-def find_waitlist(c, io_group, ioc_range):
-    network = {}
-    waitlist = []
-    for chip_key in c.chips:
+def find_waitlist(
+    controller: larpix.Controller, io_group: int, ioc_range: list[int]
+) -> tuple[list[int], dict[int, larpix.Key]]:
+    network: dict[int, larpix.Key] = {}
+    waitlist: list[int] = []
+    for chip_key in controller.chips:
         if chip_key.io_group != io_group:
             continue
         if chip_key.io_channel not in ioc_range:
@@ -416,30 +451,32 @@ def find_potential_parents(chip_id, network, verbose):
 
 # @timebudget
 def iterate_waitlist(
-    c,
-    io,
-    io_group,
-    io_channels,
-    verbose,
-    asic_version,
-    ref_current_trim,
-    tx_diff,
-    tx_slice,
-    r_term,
-    i_rx,
-    exclude=None,
-    exclude_links=None,
-):
+    controller: larpix.Controller,
+    io: larpix.io.PACMAN_IO,
+    io_group: int,
+    io_channels: list[int],
+    verbose: bool,
+    asic_version: str | int,
+    ref_current_trim: int,
+    tx_diff: int,
+    tx_slice: int,
+    r_term: int,
+    i_rx: int,
+    exclude: dict[str, int] | None = None,
+    exclude_links: dict[str, tuple[int, int]] | None = None,
+) -> list[tuple[larpix.Key, int]]:
     print("\n\n----- Iterating waitlist ----\n")
-    flag = True
-    outstanding = []
+    flag: bool = True
+    outstanding: list[tuple[int, int]] = []
     while flag == True:
-        waitlist, network = find_waitlist(c, io_group, io_channels)
-        n_waitlist = len(waitlist)
+        waitlist, network = find_waitlist(controller, io_group, io_channels)
+        n_waitlist: int = len(waitlist)
         outstanding = []
 
         for chip_id in waitlist:
-            potential_parents = find_potential_parents(chip_id, network, verbose)
+            potential_parents: list[larpix.Key] = find_potential_parents(
+                chip_id, network, verbose
+            )
             for parent in potential_parents:
                 daughter = larpix.key.Key(parent.io_group, parent.io_channel, chip_id)
                 if (
@@ -471,18 +508,18 @@ def iterate_waitlist(
                     continue
 
                 ok, diff = uart.setup_parent_piso(
-                    c, io, parent, daughter, verbose, tx_diff, tx_slice
+                    controller, io, parent, daughter, verbose, tx_diff, tx_slice
                 )
                 if not ok:
                     print("\t\t==> PARENT PISO US ", parent, "failed to configure")
                     uart.disable_parent_piso_us(
-                        c, parent, daughter, verbose, tx_diff, tx_slice
+                        controller, parent, daughter, verbose, tx_diff, tx_slice
                     )
                     pacman.disable_all_pacman_uart(io, io_group)
                     continue
 
                 ok, diff, piso = uart.setup_daughter(
-                    c,
+                    controller,
                     io,
                     parent,
                     daughter,
@@ -500,12 +537,12 @@ def iterate_waitlist(
                     break
                 if not ok:
                     print("\t\t==> DAUGHTER ", daughter, " failed to configure")
-                    uart.reset_uarts(c, daughter, verbose)
+                    uart.reset_uarts(controller, daughter, verbose)
                     uart.disable_parent_piso_us(
-                        c, parent, daughter, verbose, tx_diff, tx_slice
+                        controller, parent, daughter, verbose, tx_diff, tx_slice
                     )
-                    uart.disable_parent_posi(c, parent, daughter, verbose)
-                    c.remove_chip(daughter)
+                    uart.disable_parent_posi(controller, parent, daughter, verbose)
+                    controller.remove_chip(daughter)
                     outstanding.append((daughter, piso))
                 pacman.disable_all_pacman_uart(io, io_group)
 
@@ -518,9 +555,9 @@ def iterate_waitlist(
 
 
 # @timebudget
-def configure_asic_network_links(c):
-    for chip_key in c.chips:
-        piso_us = c[chip_key].config.enable_piso_upstream
+def configure_asic_network_links(controller: larpix.Controller) -> larpix.Controller:
+    for chip_key in controller.chips:
+        piso_us: list[int] = controller[chip_key].config.enable_piso_upstream
         for uart in range(len(piso_us)):
             if piso_us[uart] != 1:
                 continue
@@ -532,14 +569,14 @@ def configure_asic_network_links(c):
                 daughter_chip_id = chip_key.chip_id + 1
             if uart == 2:
                 daughter_chip_id = chip_key.chip_id - 1
-            c.add_network_link(
+            controller.add_network_link(
                 chip_key.io_group,
                 chip_key.io_channel,
                 "miso_us",
                 (chip_key.chip_id, daughter_chip_id),
                 uart,
             )
-        piso_ds = c[chip_key].config.enable_piso_downstream
+        piso_ds: list[int] = controller[chip_key].config.enable_piso_downstream
         for uart in range(len(piso_ds)):
             if piso_ds[uart] != 1:
                 continue
@@ -551,14 +588,14 @@ def configure_asic_network_links(c):
                 daughter_chip_id = chip_key.chip_id + 1
             if uart == 2:
                 daughter_chip_id = chip_key.chip_id - 1
-            c.add_network_link(
+            controller.add_network_link(
                 chip_key.io_group,
                 chip_key.io_channel,
                 "miso_ds",
                 (chip_key.chip_id, daughter_chip_id),
                 uart,
             )
-        posi = c[chip_key].config.enable_posi
+        posi: list[int] = controller[chip_key].config.enable_posi
         for uart in range(len(posi)):
             if posi[uart] != 1:
                 continue
@@ -570,21 +607,26 @@ def configure_asic_network_links(c):
                 mother_chip_id = chip_key.chip_id + 1
             if uart == 3:
                 mother_chip_id = chip_key.chip_id - 1
-            c.add_network_link(
+            controller.add_network_link(
                 chip_key.io_group,
                 chip_key.io_channel,
                 "mosi",
                 (chip_key.chip_id, mother_chip_id),
                 uart,
             )
-    return c
+    return controller
 
 
 # @timebudget
-def miso_us_chip_id_list(chip2chip_pair, miso_us):
+def miso_us_chip_id_list(
+    chip2chip_pair: tuple[str, str] | tuple[int, int], miso_us: list[int] | list[str]
+) -> list[int] | list[str]:
     if chip2chip_pair[0] == "ext" or chip2chip_pair[1] == "ext":
         miso_us[3] = chip2chip_pair[1]
         return miso_us
+
+    assert type(chip2chip_pair[0]) is int and type(chip2chip_pair[1]) is int
+
     if chip2chip_pair[1] - chip2chip_pair[0] == -1:
         miso_us[1] = chip2chip_pair[1]  # piso 2
     if chip2chip_pair[1] - chip2chip_pair[0] == 1:
@@ -597,40 +639,42 @@ def miso_us_chip_id_list(chip2chip_pair, miso_us):
 
 
 def write_network_to_file(
-    c,
-    file_prefix,
-    io_group_pacman_tile,
-    unconfigured,
-    layout="2.5.1",
-    asic_version="2b",
-):
+    controller: larpix.Controller,
+    file_prefix: str,
+    io_group_pacman_tile: dict[int, int],
+    unconfigured: list[tuple[larpix.Key, Any]],
+    layout: str = "2.5.1",
+    asic_version: str | int = "2b",
+) -> str:
 
-    d = dict()
+    d: dict[str, Any] = dict()
     d["_config_type"] = "controller"
     d["name"] = file_prefix
     d["asic_version"] = asic_version
     d["layout"] = layout
 
-    c = configure_asic_network_links(c)
+    controller = configure_asic_network_links(controller)
     d["network"] = {}
     for iog in io_group_pacman_tile:
-        if iog not in c.network:
+        if iog not in controller.network:
             continue
         d["network"][iog] = {}
         io_channels = utility.tile_to_io_channel(io_group_pacman_tile[iog])
         for ioc in io_channels:
             d["network"][iog][ioc] = {}
             d["network"][iog][ioc]["nodes"] = []
-            for node in list(c.network[iog][ioc]["miso_us"]):
-                temp = {}
+            for node in list(controller.network[iog][ioc]["miso_us"]):
+                temp: dict[str, Any] = {}
                 temp["chip_id"] = node
                 miso_us = [None] * 4
-                for edge in list(c.network[iog][ioc]["miso_us"].edges()):
-                    for chip2chip_pair in c.network[iog][ioc]["miso_us"].edges(edge):
+                for edge in list(controller.network[iog][ioc]["miso_us"].edges()):
+                    for chip2chip_pair in controller.network[iog][ioc]["miso_us"].edges(
+                        edge
+                    ):
                         if chip2chip_pair[0] == node:
                             miso_us_chip_id_list(chip2chip_pair, miso_us)
                 temp["miso_us"] = miso_us
-                if c.network[iog][ioc]["miso_us"].nodes[node]["root"] == True:
+                if controller.network[iog][ioc]["miso_us"].nodes[node]["root"] == True:
                     temp["root"] = True
                 d["network"][iog][ioc]["nodes"].append(temp)
     d["network"]["miso_us_uart_map"] = [3, 2, 1, 0]
@@ -660,70 +704,76 @@ def write_network_to_file(
     return fname
 
 
-def network_v2b(controller_config, tiles=None, verbose=False):
+def network_v2b(
+    controller_config: str, tiles: list[int] | None = None, verbose: bool = False
+) -> larpix.Controller:
 
-    c = larpix.Controller()
-    c.io = larpix.io.PACMAN_IO(relaxed=True)
+    controller: larpix.Controller = larpix.Controller()
+    controller.io = larpix.io.PACMAN_IO(relaxed=True)
 
     if controller_config is None:
         raise RuntimeError("No controller config specified!")
     else:
-        c.load(controller_config)
+        controller.load(controller_config)
 
-    for io_group, io_channels in c.network.items():
+    for io_group, io_channels in controller.network.items():
         if tiles is None:
             if verbose:
                 print("resetting io group:", io_group)
-            c.io.reset_larpix(length=2048, io_group=io_group)
+            controller.io.reset_larpix(length=2048, io_group=io_group)
             time.sleep(2048 * (1 / (10e6)))
-            c.io.reset_larpix(length=2048, io_group=io_group)
+            controller.io.reset_larpix(length=2048, io_group=io_group)
             time.sleep(2048 * (1 / (10e6)))
         else:
             if verbose:
                 print("resetting tiles {} on io group:".format(tiles), io_group)
-            c.io.reset_tiles(tiles=tiles, length=2048, io_group=io_group)
+            controller.io.reset_tiles(tiles=tiles, length=2048, io_group=io_group)
             time.sleep(2048 * (1 / (10e6)))
-            c.io.reset_tiles(tiles=tiles, length=2048, io_group=io_group)
+            controller.io.reset_tiles(tiles=tiles, length=2048, io_group=io_group)
             time.sleep(2048 * (1 / (10e6)))
     # throttle the data rate to insure no FIFO collisions
-    c.io.group_packets_by_io_group = False
-    for io_group, io_channels in c.network.items():
+    controller.io.group_packets_by_io_group = False
+    for io_group, io_channels in controller.network.items():
         for io_channel in io_channels:
             if tiles is not None:
                 if utility.io_channel_to_tile(io_channel) not in tiles:
                     continue
-            c.init_network(io_group, io_channel, modify_mosi=True)
+            controller.init_network(io_group, io_channel, modify_mosi=True)
 
     # write tx, rx, etc configs
-    for chip_key in c.chips:
+    for chip_key in controller.chips:
         if tiles is not None:
             if utility.io_channel_to_tile(chip_key.io_channel) not in tiles:
                 continue
 
-        c[chip_key].config.ref_current_trim = ref_current_trim
-        c.write_configuration(chip_key, "ref_current_trim")
-        registers = []
+        controller[chip_key].config.ref_current_trim = ref_current_trim
+        controller.write_configuration(chip_key, "ref_current_trim")
+        registers: list[int] = []
         for uart in range(4):
-            setattr(c[chip_key].config, f"i_rx{uart}", i_rx)
-            registers.append(c[chip_key].config.register_map[f"i_rx{uart}"])
-            setattr(c[chip_key].config, f"r_term{uart}", r_term)
-            registers.append(c[chip_key].config.register_map[f"r_term{uart}"])
-            setattr(c[chip_key].config, f"i_tx_diff{uart}", i_tx_diff)
-            registers.append(c[chip_key].config.register_map[f"i_tx_diff{uart}"])
-            setattr(c[chip_key].config, f"tx_slices{uart}", tx_slices)
-            registers.append(c[chip_key].config.register_map[f"tx_slices{uart}"])
+            setattr(controller[chip_key].config, f"i_rx{uart}", i_rx)
+            registers.append(controller[chip_key].config.register_map[f"i_rx{uart}"])
+            setattr(controller[chip_key].config, f"r_term{uart}", r_term)
+            registers.append(controller[chip_key].config.register_map[f"r_term{uart}"])
+            setattr(controller[chip_key].config, f"i_tx_diff{uart}", i_tx_diff)
+            registers.append(
+                controller[chip_key].config.register_map[f"i_tx_diff{uart}"]
+            )
+            setattr(controller[chip_key].config, f"tx_slices{uart}", tx_slices)
+            registers.append(
+                controller[chip_key].config.register_map[f"tx_slices{uart}"]
+            )
 
         #        ok, diff = c.enforce_configuration([chip_key], timeout=0.01, connection_delay=0.003, n=20, n_verify=7)
         #        if not ok:
         #            raise RuntimeError('Enforcing failed', diff)
         for reg in registers:
-            c.write_configuration(chip_key, reg)
+            controller.write_configuration(chip_key, reg)
         #            c.write_configuration(chip_key, reg, connection_delay=0.005)
         #            c.write_configuration(chip_key, reg, connection_delay=0.005)
         for reg in registers:
             #            c.write_configuration(chip_key, reg, connection_delay=0.005)
             #            c.write_configuration(chip_key, reg, connection_delay=0.005)
-            c.write_configuration(chip_key, reg)
+            controller.write_configuration(chip_key, reg)
     # ok, diff = c.enforce_configuration([chip_key], timeout=0.01, connection_delay=0.003, n=20, n_verify=7)
     # if not ok:
     #    raise RuntimeError('Enforcing failed', diff)
@@ -748,65 +798,65 @@ def network_v2b(controller_config, tiles=None, verbose=False):
     #             io_channel, clk_ctrl_2_clk_ratio_map[_default_clk_ctrl], io_group=io_group)
 
     # issue soft reset (resets state machines, configuration memory untouched)
-    for io_group, io_channels in c.network.items():
-        c.io.reset_larpix(length=24, io_group=io_group)
+    for io_group, io_channels in controller.network.items():
+        controller.io.reset_larpix(length=24, io_group=io_group)
 
-    return c
+    return controller
 
 
-def network_v2a(controller_config, verbose=False):
+def network_v2a(controller_config: str, verbose: bool = False) -> larpix.Controller:
 
-    c = larpix.Controller()
-    c.io = larpix.io.PACMAN_IO(relaxed=True)
+    controller = larpix.Controller()
+    controller.io = larpix.io.PACMAN_IO(relaxed=True)
 
     if controller_config is None:
         raise RuntimeError("No controller config specified!")
     else:
-        c.load(controller_config)
+        controller.load(controller_config)
 
-    for io_group in c.network:
-        io_channels = np.array(list(c.network[io_group])).astype(int)
+    for io_group in controller.network:
+        io_channels = np.array(list(controller.network[io_group])).astype(int)
         tiles = utility.io_channel_list_to_tile(io_channels)
 
-    for io_group, io_channels in c.network.items():
+    for io_group, io_channels in controller.network.items():
         if verbose:
             print("resetting io group:", io_group)
-        c.io.reset_larpix(length=2048, io_group=io_group)
+        controller.io.reset_larpix(length=2048, io_group=io_group)
         time.sleep(2048 * (1 / (10e6)))
-        c.io.reset_larpix(length=2048, io_group=io_group)
+        controller.io.reset_larpix(length=2048, io_group=io_group)
         time.sleep(2048 * (1 / (10e6)))
 
         for io_channel in io_channels:
-            c.io.set_uart_clock_ratio(
+            controller.io.set_uart_clock_ratio(
                 io_channel, clk_ctrl_2_clk_ratio_map[0], io_group=io_group
             )
 
     # throttle the data rate to insure no FIFO collisions
-    c.io.group_packets_by_io_group = False
-    for io_group, io_channels in c.network.items():
+    controller.io.group_packets_by_io_group = False
+    for io_group, io_channels in controller.network.items():
         for io_channel in io_channels:
-            c.init_network(io_group, io_channel, modify_mosi=False)
+            controller.init_network(io_group, io_channel, modify_mosi=False)
 
     # set uart speed (v2a at 2.5 MHz transmit clock, v2b fine at 5 MHz transmit clock)
-    for io_group, io_channels in c.network.items():
+    for io_group, io_channels in controller.network.items():
         for io_channel in io_channels:
-            chip_keys = c.get_network_keys(
+            chip_keys = controller.get_network_keys(
                 io_group, io_channel, root_first_traversal=False
             )
             for chip_key in chip_keys:
-                c[chip_key].config.clk_ctrl = _default_clk_ctrl
-                c.write_configuration(chip_key, "clk_ctrl")
+                controller[chip_key].config.clk_ctrl = _default_clk_ctrl
+                controller.write_configuration(chip_key, "clk_ctrl")
 
-    for io_group, io_channels in c.network.items():
+    for io_group, io_channels in controller.network.items():
         for io_channel in io_channels:
-            c.io.set_uart_clock_ratio(
+            controller.io.set_uart_clock_ratio(
                 io_channel,
                 clk_ctrl_2_clk_ratio_map[_default_clk_ctrl],
                 io_group=io_group,
             )
 
     # issue soft reset (resets state machines, configuration memory untouched)
-    for io_group, io_channels in c.network.items():
-        c.io.reset_larpix(length=24, io_group=io_group)
+    for io_group, io_channels in controller.network.items():
+        controller.io.reset_larpix(length=24, io_group=io_group)
 
-    return c
+    return controller

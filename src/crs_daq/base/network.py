@@ -330,6 +330,29 @@ def initial_network(
     r_term: int,
     i_rx: int,
 ) -> None:
+    """
+    Create the initial network on the LArPix Controller.
+
+    Parameters
+    ----------
+    controller : larpix.Controller
+        The LArPix Controller to set the network on. Has the identities of the chips.
+    io : larpix.io.PACMAN_IO
+        The PACMAN interface IO.
+    io_group : int
+        The IO group number.
+    root_keys : list[larpix.Key]
+        The network root chip keys, or the initial parents within the network.
+    verbose : bool
+        Prints state updates throughout the process.
+    asic_version : int | str
+        The LArPix ASIC version.
+    ref_current_trim : int
+    tx_diff : int
+    tx_slice : int
+    r_term : int
+    i_rx : int
+    """
     root_ioc: list[int] = [rk.io_channel for rk in root_keys]
     waitlist: set[int] = set()
     cnt_configured, cnt_unconfigured = 0, 0
