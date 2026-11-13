@@ -626,7 +626,7 @@ def io_channel_to_tile(io_channel: int) -> int:
     return int(np.floor((io_channel - 1 - ((io_channel - 1) % 4)) / 4 + 1))
 
 
-def io_channel_list_to_tile(io_channel: list[int]) -> list[int]:
+def io_channel_list_to_tile(io_channel: list[int] | npt.NDArray[int]) -> list[int]:
     """
     IO channel numbers to tile IDs.
     """

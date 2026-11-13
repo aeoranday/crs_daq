@@ -28,7 +28,7 @@ def network_ext_node_from_tuple(
     controller: larpix.Controller, iog_ioc_cid: tuple[int, int, int]
 ) -> None:
     controller.add_network_node(
-        iog_ioc_cid[0], iog_ioc_cid[1], c.network_names, "ext", root=True
+        iog_ioc_cid[0], iog_ioc_cid[1], controller.network_names, "ext", root=True
     )
     controller.add_network_link(
         iog_ioc_cid[0], iog_ioc_cid[1], "miso_us", ("ext", iog_ioc_cid[2]), 0
@@ -42,10 +42,10 @@ def network_ext_node_from_tuple(
     return
 
 
-def network_ext_node_from_tuple(
+def network_ext_node(
     controller: larpix.Controller, io_group: int, io_channel: int, chip_id: int
 ) -> None:
-    controller.add_network_node(io_group, io_channel, c.network_names, "ext", root=True)
+    controller.add_network_node(io_group, io_channel, controller.network_names, "ext", root=True)
     controller.add_network_link(io_group, io_channel, "miso_us", ("ext", chip_id), 0)
     controller.add_network_link(io_group, io_channel, "miso_ds", (chip_id, "ext"), 0)
     controller.add_network_link(io_group, io_channel, "mosi", ("ext", chip_id), 0)
@@ -135,7 +135,7 @@ def setup_root(
     tx_slice: int,
     r_term: int,
     i_rx: int,
-) -> None:
+) -> larpix.Key | None:
 
     chip_key: larpix.Key = configure_chip_id(
         controller, io_group, io_channel, chip_id, asic_version
@@ -265,7 +265,7 @@ def initial_network(
 
         bail: bool = False
         last_chip_id: int = root.chip_id
-        last_daughter: list[larpix.Key] = []
+        last_daughter: list[tuple[int, int]] = []
         while last_chip_id <= root.chip_id + 29:
             if bail == True:
                 break
@@ -275,7 +275,7 @@ def initial_network(
                 if bail == True:
                     break
                 excluded = False
-                daughter_id: larpix.Key = find_daughter_id(parent_piso_us, last_chip_id)
+                daughter_id: int = find_daughter_id(parent_piso_us, last_chip_id)
                 print("LOOKING AT DAUGHTER: ", daughter_id)
                 # UGLY HACK
                 if (last_chip_id, daughter_id) not in last_daughter:
@@ -331,10 +331,10 @@ def initial_network(
                         cks.append(ck.chip_id)
                 if daughter_id in cks:
                     continue
-                parent = larpix.key.Key(root.io_group, root.io_channel, last_chip_id)
+                parent: larpix.Key = larpix.key.Key(root.io_group, root.io_channel, last_chip_id)
                 if parent not in controller.chips:
                     continue
-                daughter = larpix.key.Key(root.io_group, root.io_channel, daughter_id)
+                daughter: larpix.Key = larpix.key.Key(root.io_group, root.io_channel, daughter_id)
 
                 ok, diff = uart.setup_parent_piso(
                     controller, io, parent, daughter, verbose, tx_diff, tx_slice
@@ -462,12 +462,12 @@ def iterate_waitlist(
     tx_slice: int,
     r_term: int,
     i_rx: int,
-    exclude: dict[str, int] | None = None,
-    exclude_links: dict[str, tuple[int, int]] | None = None,
+    exclude: dict[str, int] | None = None,  # FIXME AEO: Both this and exclude_links **cannot** be None. There would be an error otherwise.
+    exclude_links: dict[str, dict[str, list[list[int]]]] | None = None,
 ) -> list[tuple[larpix.Key, int]]:
     print("\n\n----- Iterating waitlist ----\n")
     flag: bool = True
-    outstanding: list[tuple[int, int]] = []
+    outstanding: list[tuple[larpix.Key, int]] = []
     while flag == True:
         waitlist, network = find_waitlist(controller, io_group, io_channels)
         n_waitlist: int = len(waitlist)
@@ -619,8 +619,8 @@ def configure_asic_network_links(controller: larpix.Controller) -> larpix.Contro
 
 # @timebudget
 def miso_us_chip_id_list(
-    chip2chip_pair: tuple[str, str] | tuple[int, int], miso_us: list[int] | list[str]
-) -> list[int] | list[str]:
+    chip2chip_pair: tuple[str, str] | tuple[int, int], miso_us: list[Any]
+) -> list[Any]:
     if chip2chip_pair[0] == "ext" or chip2chip_pair[1] == "ext":
         miso_us[3] = chip2chip_pair[1]
         return miso_us
@@ -641,7 +641,7 @@ def miso_us_chip_id_list(
 def write_network_to_file(
     controller: larpix.Controller,
     file_prefix: str,
-    io_group_pacman_tile: dict[int, int],
+    io_group_pacman_tile: dict[int, list[int]],
     unconfigured: list[tuple[larpix.Key, Any]],
     layout: str = "2.5.1",
     asic_version: str | int = "2b",
@@ -666,7 +666,7 @@ def write_network_to_file(
             for node in list(controller.network[iog][ioc]["miso_us"]):
                 temp: dict[str, Any] = {}
                 temp["chip_id"] = node
-                miso_us = [None] * 4
+                miso_us: list[None] = [None] * 4
                 for edge in list(controller.network[iog][ioc]["miso_us"].edges()):
                     for chip2chip_pair in controller.network[iog][ioc]["miso_us"].edges(
                         edge
