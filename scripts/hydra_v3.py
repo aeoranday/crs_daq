@@ -6,6 +6,7 @@ import argparse
 import json
 import sys
 import time
+from pathlib import Path
 
 import larpix
 import larpix.io
@@ -35,6 +36,7 @@ v3_10x16_root_ids: list[int] = [151, 111, 61, 21]
 
 def main(
     io_group: int,
+    pacman_config: Path,
     file_prefix: str | None = _default_file_prefix,  # FIXME AEO: Remove unused argument.
     disable_logger: bool = _default_disable_logger,  # FIXME AEO: Remove unused argument.
     verbose: bool = _default_verbose,
@@ -49,7 +51,7 @@ def main(
     start = time.time()
 
     controller: larpix.Controller = larpix.Controller()
-    controller.io = larpix.io.PACMAN_IO(relaxed=True, asic_version=3)
+    controller.io = larpix.io.PACMAN_IO(config_filepath=pacman_config, relaxed=True, asic_version=3)
     controller.io.reset_tiles([pacman_tile], length=4096 * 4, io_group=io_group)  # 2048
     time.sleep(4096 * 4 * 1e-6)
     controller.io.reset_tiles([pacman_tile], length=4096 * 4, io_group=io_group)  # 2048
@@ -167,6 +169,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--io_group", default=1, type=int, help="""io group to network"""
+    )
+    parser.add_argument(
+        "--pacman_config", default=Path("configs/io/pacman.json"), type=Path, help="Config path for the PACMAN IO."
     )
     parser.add_argument(
         "--pacman_tile", default=None, type=int, help="""PACMAN tile to work with"""

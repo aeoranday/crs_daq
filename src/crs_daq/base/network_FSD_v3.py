@@ -1,5 +1,6 @@
 import json
 import time
+from pathlib import Path
 
 import larpix
 import numpy as np
@@ -706,10 +707,10 @@ def write_network_to_file(
     return fname
 
 
-def network_v3(controller_config, tiles=None, verbose=False):
+def network_v3(controller_config, pacman_config: Path = Path("configs/io/pacman.json"), tiles=None, verbose=False):
 
     c = larpix.Controller()
-    c.io = larpix.io.PACMAN_IO(relaxed=True, asic_version=3)
+    c.io = larpix.io.PACMAN_IO(config_filepath=pacman_config, relaxed=True, asic_version=3)
 
     if controller_config is None:
         raise RuntimeError("No controller config specified!")
