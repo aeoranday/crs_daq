@@ -1,11 +1,9 @@
-import warnings
-
-warnings.filterwarnings("ignore")
 import argparse
 import json
 import logging
 import os
 import sys
+import warnings
 
 import larpix
 import larpix.io
@@ -13,13 +11,9 @@ import larpix.io
 from crs_daq.base import (config_loader, enforce_parallel, network,
                   network_FSD, network_FSD_v3, pacman,
                   utility)
-from runenv import runenv as RUN
+from crs_daq.runenv import runenv as RUN
 
-module = sys.modules[__name__]
-for var in RUN.config:
-    setattr(module, var, getattr(RUN, var))
-
-
+warnings.filterwarnings("ignore")
 logger = logging.getLogger(__name__)
 _default_verbose = True
 _default_controller_config = "configs/controller_config.json"
@@ -61,13 +55,13 @@ def enforce_iterative(
         for io_group in io_group_tiles:
             tiles = io_group_tiles[io_group]
             config = configs[str(io_group)]
-            if io_group_asic_version_[io_group] == "2b":
+            if RUN.config["io_group_asic_version_"][io_group] == "2b":
                 c = network.network_v2b(config)
 
-            elif io_group_asic_version_[io_group] in [2, "lightpix-1"]:
+            elif RUN.config["io_group_asic_version_"][io_group] in [2, "lightpix-1"]:
                 c = network.network_v2a(config)
 
-            elif io_group_asic_version_[io_group] in [3]:
+            elif RUN.config["io_group_asic_version_"][io_group] in [3]:
                 c = network_FSD_v3.network_v3(config, tiles=tiles)
 
             all_network_keys += enforce_parallel.get_chips_by_io_group_io_channel(
@@ -120,12 +114,12 @@ def main(
         c = None
 
         config = configs[str(io_group)]
-        _ = utility.update_json(network_config_paths_file_, io_group, config)
-        if io_group_asic_version_[io_group] in ["2b", "2d"]:
+        _ = utility.update_json(RUN.config["network_config_paths_file_"], io_group, config)
+        if RUN.config["io_group_asic_version_"][io_group] in ["2b", "2d"]:
             c = network_FSD.network_v2b(config)
-        elif io_group_asic_version_[io_group] in [3]:
+        elif RUN.config["io_group_asic_version_"][io_group] in [3]:
             c = network_FSD_v3.network_v3(config, tiles=tiles)
-        elif io_group_asic_version_[io_group] in [2, "lightpix-1"]:
+        elif RUN.config["io_group_asic_version_"][io_group] in [2, "lightpix-1"]:
             if verbose:
                 print("loading network_v2a")
             c = network.network_v2a(config)
@@ -141,7 +135,7 @@ def main(
             _tiles += utility.io_channel_list_to_tile(list(io_channels))
 
         _update_now = False
-        CONFIG = utility.get_from_json(default_asic_config_paths_file_, io_group)
+        CONFIG = utility.get_from_json(RUN.config["default_asic_config_paths_file_"], io_group)
         if update_default or CONFIG is None:
             config_path = config_loader.write_config_to_file(c, config_path)
             _update_now = True
@@ -149,14 +143,14 @@ def main(
         DCONFIG = None
         if _update_now:
             _ = utility.update_json(
-                default_asic_config_paths_file_, io_group, config_path
+                RUN.config["default_asic_config_paths_file_"], io_group, config_path
             )
             DCONFIG = config_path
         else:
             DCONFIG = utility.get_from_json(
-                default_asic_config_paths_file_, io_group
+                RUN.config["default_asic_config_paths_file_"], io_group
             )
-        _ = utility.update_json(asic_config_paths_file_, io_group, DCONFIG)
+        _ = utility.update_json(RUN.config["asic_config_paths_file_"], io_group, DCONFIG)
         DCONFIGS[io_group] = DCONFIG
 
     nc = larpix.Controller()

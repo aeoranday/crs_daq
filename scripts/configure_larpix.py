@@ -1,13 +1,10 @@
-import warnings
-
-warnings.filterwarnings("ignore")
-
 import argparse
 import json
 import logging
 import os
 import sys
 from typing import Any
+import warnings
 
 import larpix
 import larpix.io
@@ -15,9 +12,7 @@ import larpix.io
 from crs_daq.base import config_loader, enforce_parallel, pacman, utility
 from crs_daq.runenv import runenv as RUN
 
-module = sys.modules[__name__]
-for var in RUN.config:
-    setattr(module, var, getattr(RUN, var))
+warnings.filterwarnings("ignore")
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -52,15 +47,15 @@ def main(
         CONFIG: str | None = None
         if asic_config is None:
             print("Loading current config...")
-            CONFIG = utility.get_from_json(asic_config_paths_file_, io_group)
+            CONFIG = utility.get_from_json(RUN.config["asic_config_paths_file_"], io_group)
         else:
             CONFIG = asic_config
             if config_subdir is not None:
                 CONFIG = "{}/{}".format(asic_config, config_subdir)
-            utility.update_json(asic_config_paths_file_, io_group, CONFIG)
+            utility.update_json(RUN.config["asic_config_paths_file_"], io_group, CONFIG)
 
         network_config_file: dict[str, Any] | Any | None = utility.get_from_json(
-            network_config_paths_file_, io_group
+            RUN.config["network_config_paths_file_"], io_group
         )
         if type(network_config_file) is not str:
             raise RuntimeError(

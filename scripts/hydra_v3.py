@@ -16,10 +16,6 @@ from crs_daq.base import (network_FSD_v3, utility)
 from crs_daq.runenv import runenv as RUN
 from crs_daq.utils import datetime_now
 
-module = sys.modules[__name__]
-for var in RUN.config:
-    setattr(module, var, getattr(RUN, var))
-
 _default_file_prefix: None = None
 _default_disable_logger: bool = True
 _default_verbose: bool = False
@@ -60,25 +56,12 @@ def main(
     now: str = datetime_now()  # FIXME AEO: Remove unused variable (stage 2).
     config_name = "controller-config-" + now + ".json"  # FIXME AEO: Remove unused variable.
 
-    # fixed in FSD tile PCB
-    # VERSION_SPECIFIC
-    # if io_group_asic_version_[iog]=='2b':
-    #    print('inverting io group {} tiles {}'.format(iog, io_group_pacman_tile_[iog]))
-    #    pacman.invert_pacman_uart(controller.io, iog, io_group_asic_version_[iog], \
-    #                               io_group_pacman_tile_[iog])
-
-    # for g_c_id in iog_ioc_cid:
-    #     network_FSD.network_ext_node_from_tuple(controller, g_c_id)
-
     for iog in [io_group]:
         print("Working on io_group={}".format(iog))
-        if io_group_asic_version_[iog] in [3]:
-
+        if RUN.config["io_group_asic_version_"][iog] == 3:
             tiles: list[int]
-            # print('Working on tiles: ', pacman_tile)
-
             if pacman_tile is None:
-                tiles = io_group_pacman_tile_[iog]
+                tiles = RUN.config["io_group_pacman_tile_"][iog]
             else:
                 tiles = [pacman_tile]
             for tile in tiles:
@@ -90,7 +73,7 @@ def main(
                     network_FSD_v3.network_ext_node_from_tuple(
                         controller, iog, io_channel, cid
                     )
-                    if cid in iog_exclude[iog][str(tile)]:
+                    if cid in RUN.config["iog_exclude"][iog][str(tile)]:
                         continue
                     candidate_root: larpix.Key | None = network_FSD_v3.setup_root(
                         controller,
@@ -99,7 +82,7 @@ def main(
                         io_channel,
                         cid,
                         verbose,
-                        io_group_asic_version_[iog],
+                        RUN.config["io_group_asic_version_"][iog],
                         v_cm_lvds_tx,
                         tx_diff,
                         tx_slice,
@@ -122,14 +105,14 @@ def main(
                         iog_tile[0],
                         iog_tile_to_root_keys[iog_tile],
                         verbose,
-                        io_group_asic_version_[iog],
+                        RUN.config["io_group_asic_version_"][iog],
                         v_cm_lvds_tx,
                         tx_diff,
                         tx_slice,
                         r_term,
                         i_rx,
-                        exclude=iog_exclude[iog],
-                        exclude_links=iog_exclude_links[iog],
+                        exclude=RUN.config["iog_exclude"][iog],
+                        exclude_links=RUN.config["iog_exclude_links"][iog],
                     )
 
                 unconfigured: list[tuple[larpix.Key, int]] = []
@@ -139,14 +122,14 @@ def main(
                     iog,
                     utility.tile_to_io_channel([tile]),
                     verbose,
-                    io_group_asic_version_[iog],
+                    RUN.config["io_group_asic_version_"][iog],
                     v_cm_lvds_tx,
                     tx_diff,
                     tx_slice,
                     r_term,
                     i_rx,
-                    exclude=iog_exclude[iog],
-                    exclude_links=iog_exclude_links[iog],
+                    exclude=RUN.config["iog_exclude"][iog],
+                    exclude_links=RUN.config["iog_exclude_links"][iog],
                 )
                 unconfigured.extend(out_of_network)
 
@@ -155,7 +138,7 @@ def main(
                     f"iog_{io_group}-tile_{tile}",
                     {io_group: [tile]},
                     unconfigured,
-                    asic_version=io_group_asic_version_[iog],
+                    asic_version=RUN.config["io_group_asic_version_"][iog],
                 )
 
                 plot_hydra_network_10x16.main(network_file, io_group=io_group)
