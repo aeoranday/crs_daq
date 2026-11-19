@@ -1,18 +1,18 @@
-import warnings
-
-warnings.filterwarnings("ignore")
 import argparse
 import json
 import logging
 import sys
 import time
+import warnings
 from typing import Any
 
 import larpix
 import larpix.io
 
 from crs_daq.base import pacman, utility
+from crs_daq.runenv import runenv as RUN
 
+warnings.filterwarnings("ignore")
 logger = logging.getLogger(__name__)
 
 _default_verbose = False
@@ -20,12 +20,6 @@ skip_readback = False
 # 0x201c
 # 1: disable
 # 0: enable (default)
-
-from crs_daq.runenv import runenv as RUN
-
-module = sys.modules[__name__]
-for var in RUN.config:
-    setattr(module, var, getattr(RUN, var))
 
 
 def main(verbose: bool, pacman_config: str) -> None:
@@ -46,9 +40,9 @@ def main(verbose: bool, pacman_config: str) -> None:
         io_group: int = io_group_ip_pair[0]
         print("Configuring IO Group {}".format(io_group))
         # read pacman information and metadata from RUNENV
-        pacman_version: str = iog_pacman_version_[io_group]
-        VDDD_DAC: list[int] = iog_VDDD_DAC[io_group]
-        VDDA_DAC: list[int] = iog_VDDA_DAC[io_group]
+        pacman_version: str = RUN.config["iog_pacman_version_"][io_group]
+        VDDD_DAC: list[int] = RUN.config["iog_VDDD_DAC"][io_group]
+        VDDA_DAC: list[int] = RUN.config["iog_VDDA_DAC"][io_group]
 
         if verbose:
             print("disabling tile power and clock")
@@ -62,7 +56,7 @@ def main(verbose: bool, pacman_config: str) -> None:
         controller.io.set_reg(0x101C, 0x4, io_group=io_group)
         time.sleep(0.1)
 
-        for IO_CHAN in utility.tile_to_io_channel(io_group_pacman_tile_[io_group]):
+        for IO_CHAN in utility.tile_to_io_channel(RUN.config["io_group_pacman_tile_"][io_group]):
 
             uart: int | None = pacman.convert_io_channel_to_uart(IO_CHAN)
             if uart is not None:
@@ -74,7 +68,7 @@ def main(verbose: bool, pacman_config: str) -> None:
         # enable pacman power
         controller.io.set_reg(0x00000014, 1, io_group=io_group)
 
-        pacman_version = iog_pacman_version_[io_group]
+        pacman_version = RUN.config["iog_pacman_version_"][io_group]
 
         VDDA_REG: int | None = None
         VDDD_REG: int | None = None
@@ -82,7 +76,7 @@ def main(verbose: bool, pacman_config: str) -> None:
         if pacman_version == "v1rev5":
             VDDD_REG = 0x24020
             VDDA_REG = 0x24010
-            for PACMAN_TILE in io_group_pacman_tile_[io_group]:
+            for PACMAN_TILE in RUN.config["io_group_pacman_tile_"][io_group]:
                 if verbose:
                     print(
                         "powering pacman tile:", PACMAN_TILE, "to", VDDD_DAC, VDDA_DAC
@@ -118,7 +112,7 @@ def main(verbose: bool, pacman_config: str) -> None:
         # enable tile power
         tile_enable_sum: int = 0
         tile_enable_val: int = 0
-        for PACMAN_TILE in io_group_pacman_tile_[io_group]:
+        for PACMAN_TILE in RUN.config["io_group_pacman_tile_"][io_group]:
             tile_enable_sum = +tile_enable_sum  # FIXME AEO: This is always 0.
             tile_enable_val = controller.io.get_reg(0x00000010, io_group=io_group) + pow(
                 2, PACMAN_TILE - 1
@@ -128,19 +122,19 @@ def main(verbose: bool, pacman_config: str) -> None:
             if verbose:
                 print("enabling tilereg 0x10: {0:b}".format(tile_enable_val))
 
-        if io_group_asic_version_[io_group] == "2b":
+        if RUN.config["io_group_asic_version_"][io_group] == "2b":
             if verbose:
                 print("Inverting PACMAN UARTs on io_group={}".format(io_group))
             pacman.invert_pacman_uart(
                 controller.io,
                 io_group,
-                io_group_asic_version_[io_group],
-                io_group_pacman_tile_[io_group],
+                RUN.config["io_group_asic_version_"][io_group],
+                RUN.config["io_group_pacman_tile_"][io_group],
             )
 
         if not skip_readback:
             readback = pacman.power_readback(
-                controller.io, io_group, pacman_version, io_group_pacman_tile_[io_group]
+                controller.io, io_group, pacman_version, RUN.config["io_group_pacman_tile_"][io_group]
             )
         #   - toggle reset bit
         controller.io.set_reg(0x1014, RESET_CYCLES, io_group=io_group)
@@ -157,8 +151,8 @@ def main(verbose: bool, pacman_config: str) -> None:
 
         pacman.set_packet_delay(controller.io, io_group)
 
-        utility.update_json(asic_config_paths_file_, io_group, None)
-        utility.update_json(network_config_paths_file_, io_group, None)
+        utility.update_json(RUN.config["asic_config_paths_file_"], io_group, None)
+        utility.update_json(RUN.config["network_config_paths_file_"], io_group, None)
 
     logger.info("completed")
 

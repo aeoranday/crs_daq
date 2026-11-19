@@ -7,11 +7,7 @@ import sys
 import larpix.io
 
 from crs_daq.base import utility
-from runenv import runenv as RUN
-
-module = sys.modules[__name__]
-for var in RUN.config:
-    setattr(module, var, getattr(RUN, var))
+from crs_daq.runenv import runenv as RUN
 
 
 ##########################################################################
@@ -142,7 +138,7 @@ def enable_all_pacman_uart_from_io_group(
 ) -> None:
     bits: list[str] = list("00000000000000000000000000000000")
     if not true_all:
-        enable_pacman_uart_from_tile(io, io_group, io_group_pacman_tile_[io_group])
+        enable_pacman_uart_from_tile(io, io_group, RUN.config["io_group_pacman_tile_"][io_group])
     else:
         io.set_reg(0x201C, int("".join(bits), 2), io_group=io_group)
     return
