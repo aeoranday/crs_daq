@@ -1,9 +1,15 @@
-import argparse
+#!/usr/bin/env python3
+"""
+Monitor the power of the PACMAN IO groups 1.
+"""
 import datetime as dt
 import json
 import time
 import warnings
+from pathlib import Path
+from typing import Any
 
+import click
 import larpix
 import larpix.io
 
@@ -12,70 +18,42 @@ from crs_daq.base import pacman
 
 warnings.filterwarnings("ignore")
 
-_default_verbose = False
-skip_readback = False
+DEFAULT_VERBOSE = False
 
 
-def main(verbose, pacman_config):
-    # sign into the lbl account
-    # client = influxdb_client.InfluxDBClient(url=URL, token=TOKEN, org=ORG)
+@click.command()
+@click.option("--verbose", "-v", is_flag=True, default=DEFAULT_VERBOSE)
+@click.option(
+    "--pacman-config",
+    default=Path("configs/io/pacman.json"),
+    type=click.Path(readable=True, dir_okay=False, path_type=Path),
+    help="Config specifying PACMANs.",
+)
+def main(verbose: bool, pacman_config: Path):
+    """
+    Monitor the power for the IO group 1.
+    """
+    with open(pacman_config, "r", encoding="utf-8") as f:
+        pacman_configs: dict[str, Any] = json.load(f)
 
-    # set up InfluxDB to accept data
-    # write_api = client.write_api(write_options=SYNCHRONOUS)
+    controller: larpix.Controller = larpix.Controller()
+    controller.io: larpix.io.PACMAN_IO = larpix.io.PACMAN_IO(
+        relaxed=True, config_filepath=pacman_config
+    )
 
-    pacman_configs = {}
-    with open(pacman_config, "r") as f:
-        pacman_configs = json.load(f)
-
-    c = larpix.Controller()
-    c.io = larpix.io.PACMAN_IO(relaxed=True, config_filepath=pacman_config)
-
-    print(pacman_configs)
+    if verbose:
+        print(pacman_configs)
 
     # for each io_group, read power
     while True:
         print()
         print(dt.datetime.now())
         for io_group in range(1, 2):
-            print("Looking at IO Group {}".format(io_group))
+            print(f"Looking at IO Group {io_group}")
 
-            readback = pacman.power_readback(
-                c.io, io_group, "v1rev5", range(1, 11)
-            )
-
-            # for t in readback:
-            #     p = influxdb_client.Point(measurement).tag("io_group", io_group).tag("tile", t).field("vdda",
-            #                                                                                           float(readback[t][
-            #                                                                                               0]))
-            #     write_api.write(bucket=bucket, org=ORG, record=p)
-            #     p = influxdb_client.Point(measurement).tag("io_group", io_group).tag("tile", t).field("idda",
-            #                                                                                           float(readback[t][
-            #                                                                                               1]) * rescale)
-            #     write_api.write(bucket=bucket, org=ORG, record=p)
-            #     p = influxdb_client.Point(measurement).tag("io_group", io_group).tag("tile", t).field("vddd",
-            #                                                                                           float(readback[t][
-            #                                                                                               2]))
-            #     write_api.write(bucket=bucket, org=ORG, record=p)
-            #     p = influxdb_client.Point(measurement).tag("io_group", io_group).tag("tile", t).field("iddd",
-            #                                                                                           float(readback[t][
-            #                                                                                               3]) * rescale)
-            #     write_api.write(bucket=bucket, org=ORG, record=p)
-
+            _ = pacman.power_readback(controller.io, io_group, "v1rev5", range(1, 11))
         time.sleep(10)
-
-    return
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--pacman_config",
-        default="configs/io/pacman.json",
-        type=str,
-        help="""Config specifying PACMANs""",
-    )
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", default=_default_verbose
-    )
-    args = parser.parse_args()
-    c = main(**vars(args))
+    main()  # pylint: disable=no-value-for-parameter

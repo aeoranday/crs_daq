@@ -1,11 +1,15 @@
-import argparse
+#!/usr/bin/env python3
+"""
+Configure PACMANs using the given configuration.
+"""
 import json
 import logging
-import sys
 import time
 import warnings
+from pathlib import Path
 from typing import Any
 
+import click
 import larpix
 import larpix.io
 
@@ -15,19 +19,30 @@ from crs_daq.runenv import runenv as RUN
 warnings.filterwarnings("ignore")
 logger = logging.getLogger(__name__)
 
-_default_verbose = False
-skip_readback = False
+DEFAULT_VERBOSE: bool = False
+SKIP_READBACK: bool = False
 # 0x201c
 # 1: disable
 # 0: enable (default)
 
 
-def main(verbose: bool, pacman_config: str) -> None:
-
+@click.command()
+@click.option("--verbose", "-v", is_flag=True, default=DEFAULT_VERBOSE)
+@click.option(
+    "--pacman-config",
+    default=Path("configs/io/pacman.json"),
+    type=click.Path(readable=True, dir_okay=False, path_type=Path),
+    help="Config specifying PACMANs.",
+    show_default=True,
+)
+def main(verbose: bool, pacman_config: Path) -> None:
+    """
+    Configure PACMANs using the given configuration.
+    """
     # number of clock cycles to hold for hard reset of LArPix
     RESET_CYCLES: int = 4096
     pacman_configs: dict[str, Any] = {}
-    with open(pacman_config, "r") as f:
+    with open(pacman_config, "r", encoding="utf-8") as f:
         pacman_configs = json.load(f)
 
     controller: larpix.Controller = larpix.Controller()
@@ -38,7 +53,7 @@ def main(verbose: bool, pacman_config: str) -> None:
 
     for io_group_ip_pair in pacman_configs["io_group"]:
         io_group: int = io_group_ip_pair[0]
-        print("Configuring IO Group {}".format(io_group))
+        print(f"Configuring IO Group {io_group}")
         # read pacman information and metadata from RUNENV
         pacman_version: str = RUN.config["iog_pacman_version_"][io_group]
         VDDD_DAC: list[int] = RUN.config["iog_VDDD_DAC"][io_group]
@@ -56,7 +71,9 @@ def main(verbose: bool, pacman_config: str) -> None:
         controller.io.set_reg(0x101C, 0x4, io_group=io_group)
         time.sleep(0.1)
 
-        for IO_CHAN in utility.tile_to_io_channel(RUN.config["io_group_pacman_tile_"][io_group]):
+        for IO_CHAN in utility.tile_to_io_channel(
+            RUN.config["io_group_pacman_tile_"][io_group]
+        ):
 
             uart: int | None = pacman.convert_io_channel_to_uart(IO_CHAN)
             if uart is not None:
@@ -82,8 +99,12 @@ def main(verbose: bool, pacman_config: str) -> None:
                         "powering pacman tile:", PACMAN_TILE, "to", VDDD_DAC, VDDA_DAC
                     )
                 # set voltage dacs to 0V
-                controller.io.set_reg(VDDD_REG + (PACMAN_TILE - 1), 0, io_group=io_group)
-                controller.io.set_reg(VDDA_REG + (PACMAN_TILE - 1), 0, io_group=io_group)
+                controller.io.set_reg(
+                    VDDD_REG + (PACMAN_TILE - 1), 0, io_group=io_group
+                )
+                controller.io.set_reg(
+                    VDDA_REG + (PACMAN_TILE - 1), 0, io_group=io_group
+                )
                 time.sleep(0.2)
 
                 # set voltage dacs VDDD first
@@ -114,17 +135,17 @@ def main(verbose: bool, pacman_config: str) -> None:
         tile_enable_val: int = 0
         for PACMAN_TILE in RUN.config["io_group_pacman_tile_"][io_group]:
             tile_enable_sum = +tile_enable_sum  # FIXME AEO: This is always 0.
-            tile_enable_val = controller.io.get_reg(0x00000010, io_group=io_group) + pow(
-                2, PACMAN_TILE - 1
-            )
+            tile_enable_val = controller.io.get_reg(
+                0x00000010, io_group=io_group
+            ) + pow(2, PACMAN_TILE - 1)
             controller.io.set_reg(0x00000010, tile_enable_val, io_group)
             time.sleep(0.1)
             if verbose:
-                print("enabling tilereg 0x10: {0:b}".format(tile_enable_val))
+                print(f"enabling tilereg 0x10: {tile_enable_val:b}")
 
         if RUN.config["io_group_asic_version_"][io_group] == "2b":
             if verbose:
-                print("Inverting PACMAN UARTs on io_group={}".format(io_group))
+                print(f"Inverting PACMAN UARTs on {io_group=}")
             pacman.invert_pacman_uart(
                 controller.io,
                 io_group,
@@ -132,9 +153,12 @@ def main(verbose: bool, pacman_config: str) -> None:
                 RUN.config["io_group_pacman_tile_"][io_group],
             )
 
-        if not skip_readback:
-            readback = pacman.power_readback(
-                controller.io, io_group, pacman_version, RUN.config["io_group_pacman_tile_"][io_group]
+        if not SKIP_READBACK:
+            _ = pacman.power_readback(
+                controller.io,
+                io_group,
+                pacman_version,
+                RUN.config["io_group_pacman_tile_"][io_group],
             )
         #   - toggle reset bit
         controller.io.set_reg(0x1014, RESET_CYCLES, io_group=io_group)
@@ -156,19 +180,6 @@ def main(verbose: bool, pacman_config: str) -> None:
 
     logger.info("completed")
 
-    return
-
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--pacman_config",
-        default="configs/io/pacman.json",
-        type=str,
-        help="""Config specifying PACMANs""",
-    )
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", default=_default_verbose
-    )
-    args = parser.parse_args()
-    main(**vars(args))
+    main()  # pylint: disable=no-value-for-parameter

@@ -1,27 +1,20 @@
-import argparse
 import os
-import sys
 import warnings
 from signal import SIGINT, signal
+from pathlib import Path
 
-warnings.filterwarnings("ignore")
-
+import click
 import larpix
 import larpix.io
 
 from crs_daq.base import utility
 from crs_daq.runenv import runenv as RUN
-from crs_daq.utils import datetime_now
 
-module = sys.modules[__name__]
-for var in RUN.config:
-    setattr(module, var, getattr(RUN, var))
+warnings.filterwarnings("ignore")
 
 
-_default_file_count: int = -1
-_default_runtime: int = 300
-_default_message: str = "collecting data..."
-_default_packet: bool = False
+DEFAULT_FILE_COUNT: int = -1
+DEFAULT_RUNTIME: int = 300
 
 
 # FIXME AEO: `ctrlc_handler` should have 2 positional arguments. Ref. signal.signal documentation.
@@ -30,10 +23,65 @@ def ctrlc_handler() -> None:
     print("CTRL-C detected. Starting Dump.")
 
 
+@click.command()
+@click.option(
+    "--file-count",
+    default=DEFAULT_FILE_COUNT,
+    type=int,
+    help="Number of output files to create, default inf.",
+)
+@click.option(
+    "--runtime",
+    default=DEFAULT_RUNTIME,
+    type=int,
+    help="Runtime duration in seconds.",
+    show_default=True,
+)
+@click.option(
+    "--packet",
+    is_flag=True,
+    help="Generate packet file (default binary).",
+)
+@click.option(
+    "--filename",
+    "-f",
+    type=click.Path(writable=True, path_type=Path),
+    help="Specifiy a file name to save to.",
+)
+@click.option(
+    "--file-tag",
+    default=None,
+    type=str,
+    help="Automatic filename generation including this tag",
+)
+@click.option(
+    "--pacman-config",
+    default=Path("configs/io/pacman.json"),
+    type=click.Path(readable=True, dir_okay=False, path_type=Path),
+    help="Config specifying PACMANs.",
+    show_default=True,
+)
+@click.option("--return-filename", is_flag=True, help="Return last filename.")
+@click.option(
+    "--record-metadata",
+    is_flag=True,
+    help="Dump metadata.",
+)
+@click.option(
+    "--run",
+    default=-1,
+    type=int,
+    help="Run number, passed from combined run control.",
+)
+@click.option(
+    "--data-stream",
+    default="",
+    type=str,
+    help="Data stream, passed from combined run control.",
+)
 def main(
     file_count: int,
     runtime: int,
-    message: str,  # FIXME AEO: Unused argument.
     packet: bool,
     filename: str,
     file_tag: str,
@@ -42,7 +90,6 @@ def main(
     record_metadata: bool,
     run: int,
     data_stream: str,
-    **args,  # FIXME AEO: Unused argument.
 ) -> str | None:
     """
     Record data until reaching a specified file count or early exit.
@@ -50,7 +97,8 @@ def main(
     Arguments
     ---------
     file_count : int
-        The upper bound for the number of files to generate. Data recording can be stopped early with Ctrl-C.
+        The upper bound for the number of files to generate.
+        Data recording can be stopped early with Ctrl-C.
     runtime : int
         The amount of time in seconds to run for.
     message : str
@@ -80,24 +128,19 @@ def main(
     if filename is not None and file_count > 1:
         raise RuntimeError("All files will have same filename and will be overwritten")
 
-    global _global_record_metadata_
-    _global_record_metadata_ = record_metadata
-
     # Launch archiving process in the background to copy ASIC configs / detector parameters
-    if monitor:
+    if RUN.config["monitor"]:
         # check if destination_dir_ ends with "/"
-        if destination_dir_.endswith("/"):
-            copy_configs_here: str = "{}.configs".format(destination_dir_[:-1])
+        if RUN.config["destination_dir_"].endswith("/"):
+            copy_configs_here: str = f"{RUN.config['destination_dir_'][:-1]}.configs"
         else:
-            copy_configs_here = "{}.configs".format(destination_dir_)
+            copy_configs_here = f"{RUN.config['destination_dir_']}.configs"
 
         # check if copy_configs_here directory exists
         if not os.path.exists(copy_configs_here):
             os.mkdir(copy_configs_here)
         os.system(
-            "python archive.py --ignore_busy --monitor_dir {} &".format(
-                copy_configs_here
-            )
+            f"python archive.py --ignore_busy --monitor_dir {copy_configs_here} &"
         )
 
     controller: larpix.Controller = larpix.Controller()
@@ -109,8 +152,6 @@ def main(
     ctr: int = 0
     while (ctr < file_count or file_count < 0) and not utility._dump_and_exit_:
 
-        run_start: str = datetime_now()  # FIXME AEO: Unused variable.
-
         # dump ASIC configs to temporary directory to embed in data files
         # note that this archiviving command is called inside the loop, so it will be updated for each file
         # i.e. if changes are made during the run, they will be picked up automatically in the next file
@@ -118,18 +159,18 @@ def main(
 
         if filename is None or ctr > 0:
             filename = (
-                destination_dir_
+                RUN.config["destination_dir_"]
                 + "/"
                 + utility.data_filename(controller, packet, file_tag)
             )
         elif ctr == 0:
-            filename = destination_dir_ + "/" + filename
+            filename = RUN.config["destination_dir_"] + "/" + filename
 
         # set command to archive in case of ctrl+c
 
-        embed_command: str = "./embed_configs.sh {} &".format(filename.split("/")[-1])
-        dump_command: str = "./dump_metadata.sh {} {} {} &".format(
-            filename.split("/")[-1], run, data_stream
+        embed_command: str = f"./embed_configs.sh {filename.split('/')[-1]} &"
+        dump_command: str = (
+            f"./dump_metadata.sh {filename.split('/')[-1]} {run} {data_stream} &"
         )
 
         utility.data(controller, runtime, packet, False, filename)
@@ -152,67 +193,4 @@ def main(
 
 if __name__ == "__main__":
     signal(SIGINT, ctrlc_handler)
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--message",
-        "-m",
-        default=_default_message,
-        type=str,
-        help="""Message logged with file""",
-    )
-    parser.add_argument(
-        "--runtime",
-        default=_default_runtime,
-        type=int,
-        help="""Runtime duration, default 5 minutes""",
-    )
-    parser.add_argument(
-        "--file_count",
-        default=_default_file_count,
-        type=int,
-        help="""Number of output files to create, default inf""",
-    )
-    parser.add_argument(
-        "--packet",
-        action="store_true",
-        default=False,
-        help="""Generate packet file (default binary)""",
-    )
-    parser.add_argument(
-        "--pacman_config",
-        default="configs/io/pacman.json",
-        type=str,
-        help="""Config specifying PACMANs""",
-    )
-    parser.add_argument(
-        "--filename", "-f", default=None, type=str, help="""Specifiy a file name"""
-    )
-    parser.add_argument(
-        "--file_tag",
-        default=None,
-        type=str,
-        help="""Automatic filename generation including this tag""",
-    )
-    parser.add_argument(
-        "--record_metadata",
-        default=False,
-        action="store_true",
-        help="""Dump metadata""",
-    )
-    parser.add_argument(
-        "--run",
-        default=-1,
-        type=int,
-        help="""Run number, passed from combined run control""",
-    )
-    parser.add_argument(
-        "--data_stream",
-        default="",
-        type=str,
-        help="""Data stream, passed from combined run control""",
-    )
-    parser.add_argument(
-        "--return_filename", action="store_true", help="""Return last filename"""
-    )
-    args = parser.parse_args()
-    main(**vars(args))
+    main()  # pylint: disable=no-value-for-parameter

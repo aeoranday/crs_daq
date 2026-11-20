@@ -7,6 +7,7 @@ name = "crs_daq"
 version = "3.0.0"
 requires-python = ">= 3.11"
 dependencies = [
+	"click",
 	"h5py",
 	"larpix-control",
 	"matplotlib",
