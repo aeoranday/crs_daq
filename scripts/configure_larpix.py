@@ -1,11 +1,15 @@
-import argparse
+#!/usr/bin/env python3
+"""
+Configure a LArPix Controller with the given configurations.
+"""
 import json
 import logging
 import os
-import sys
 from typing import Any
 import warnings
+from pathlib import Path
 
+import click
 import larpix
 import larpix.io
 
@@ -13,24 +17,41 @@ from crs_daq.base import config_loader, enforce_parallel, pacman, utility
 from crs_daq.runenv import runenv as RUN
 
 warnings.filterwarnings("ignore")
-
 logger: logging.Logger = logging.getLogger(__name__)
 
-_default_verbose: bool = False
 
-
+@click.command()
+@click.option(
+    "--asic-config",
+    type=click.Path(readable=True, dir_okay=False, path_type=Path),
+    help="ASIC config to load and enforce.",
+)
+@click.option(
+    "--config-subdir",
+    type=click.Path(readable=True, file_okay=False, dir_okay=True, path_type=Path),
+    help="Subdirectory in larger config dir. Ignored if asic-config is not specified.",
+)
+@click.option(
+    "--pacman-config",
+    type=click.Path(readable=True, dir_okay=False, path_type=Path),
+    default=Path("configs/io/pacman.json"),
+    help="Config specifying PACMANs.",
+)
+@click.option("--pid-logged", is_flag=True, default=False)
+@click.option("--no-unmask-last", is_flag=True, default=False)
 def main(
-    verbose: bool,  # FIXME AEO: Unused variable.
-    asic_config: str,
-    config_subdir: str,
-    pacman_config: str,
-    no_unmask_last: bool = False,
-    pid_logged: bool = False,
+    asic_config: Path,
+    config_subdir: Path,
+    pacman_config: Path,
+    no_unmask_last: bool,
+    pid_logged: bool,
 ) -> None:
-
+    """
+    Configure a LArPix Controller with the given configurations.
+    """
     unmask_last: bool = not no_unmask_last
     pacman_configs: dict[str, Any] = {}
-    with open(pacman_config, "r") as f:
+    with open(pacman_config, "r", encoding="utf-8") as f:
         pacman_configs = json.load(f)
 
     controller: larpix.Controller = larpix.Controller()
@@ -47,11 +68,13 @@ def main(
         CONFIG: str | None = None
         if asic_config is None:
             print("Loading current config...")
-            CONFIG = utility.get_from_json(RUN.config["asic_config_paths_file_"], io_group)
+            CONFIG = utility.get_from_json(
+                RUN.config["asic_config_paths_file_"], io_group
+            )
         else:
             CONFIG = asic_config
             if config_subdir is not None:
-                CONFIG = "{}/{}".format(asic_config, config_subdir)
+                CONFIG = f"{asic_config}/{config_subdir}"
             utility.update_json(RUN.config["asic_config_paths_file_"], io_group, CONFIG)
 
         network_config_file: dict[str, Any] | Any | None = utility.get_from_json(
@@ -59,7 +82,8 @@ def main(
         )
         if type(network_config_file) is not str:
             raise RuntimeError(
-                f"Unexpected type for `network_config_file`. Got {type(network_config_file)}; expected str."
+                "Unexpected type for `network_config_file`."
+                f"Got {type(network_config_file)}; expected str."
             )
         all_network_keys += enforce_parallel.get_chips_by_io_group_io_channel(
             network_config_file
@@ -103,7 +127,6 @@ def main(
             io_group,
             list(set([chip.io_channel for chip in controller.chips])),
         )
-        # logger.info('starting configuration enforce: io_group={}'.format(io_group))
 
     pos: int = 0
     tag: str = "configuring..."
@@ -115,12 +138,11 @@ def main(
         pos = enforce_parallel.tag_to_config_map[tag]
 
     logger.info(
-        "started configuring: io_groups={}, {}/{}".format(
-            pacman_configs["io_group"], str(asic_config), str(config_subdir)
-        )
+        "started configuring: io_groups="
+        f"{pacman_configs['io_group']}, {asic_config}/{config_subdir}"
     )
     # enforce all configurations in parallel (one chip per io channel per cycle)
-    ok, diff, unconfigured = enforce_parallel.enforce_parallel(
+    ok, diff, _ = enforce_parallel.enforce_parallel(
         controller,
         all_network_keys,
         unmask_last=unmask_last,
@@ -131,37 +153,11 @@ def main(
         raise RuntimeError(diff)
 
     if pid_logged:
-        print("\n{} configured successfully".format(tag))
+        print(f"\n{tag} configured successfully")
     logger.info(
-        "completed configuring: io_groups={}".format(pacman_configs["io_group"])
+        f"completed configuring: io_groups={pacman_configs['io_group']}"
     )
-    return
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--asic_config",
-        default=None,
-        type=str,
-        help="""ASIC config to load and enforce""",
-    )
-    parser.add_argument(
-        "--config_subdir",
-        default=None,
-        type=str,
-        help="""Subdirectory in larger config dir. Ignroed if asic_config not specified""",
-    )
-    parser.add_argument(
-        "--pacman_config",
-        default="configs/io/pacman.json",
-        type=str,
-        help="""Config specifying PACMANs""",
-    )
-    parser.add_argument("--pid_logged", action="store_true", default=False)
-    parser.add_argument("--no_unmask_last", action="store_true", default=False)
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", default=_default_verbose
-    )
-    args = parser.parse_args()
-    main(**vars(args))
+    main()  # pylint: disable=no-value-for-parameter

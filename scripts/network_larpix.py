@@ -1,32 +1,38 @@
-import argparse
+#!/usr/bin/env python3
+"""
+Network the LArPix chips from the given controller and PACMAN configurations.
+"""
 import json
 import logging
 import os
-import sys
 import warnings
+from pathlib import Path
 
+import click
 import larpix
 import larpix.io
 
-from crs_daq.base import (config_loader, enforce_parallel, network,
-                  network_FSD, network_FSD_v3, pacman,
-                  utility)
+from crs_daq.base import (
+    config_loader,
+    enforce_parallel,
+    network,
+    network_FSD,
+    network_FSD_v3,
+    pacman,
+    utility,
+)
 from crs_daq.runenv import runenv as RUN
 
 warnings.filterwarnings("ignore")
 logger = logging.getLogger(__name__)
-_default_verbose = True
-_default_controller_config = "configs/controller_config.json"
-_update_default = False
+DEFAULT_VERBOSE: bool = True
+DEFAULT_CONTROLLER_CONFIG: Path = Path("configs/controller_config.json")
+UPDATE_DEFAULT: bool = False
 
 
 def enforce_iterative(
     nc, all_network_keys, n=1, configs=None, pbar_desc="p", pbar_position=0
 ):
-    # while True:
-    #     nc.verify_registers([('1-1-151', [122])])
-    #     nc.verify_registers([('1-1-152', [122])])
-
     ok, diff, unconfigured = enforce_parallel.enforce_parallel(
         nc, all_network_keys, pbar_desc=pbar_desc, pbar_position=pbar_position
     )
@@ -78,16 +84,39 @@ def enforce_iterative(
         )
 
 
+@click.command()
+@click.option("--verbose", "-v", is_flag=True, default=DEFAULT_VERBOSE)
+@click.option(
+    "--config-path",
+    type=click.Path(writable=True, path_type=Path),
+    help="Path to save configuration.",
+)
+@click.option(
+    "--controller-config",
+    default=DEFAULT_CONTROLLER_CONFIG,
+    type=click.Path(readable=True, dir_okay=False, path_type=Path),
+    help="""Controller config specifying hydra network""",
+)
+@click.option(
+    "--pacman-config",
+    default=Path("configs/io/pacman.json"),
+    type=click.Path(readable=True, dir_okay=False, path_type=Path),
+    help="Config specifying PACMANs.",
+)
+@click.option("--pid-logged", is_flag=True, default=False)
+@click.option("--update-default", is_flag=True, default=UPDATE_DEFAULT)
 def main(
-    verbose,
-    controller_config,
-    io_group_tiles=None,
-    pacman_config=None,
-    config_path=None,
-    pid_logged=False,
-    update_default=_update_default,
-):
-
+    verbose: bool,
+    controller_config: Path,
+    io_group_tiles,
+    pacman_config: Path,
+    config_path: Path,
+    pid_logged: bool,
+    update_default: bool,
+) -> larpix.Controller:
+    """
+    Network the LArPix chips from the given controller and PACMAN configurations.
+    """
     pacman_configs = {}
     with open(pacman_config, "r") as f:
         pacman_configs = json.load(f)
@@ -110,19 +139,21 @@ def main(
                 tiles = io_group_tiles[io_group]
 
         if verbose:
-            print("Configuring io_group={}".format(io_group))
-        c = None
+            print(f"Configuring {io_group=}")
+        controller: larpix.Controller | None = None
 
         config = configs[str(io_group)]
-        _ = utility.update_json(RUN.config["network_config_paths_file_"], io_group, config)
+        _ = utility.update_json(
+            RUN.config["network_config_paths_file_"], io_group, config
+        )
         if RUN.config["io_group_asic_version_"][io_group] in ["2b", "2d"]:
-            c = network_FSD.network_v2b(config)
+            controller = network_FSD.network_v2b(config)
         elif RUN.config["io_group_asic_version_"][io_group] in [3]:
-            c = network_FSD_v3.network_v3(config, tiles=tiles)
+            controller = network_FSD_v3.network_v3(config, tiles=tiles)
         elif RUN.config["io_group_asic_version_"][io_group] in [2, "lightpix-1"]:
             if verbose:
                 print("loading network_v2a")
-            c = network.network_v2a(config)
+            controller = network.network_v2a(config)
             if verbose:
                 print("done")
 
@@ -131,13 +162,15 @@ def main(
         )
 
         _tiles = []
-        for _, io_channels in c.network.items():
+        for _, io_channels in controller.network.items():
             _tiles += utility.io_channel_list_to_tile(list(io_channels))
 
         _update_now = False
-        CONFIG = utility.get_from_json(RUN.config["default_asic_config_paths_file_"], io_group)
+        CONFIG = utility.get_from_json(
+            RUN.config["default_asic_config_paths_file_"], io_group
+        )
         if update_default or CONFIG is None:
-            config_path = config_loader.write_config_to_file(c, config_path)
+            config_path = config_loader.write_config_to_file(controller, config_path)
             _update_now = True
 
         DCONFIG = None
@@ -150,7 +183,9 @@ def main(
             DCONFIG = utility.get_from_json(
                 RUN.config["default_asic_config_paths_file_"], io_group
             )
-        _ = utility.update_json(RUN.config["asic_config_paths_file_"], io_group, DCONFIG)
+        _ = utility.update_json(
+            RUN.config["asic_config_paths_file_"], io_group, DCONFIG
+        )
         DCONFIGS[io_group] = DCONFIG
 
     nc = larpix.Controller()
@@ -173,40 +208,18 @@ def main(
         tag = utility.get_from_process_log(pid)
         pos = enforce_parallel.tag_to_config_map[tag]
 
-    ok, diff, unconfigured = enforce_iterative(
+    ok, diff, _ = enforce_iterative(
         nc, all_network_keys, configs=configs, pbar_desc=tag, pbar_position=pos
     )
     if not ok:
         raise RuntimeError("Unconfigured chips!", diff)
 
     if pid_logged:
-        print("\n{} networked successfully".format(tag))
+        print(f"\n{tag} networked successfully")
 
     logger.info("completed networking: io_groups={}".format(pacman_configs["io_group"]))
-    return c
+    return controller
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", default=_default_verbose
-    )
-    parser.add_argument(
-        "--config_path", default=None, type=str, help="""Path to save configuration"""
-    )
-    parser.add_argument(
-        "--controller_config",
-        default=_default_controller_config,
-        type=str,
-        help="""Controller config specifying hydra network""",
-    )
-    parser.add_argument(
-        "--pacman_config",
-        default="configs/io/pacman.json",
-        type=str,
-        help="""Config specifying PACMANs""",
-    )
-    parser.add_argument("--pid_logged", action="store_true", default=False)
-    parser.add_argument("--update_default", action="store_true", default=False)
-    args = parser.parse_args()
-    c = main(**vars(args))
+    main()  # pylint: disable=no-value-for-parameter

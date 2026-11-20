@@ -1,63 +1,62 @@
-import warnings
-
-warnings.filterwarnings("ignore")
-import argparse
+#!/usr/bin/env python3
+"""
+Power down the LArPix using the given PACMAN configuration.
+"""
 import json
 import logging
-import sys
+import warnings
+from pathlib import Path
+from typing import Any
 
+import click
 import larpix
 import larpix.io
 
 from crs_daq.base import utility
-from runenv import runenv as RUN
+from crs_daq.runenv import runenv as RUN
 
+warnings.filterwarnings("ignore")
 logger = logging.getLogger(__name__)
 
-module = sys.modules[__name__]
-for var in RUN.config:
-    setattr(module, var, getattr(RUN, var))
+
+DEFAULT_VERBOSE: bool = False
 
 
-_default_verbose = False
-
-
-def main(verbose, pacman_config):
+@click.command()
+@click.argument(
+    "pacman-config",
+    required=False,
+    default=Path("configs/io/pacman.json"),
+    type=click.Path(readable=True, dir_okay=False, path_type=Path),
+    help="Config specifying PACMANs.",
+)
+def main(pacman_config: Path):
+    """
+    Power down the LArPix using the given PACMAN configuration.
+    """
     logging.info("power_down_larpix.py")
-    c = larpix.Controller()
-    c.io = larpix.io.PACMAN_IO(
+    controller: larpix.Controller = larpix.Controller()
+    controller.io: larpix.io.PACMAN_IO = larpix.io.PACMAN_IO(
         relaxed=True, config_filepath=pacman_config, asic_version=3
     )
 
-    pacman_configs = {}
-    with open(pacman_config, "r") as f:
-        pacman_configs = json.load(f)
+    with open(pacman_config, "r", encoding="utf-8") as f:
+        pacman_configs: dict[str, Any] = json.load(f)
 
     for io_group_ip_pair in pacman_configs["io_group"]:
-        io_group = io_group_ip_pair[0]
+        io_group: int = io_group_ip_pair[0]
 
         # disable pacman receivers
         # c.io.set_reg(0x18, 0, io_group=io_group)
 
         # disable tile power, LARPIX clock
-        c.io.set_reg(0x00000010, 0, io_group=io_group)
-        c.io.set_reg(0x00000014, 0, io_group=io_group)
+        controller.io.set_reg(0x00000010, 0, io_group=io_group)
+        controller.io.set_reg(0x00000014, 0, io_group=io_group)
 
-        utility.update_json(asic_config_paths_file_, io_group, None)
-        utility.update_json(network_config_paths_file_, io_group, None)
+        utility.update_json(RUN.config["asic_config_paths_file_"], io_group, None)
+        utility.update_json(RUN.config["network_config_paths_file_"], io_group, None)
     logger.info("powered down")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--pacman_config",
-        default="configs/io/pacman.json",
-        type=str,
-        help="""Config specifying PACMANs""",
-    )
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", default=_default_verbose
-    )
-    args = parser.parse_args()
-    c = main(**vars(args))
+    main()  # pylint: disable=no-value-for-parameter
