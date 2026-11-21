@@ -7,7 +7,7 @@ The system uses a top-level configuration file `configs/RUN_CONFIG.json` and sup
 ## Example Workflow
 The first step is to configure the PACMAN board. Within a Python environment with `crs_daq`,
 ```bash
-python scripts/configure_pacman.py --pacman_config configs/io/pacman_iog1.json
+python scripts/configure_pacman.py --pacman-config configs/io/pacman_iog1.json
 ```
 to configure one IO group (in this case IO group 1), or
 ```bash
@@ -30,9 +30,9 @@ One would expect an IDDD of approximately 500 mA.
 The next step is to create a "hydra" network between the chips on the charge readout tile.
 To generate this network, run
 ```bash
-python scripts/hydra_v3.py --io_group 1
+python scripts/hydra_v3.py --io-group 1
 ```
-In the case of only one tile, one can use the additional flag `--pacman_tile <n>`.
+In the case of only one tile, one can use the additional flag `--pacman-tile <n>`.
 This script:
 * Resets the tiles,
 * Tries to establishes a communication between neighboring chips,
@@ -47,7 +47,7 @@ In this case, the blue squares indicate root chips and the red square is a chip 
 
 Now that the chip network is established, we may initialize it using
 ```bash
-python scripts/network_larpix.py --controller_config configs/controller_config.json
+python scripts/network_larpix.py --controller-config configs/controller_config.json
 ```
 The `controller_config.json` is another high-level configuration file that references a mid-level JSON, e.g., `configs/config-io_group-1.json`, which further links the lower-level chip network configuration files, e.g., `configs/iog_1-tile_1-hydra-network.json`. Since the mid-level `config-io_group-1.json` specifies the chip network configuration files, the mid-level JSON's contents must match the user's expected chip network configuration path. This can be done by modifying the mid-level JSON or using the same path and name for the low-level chip network JSON.
 The script then
@@ -83,11 +83,11 @@ python scripts/write_register_to_config.py asic_configs/pedestal_example/* --reg
 where each cycle is is 100 ns.
 To apply these configurations to the hardware,
 ```bash
-python scripts/configure_larpix.py --asic_config asic_configs/pedestal_example
+python scripts/configure_larpix.py --asic-config asic_configs/pedestal_example
 ```
 To record data,
 ```bash
-python scripts/record_data.py --packet --runtime 60 --file_count 1
+python scripts/record_data.py --packet --runtime 60 --file-count 1
 ```
 
 To check the results of this pedestal run,
