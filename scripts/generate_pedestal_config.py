@@ -1,151 +1,158 @@
-######################################################################################
-# these settings configure the v3a larpix chips for a pedestal run. Additional configs
-# are set in /larpix-control/larpix//configs/chip/default_v3.py
-#######################################################################################
-
-import argparse
+"""
+These settings configure the v3a larpix chips for a pedestal run. Additional configs
+are set in /larpix-control/larpix//configs/chip/default_v3.json.
+"""
 import json
+from pathlib import Path
+from typing import Any
+
+import click
+from tqdm import tqdm
 
 from crs_daq.utils import datetime_now
 
-_default_verbose = False
-_default_periodic_trigger_cycles = 150000
-_default_periodic_reset_cycles = 4
-_default_vref_dac = 220  ###cold 220 ### warm 185
-_default_ref_current_trim = 0
-_default_tx_diff = 7
-_default_tx_slice = 1
-_default_r_term = 7
-_default_i_rx = 3
+
+DEFAULT_PERIODIC_TRIGGER_CYCLES: int = 150000
+DEFAULT_PERIODIC_RESET_CYCLES: int = 4
+DEFAULT_VREF_DAC: int = 220  ###cold 220 ### warm 185
+DEFAULT_REF_CURRENT_TRIM: int = 16
+DEFAULT_TX_DIFF: int = 8
+DEFAULT_TX_SLICE: int = 1
+DEFAULT_R_TERM: int = 7
+DEFAULT_I_RX: int = 3
 
 
+def generate_pedestal_config_patch(**kwargs) -> dict[str, Any]:
+    """ Generate a minimal pedestal configuration patch. """
+    config: dict[str, Any] = {}
+    config["adc_comp_trim"] = 2
+    config["adc_ibias_delay"] = 7
+    config["cds_mode"] = 0
+    config["channel_mask"] = [1] * 64
+    config["csa_enable"] = [1] * 64
+    config["enable_data_stats"] = 0
+    config["enable_external_sync"] = 0
+    config["enable_external_trigger"] = 0
+    config["enable_hit_veto"] = 1
+    config["enable_periodic_reset"] = 1
+    config["enable_periodic_trigger"] = 1
+    config["enable_periodic_trigger_veto"] = 0
+    config["enable_rolling_periodic_reset"] = 1
+    config["enable_rolling_periodic_trigger"] = 1
+    config["enable_tally"] = 1
+    config["i_rx0"] = kwargs["i_rx"]
+    config["i_rx1"] = kwargs["i_rx"]
+    config["i_rx2"] = kwargs["i_rx"]
+    config["i_rx3"] = kwargs["i_rx"]
+    config["i_tx_diff0"] = kwargs["tx_diff"]
+    config["i_tx_diff1"] = kwargs["tx_diff"]
+    config["i_tx_diff2"] = kwargs["tx_diff"]
+    config["i_tx_diff3"] = kwargs["tx_diff"]
+    config["ibias_vcm_buffer"] = 7
+    config["mark_first_packet"] = 0
+    config["periodic_trigger_mask"] = [0] * 64
+    config["r_term0"] = kwargs["r_term"]
+    config["r_term1"] = kwargs["r_term"]
+    config["r_term2"] = kwargs["r_term"]
+    config["r_term3"] = kwargs["r_term"]
+    config["threshold_global"] = 255
+    config["tx_slices0"] = kwargs["tx_slice"]
+    config["tx_slices1"] = kwargs["tx_slice"]
+    config["tx_slices2"] = kwargs["tx_slice"]
+    config["tx_slices3"] = kwargs["tx_slice"]
+
+    config["vref_dac"] = kwargs["vref_dac"]
+    config["periodic_trigger_cycles"] = kwargs["periodic_trigger_cycles"]
+    config["periodic_reset_cycles"] = kwargs["periodic_reset_cycles"]
+    return config
+
+
+@click.command()
+@click.argument(
+        "input_files",
+        nargs=-1,
+        required=True,
+        type=click.Path(dir_okay=False, writable=True, readable=True, path_type=Path),
+)
+@click.option(
+        "--periodic-trigger-cycles",
+        '-t',
+        type=int,
+        default=DEFAULT_PERIODIC_TRIGGER_CYCLES,
+        show_default=True,
+        help="How many cycles (100 ns) per trigger.",
+)
+@click.option(
+        "--periodic-reset-cycles",
+        '-r',
+        type=int,
+        default=DEFAULT_PERIODIC_RESET_CYCLES,
+        show_default=True,
+        help="How many cycles (100 ns) per reset.",
+)
+@click.option(
+        "--vref-dac",
+        type=int,
+        default=DEFAULT_VREF_DAC,
+        show_default=True,
+        help="Voltage reference DAC value.",
+)
+@click.option(
+        "--ref-current-trim",
+        type=int,
+        default=DEFAULT_REF_CURRENT_TRIM,
+        show_default=True,
+        help="Current reference trim value.",
+)
+@click.option(
+        "--tx-diff",
+        type=int,
+        default=DEFAULT_TX_DIFF,
+        show_default=True,
+        help="Transmitter's differential current DAC per slice-loop.",
+)
+@click.option(
+        "--tx-slice",
+        type=int,
+        default=DEFAULT_TX_SLICE,
+        show_default=True,
+        help="Number of slices enabled per transmitter DAC.",
+)
+@click.option(
+        "--r-term",
+        type=int,
+        default=DEFAULT_R_TERM,
+        show_default=True,
+        help="Receiver's termination DAC.",
+)
+@click.option(
+        "--i-rx",
+        type=int,
+        default=DEFAULT_I_RX,
+        show_default=True,
+        help="Receiver's bias current DAC.",
+)
 def main(
-    input_files,
-    verbose,
-    periodic_trigger_cycles=_default_periodic_trigger_cycles,
-    periodic_reset_cycles=_default_periodic_reset_cycles,
-    vref_dac=_default_vref_dac,
-    ref_current_trim=_default_ref_current_trim,
-    tx_diff=_default_tx_diff,
-    tx_slice=_default_tx_slice,
-    r_term=_default_r_term,
-    i_rx=_default_i_rx,
+    input_files: list[Path],
+    **kwargs,
 ):
+    """
+    Configure the v3a LArPix chips for a pedestal-focused run.
+    """
+    patch_config: dict[str, Any] = generate_pedestal_config_patch(**kwargs)
 
-    for file in input_files:
-        config = {}
-        with open(file, "r") as f:
-            config = json.load(f)
-        config["adc_comp_trim"] = 2
-        config["adc_ibias_delay"] = 7
-        config["cds_mode"] = 0
-        config["channel_mask"] = [1] * 64
-        config["csa_enable"] = [1] * 64
-        config["enable_data_stats"] = 0
-        config["enable_external_sync"] = 0
-        config["enable_external_trigger"] = 0
-        config["enable_hit_veto"] = 1
-        config["enable_periodic_reset"] = 1
-        config["enable_periodic_trigger"] = 1
-        config["enable_periodic_trigger_veto"] = 0
-        config["enable_rolling_periodic_reset"] = 1
-        config["enable_rolling_periodic_trigger"] = 1
-        config["enable_tally"] = 1
-        config["i_rx0"] = 3
-        config["i_rx1"] = 3
-        config["i_rx2"] = 3
-        config["i_rx3"] = 3
-        config["i_tx_diff0"] = 8
-        config["i_tx_diff1"] = 8
-        config["i_tx_diff2"] = 8
-        config["i_tx_diff3"] = 8
-        config["ibias_vcm_buffer"] = 7
-        config["mark_first_packet"] = 0
-        config["periodic_trigger_mask"] = [0] * 64
-        config["r_term0"] = 7
-        config["r_term1"] = 7
-        config["r_term2"] = 7
-        config["r_term3"] = 7
-        config["threshold_global"] = 255
-        config["tx_slices0"] = 1
-        config["tx_slices1"] = 1
-        config["tx_slices2"] = 1
-        config["tx_slices3"] = 1
+    for file in tqdm(input_files, desc="Config files:"):
+        with open(file, "r", encoding="utf-8") as f:
+            config: dict[str, Any] = json.load(f)
 
-        if vref_dac is not None:
-            config["vref_dac"] = vref_dac
-        config["periodic_trigger_cycles"] = periodic_trigger_cycles
-        config["periodic_reset_cycles"] = periodic_reset_cycles
+        config.update(patch_config)
         if "meta" in config:
             config["meta"]["last_update"] = datetime_now()
             config["meta"]["description"] = "pedestal"
 
-        with open(file, "w") as f:
+        with open(file, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=4)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("input_files", nargs="+", help="""files to modify""")
-    parser.add_argument(
-        "--verbose",
-        default=_default_verbose,
-        action="store_true",
-        help="""Enable verbose mode""",
-    )
-    parser.add_argument(
-        "--periodic_trigger_cycles",
-        default=_default_periodic_trigger_cycles,
-        type=int,
-        help="""Periodic trigger cycles [MCLK]""",
-    )
-    parser.add_argument(
-        "--periodic_reset_cycles",
-        default=_default_periodic_reset_cycles,
-        type=int,
-        help="""Periodic reset cycles [MCLK]""",
-    )
-    parser.add_argument(
-        "--vref_dac", default=_default_vref_dac, type=int, help="""Vref DAC"""
-    )
-    parser.add_argument(
-        "--ref_current_trim",
-        default=_default_ref_current_trim,
-        type=int,
-        help="""Trim DAC for primary reference current""",
-    )
-    parser.add_argument(
-        "--tx_diff",
-        default=_default_tx_diff,
-        type=int,
-        help="""Differential per-slice loop current DAC""",
-    )
-    parser.add_argument(
-        "--tx_slice",
-        default=_default_tx_slice,
-        type=int,
-        help="""Slices enabled per transmitter DAC""",
-    )
-    parser.add_argument(
-        "--r_term",
-        default=_default_r_term,
-        type=int,
-        help="""Receiver termination DAC""",
-    )
-    parser.add_argument(
-        "--i_rx", default=_default_i_rx, type=int, help="""Receiver bias current DAC"""
-    )
-
-    args = parser.parse_args()
-    c = main(
-        args.input_files,
-        verbose=args.verbose,
-        periodic_trigger_cycles=args.periodic_trigger_cycles,
-        periodic_reset_cycles=args.periodic_reset_cycles,
-        vref_dac=args.vref_dac,
-        ref_current_trim=args.ref_current_trim,
-        tx_diff=args.tx_diff,
-        tx_slice=args.tx_slice,
-        r_term=args.r_term,
-        i_rx=args.i_rx,
-    )
+    main()  # pylint: disable=no-value-for-parameter
