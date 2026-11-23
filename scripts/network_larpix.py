@@ -237,7 +237,6 @@ def network_by_io_group(
 def main(
     verbose: bool,
     controller_config: Path,
-    io_group_tiles,
     pacman_config: Path,
     config_path: Path | None,
     pid_logged: bool,

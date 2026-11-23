@@ -179,7 +179,13 @@ def configure_io_group(
     help="Config specifying PACMANs.",
     show_default=True,
 )
-def main(verbose: bool, pacman_config: Path) -> None:
+@click.option(
+    "--asic-version",
+    default=3,
+    type=int,
+    help="ASIC version number.",
+)
+def main(verbose: bool, pacman_config: Path, asic_version: int) -> None:
     """
     Configure PACMANs using the given configuration.
     """
@@ -188,7 +194,7 @@ def main(verbose: bool, pacman_config: Path) -> None:
         pacman_configs = json.load(f)
 
     controller: larpix.Controller = larpix.Controller()
-    controller.io = larpix.io.PACMAN_IO(relaxed=True, config_filepath=pacman_config)
+    controller.io = larpix.io.PACMAN_IO(relaxed=True, config_filepath=pacman_config, asic_version=asic_version)
 
     # for each io_group, perform networking
     logger.info("starting power up")

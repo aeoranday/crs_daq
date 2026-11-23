@@ -29,7 +29,13 @@ DEFAULT_VERBOSE = False
     type=click.Path(readable=True, dir_okay=False, path_type=Path),
     help="Config specifying PACMANs.",
 )
-def main(verbose: bool, pacman_config: Path):
+@click.option(
+    "--asic-version",
+    default=3,
+    type=int,
+    help="ASIC version number.",
+)
+def main(verbose: bool, pacman_config: Path, asic_version: int):
     """
     Monitor the power for the IO group 1.
     """
@@ -38,7 +44,7 @@ def main(verbose: bool, pacman_config: Path):
 
     controller: larpix.Controller = larpix.Controller()
     controller.io: larpix.io.PACMAN_IO = larpix.io.PACMAN_IO(
-        relaxed=True, config_filepath=pacman_config
+        relaxed=True, config_filepath=pacman_config, asic_version=asic_version
     )
 
     if verbose:

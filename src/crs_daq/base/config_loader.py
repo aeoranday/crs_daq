@@ -105,9 +105,9 @@ def load_config_from_directory(
     """
     for file in os.listdir(directory):
         if verbose:
-            print("loading file:", directory + "/" + file)
+            print("loading file:", directory/file)
         if file[-5:] == ".json":
-            controller = load_config_from_file(controller, directory + "/" + file)
+            controller = load_config_from_file(controller, directory/file)
 
     return controller
 
