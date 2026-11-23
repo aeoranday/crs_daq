@@ -140,7 +140,7 @@ def main(
         if not os.path.exists(copy_configs_here):
             os.mkdir(copy_configs_here)
         os.system(
-            f"python archive.py --ignore_busy --monitor_dir {copy_configs_here} &"
+            f"python scripts/archive.py --ignore_busy --monitor_dir {copy_configs_here} &"
         )
 
     controller: larpix.Controller = larpix.Controller()
@@ -155,7 +155,7 @@ def main(
         # dump ASIC configs to temporary directory to embed in data files
         # note that this archiviving command is called inside the loop, so it will be updated for each file
         # i.e. if changes are made during the run, they will be picked up automatically in the next file
-        os.system("./dump_temp_archive.sh &")
+        os.system("./scripts/dump_temp_archive.sh &")
 
         if filename is None or ctr > 0:
             filename = (
