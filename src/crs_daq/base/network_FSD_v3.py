@@ -22,6 +22,57 @@ _default_clk_ctrl = 0
 clk_ctrl_2_clk_ratio_map = {0: 10, 1: 20, 2: 40, 3: 80}
 
 
+def get_io_group_io_channel_to_chips_map(
+    network_config: str,
+    tiles: list[int] | None = None,
+    keys_to_use: list[larpix.Key] | None = None,
+) -> dict[tuple[int, int], list[larpix.Key]]:
+    """
+    Get the mapping from (<IO Group>, <IO Channel>) to LArPix chip Key.
+
+    Parameters
+    ----------
+    network_config : str
+        The network configuration path to be loaded and parsed for connections.
+    tiles : list[int] | None, default: None
+        When given, used to check that an IO channel number is within the list of tiles.
+    keys_to_use : list[larpix.Key] | None, default: None
+        When given, used as a list of Keys that are to be used. All other keys for the same
+        (IO group, IO channel) are not considered.
+
+    Returns
+    -------
+    dict[tuple[int, int], list[larpix.Key]]
+        Each element has all chip Keys that belong to the same IO group and IO channel.
+    """
+    controller: larpix.Controller = larpix.Controller()
+    controller.load(network_config)
+
+    iog_ioc_to_keys: dict[tuple[int, int], list[larpix.Key]] = {}
+    for io_group, io_channels in controller.network.items():
+        for io_channel in io_channels:
+            if (
+                tiles is not None
+                and utility.io_channel_to_tile(io_channel) not in tiles
+            ):
+                continue
+            network_keys: list[larpix.Key] = controller.get_network_keys(
+                io_group, io_channel, root_first_traversal=True
+            )
+
+            # Use all of the network keys.
+            if keys_to_use is None:
+                iog_ioc_to_keys[(io_group, io_channel)] = network_keys
+                continue
+
+            # Use our selection of keys
+            iog_ioc_to_keys[(io_group, io_channel)] = [
+                key for key in keys_to_use if key in network_keys
+            ]
+
+    return iog_ioc_to_keys
+
+
 # @timebudget
 def network_ext_node_from_tuple(c, iog_ioc_cid):
     c.add_network_node(
@@ -707,10 +758,17 @@ def write_network_to_file(
     return fname
 
 
-def network_v3(controller_config, pacman_config: Path = Path("configs/io/pacman.json"), tiles=None, verbose=False):
+def network_v3(
+    controller_config,
+    pacman_config: Path = Path("configs/io/pacman.json"),
+    tiles=None,
+    verbose=False,
+):
 
     c = larpix.Controller()
-    c.io = larpix.io.PACMAN_IO(config_filepath=pacman_config, relaxed=True, asic_version=3)
+    c.io = larpix.io.PACMAN_IO(
+        config_filepath=pacman_config, relaxed=True, asic_version=3
+    )
 
     if controller_config is None:
         raise RuntimeError("No controller config specified!")
