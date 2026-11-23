@@ -142,35 +142,6 @@ def main(
     for (io_group, _) in pacman_configs["io_group"]:
         all_network_keys += get_io_group_keys(io_group, controller, asic_config_dir, config_subdir)
 
-        # make the network keys io channel agnostic
-        remove: list[larpix.Key] = []
-        for i in range(len(all_network_keys)):
-            for j in range(len(all_network_keys[i])):
-                if all_network_keys[i][j] not in controller.chips:
-
-                    found: bool = False
-                    chip: larpix.Key = all_network_keys[i][j]
-                    tile: int = utility.io_channel_to_tile(chip.io_channel)
-                    io_channels: list[int] = [1 + 4 * (tile - 1) + n for n in range(4)]
-
-                    for io_channel in io_channels:
-                        chip_key: larpix.Key = larpix.Key(
-                            chip.io_group, io_channel, chip.chip_id
-                        )
-                        if chip_key in controller.chips:
-                            all_network_keys[i][j] = chip_key
-                            found = True
-                            break
-
-                    if not found:
-                        remove.append(chip)
-
-        for chip in remove:
-
-            for i in range(len(all_network_keys)):
-                if chip in all_network_keys[i]:
-                    all_network_keys[i].remove(chip)
-
     # ensure UARTs are enable on pacman to receive configuration packets
     for io_group_ip_pair in pacman_configs["io_group"]:
         io_group: int = io_group_ip_pair[0]
