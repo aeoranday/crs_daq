@@ -142,9 +142,7 @@ def main(
     for (io_group, _) in pacman_configs["io_group"]:
         all_network_keys += get_io_group_keys(io_group, controller, asic_config_dir, config_subdir)
 
-    # ensure UARTs are enable on pacman to receive configuration packets
-    for io_group_ip_pair in pacman_configs["io_group"]:
-        io_group: int = io_group_ip_pair[0]
+        # ensure UARTs are enable on pacman to receive configuration packets
         pacman.enable_pacman_uart_from_io_channel(
             controller.io,
             io_group,
