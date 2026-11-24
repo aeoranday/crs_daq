@@ -64,8 +64,8 @@ def enforce_parallel(
     controller: larpix.Controller,
     network_keys: list[list[larpix.Key]],
     unmask_last: bool = True,
-    pbar_desc: str = "p",
-    pbar_position: int = 0,
+    pbar_desc: str = "p",  # FIXME: Unused argument. Resolve in all locations.
+    pbar_position: int = 0,  # FIXME: Unused argument. Resolve in all locations.
 ) -> tuple[bool, dict[larpix.Key, dict[int, tuple[int, int]]], list[list[larpix.Key]]]:
     """
     Enforce chip configuration in batches.
