@@ -7,6 +7,7 @@ import json
 import os
 import subprocess
 import time
+from pathlib import Path
 from typing import Any
 
 import larpix
@@ -178,6 +179,8 @@ def update_json(
     meta_field : str
         A top level field for this config entry.
     """
+    if isinstance(data, Path):
+        data = str(data)
     loaded: bool = False
     locked_name: str | None = None
     iretry: int = 0
