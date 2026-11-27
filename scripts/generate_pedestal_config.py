@@ -5,6 +5,7 @@ are set in /larpix-control/larpix//configs/chip/default_v3.json.
 import json
 from pathlib import Path
 from typing import Any
+from warnings import warn
 
 import click
 from tqdm import tqdm
@@ -28,7 +29,7 @@ def generate_pedestal_config_patch(**kwargs) -> dict[str, Any]:
     config["adc_comp_trim"] = 2
     config["adc_ibias_delay"] = 7
     config["cds_mode"] = 0
-    config["channel_mask"] = [1] * 64
+    config["channel_mask"] = [0] * 64
     config["csa_enable"] = [1] * 64
     config["enable_data_stats"] = 0
     config["enable_external_sync"] = 0
@@ -73,6 +74,14 @@ def generate_pedestal_config_patch(**kwargs) -> dict[str, Any]:
         nargs=-1,
         required=True,
         type=click.Path(dir_okay=False, writable=True, readable=True, path_type=Path),
+)
+@click.option(
+        "--out-dir",
+        '-o',
+        type=click.Path(writable=True, path_type=Path),
+        default=Path("./asic_configs/pedestal_config"),
+        show_default=True,
+        help="Directory path to output the pedestal configurations.",
 )
 @click.option(
         "--periodic-trigger-cycles",
@@ -134,11 +143,21 @@ def generate_pedestal_config_patch(**kwargs) -> dict[str, Any]:
 )
 def main(
     input_files: list[Path],
+    out_dir: Path,
     **kwargs,
 ):
     """
     Configure the v3a LArPix chips for a pedestal-focused run.
     """
+    if out_dir.exists() and out_dir.is_dir():
+        for input_file in input_files:
+            if (out_dir / input_file.name).exists():
+                warn("At least one pedestal config file will be overwritten.")
+                break
+    elif not out_dir.exists():
+        out_dir.mkdir()
+        print(f"Made {out_dir!s}")
+
     patch_config: dict[str, Any] = generate_pedestal_config_patch(**kwargs)
 
     for file in tqdm(input_files, desc="Config files:"):
@@ -150,8 +169,10 @@ def main(
             config["meta"]["last_update"] = datetime_now()
             config["meta"]["description"] = "pedestal"
 
-        with open(file, "w", encoding="utf-8") as f:
+        with open(out_dir/file.name, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=4)
+
+    print(f"Pedestal configurations written to:\n\t{out_dir!s}")
 
 
 if __name__ == "__main__":
